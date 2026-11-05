@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, CornerDownLeft, GripHorizontal, LoaderCircle, Pencil, RotateCcw, Send, Trash2, X } from 'lucide-react';
+import { Check, CornerDownLeft, GripHorizontal, LoaderCircle, Pencil, RotateCcw, Send, Square, Trash2, X } from 'lucide-react';
 import { MathMarkdown } from './MathMarkdown';
 import type { Annotation } from '../domain/types';
 
@@ -8,12 +8,13 @@ interface AnnotationCardProps {
   onClose: () => void;
   onUpdate: (patch: Partial<Annotation>) => void;
   onAsk: () => void;
+  onStop: () => void;
   onDelete: () => void;
   disabled?: boolean;
 }
 
 /** An anchored personal note or single-turn AI exchange, without nested annotation. */
-export function AnnotationCard({ annotation, onClose, onUpdate, onAsk, onDelete, disabled }: AnnotationCardProps) {
+export function AnnotationCard({ annotation, onClose, onUpdate, onAsk, onStop, onDelete, disabled }: AnnotationCardProps) {
   const [editing, setEditing] = useState(false);
   const [question, setQuestion] = useState(annotation.question);
   const [answer, setAnswer] = useState(annotation.answer);
@@ -78,7 +79,9 @@ export function AnnotationCard({ annotation, onClose, onUpdate, onAsk, onDelete,
     // Capture runs before menus/other controls stop propagation, without consuming
     // the click: another highlight or the main input still receives its action.
     document.addEventListener('pointerdown', dismiss, true);
-    return () => document.removeEventListener('pointerdown', dismiss, true);
+    const saveBeforeExit = () => closeRef.current();
+    document.addEventListener('learn:save-edits', saveBeforeExit);
+    return () => { document.removeEventListener('pointerdown', dismiss, true); document.removeEventListener('learn:save-edits', saveBeforeExit); };
   }, []);
 
   return (
@@ -183,7 +186,7 @@ export function AnnotationCard({ annotation, onClose, onUpdate, onAsk, onDelete,
             {annotation.answer ? <MathMarkdown streaming={isGenerating}>{annotation.answer}</MathMarkdown> : isGenerating ? <p className="annotation-waiting">正在结合主对话思考…</p> : null}
             {canRetry && <div className="annotation-error" role="status"><p>{annotation.error || '上次回答未完成，可以重试原问题。'}</p><button type="button" className="annotation-text-button" disabled={disabled} onClick={onAsk}><RotateCcw size={13} />重试原问题</button></div>}
             {!isGenerating && !canRetry && <div className="annotation-response-actions"><span>内容已自动保存</span><button type="button" className="annotation-text-button" onClick={startEditing}><Pencil size={13} />编辑</button></div>}
-            {isGenerating && <p className="annotation-footnote">可以关闭窗口，回答会继续并自动保存。</p>}
+            {isGenerating && <><div className="annotation-response-actions"><span>关闭窗口后仍会继续回答</span><button type="button" className="annotation-text-button" onClick={onStop}><Square size={12} />停止回答</button></div><p className="annotation-footnote">停止后可以用原问题和首次上下文重试。</p></>}
           </div>
         )}
       </div>

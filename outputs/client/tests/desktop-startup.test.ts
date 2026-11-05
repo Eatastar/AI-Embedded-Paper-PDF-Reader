@@ -129,6 +129,7 @@ function mainHarness(options: HarnessOptions = {}) {
     async fetch() { trace.push('session.model-fetch'); return new Response('model-response'); },
   };
   const electron = {
+    ipcMain: Object.assign(new EventEmitter(), { handle() {}, removeHandler() {} }),
     app,
     BrowserWindow: FakeWindow,
     Menu: { setApplicationMenu() {}, buildFromTemplate() { return { popup() {} }; } },
@@ -144,6 +145,8 @@ function mainHarness(options: HarnessOptions = {}) {
       if (id === './profile-store.cjs') return { createProfileStore: () => ({ persistence: 'configuration', load: () => null, save() {} }) };
       if (id === './model-network.cjs') return require('../desktop/model-network.cjs');
       if (id === './request-log.cjs') return { createRequestLog: () => ({ write() {} }) };
+      if (id === './backup-store.cjs') return { createBackupStore: () => ({ list: async () => [], read: async () => '', write: async () => ({}) }) };
+      if (id === './desktop-bridge.cjs') return require('../desktop/desktop-bridge.cjs');
       if (id === 'node:fs/promises') return { async mkdir() {}, async writeFile(_path: string, value: string) { reports.push(value); } };
       if (['node:path', 'node:crypto', 'node:events'].includes(id)) return require(id);
       throw new Error('Unexpected main dependency: ' + id);

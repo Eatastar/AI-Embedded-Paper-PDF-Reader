@@ -31,14 +31,18 @@ export const selectProfile = (profileId: string | null) => profileAction('/api/p
 export const deleteProfile = (profileId: string) => profileAction('/api/profiles/delete', { profileId });
 
 export async function streamReply(request: ReplyRequest, onDelta: (text: string) => void, signal?: AbortSignal): Promise<{ modelLabel: string }> {
+  signal?.throwIfAborted();
   const response = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId: crypto.randomUUID(), ...request }), signal });
   if (!response.ok) throw new Error(await readFailure(response));
   if (!response.body || !response.headers.get('content-type')?.includes('text/event-stream')) throw new Error('本地服务没有返回可读取的回答。');
   const reader = response.body.getReader();
+  const abortRead = () => { void reader.cancel().catch(() => {}); };
+  signal?.addEventListener('abort', abortRead, { once: true });
   const decoder = new TextDecoder();
   let pending = '';
   let result: { modelLabel: string } | undefined;
   const consumeEvent = (event: string) => {
+    signal?.throwIfAborted();
     const data = event.split(/\r?\n/).filter(line => line.startsWith('data:')).map(line => line.slice(5).trimStart()).join('\n');
     if (!data) return;
     let part: { type: string; text?: string; modelLabel?: string; message?: string };
@@ -50,6 +54,7 @@ export async function streamReply(request: ReplyRequest, onDelta: (text: string)
   };
   try {
     while (true) {
+      signal?.throwIfAborted();
       const { done, value } = await reader.read();
       pending += decoder.decode(value, { stream: !done });
       let match: RegExpExecArray | null;
@@ -65,6 +70,7 @@ export async function streamReply(request: ReplyRequest, onDelta: (text: string)
     if (!result) throw new Error('连接提前结束，回答尚未完成。请重试。');
     return result;
   } finally {
+    signal?.removeEventListener('abort', abortRead);
     await reader.cancel().catch(() => {});
     reader.releaseLock();
   }

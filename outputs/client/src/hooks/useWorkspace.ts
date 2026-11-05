@@ -1,50 +1,60 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Workspace } from '../domain/types';
-import { loadWorkspace, saveWorkspace } from '../adapters/storage';
+import { exportWorkspaceWithFiles, loadWorkspace, restoreWorkspaceWithFiles, saveWorkspace } from '../adapters/storage';
+import { WorkspaceSession } from '../adapters/workspace-session';
+import { desktop } from '../adapters/desktop';
 
 export function useWorkspace() {
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [loadError, setLoadError] = useState('');
   const [saveStatus, setSaveStatus] = useState('已保存在本机');
   const current = useRef<Workspace | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const queue = useRef(Promise.resolve());
-  const revision = useRef(0);
-  const persist = useCallback(() => {
-    if (!current.current) return;
-    const snapshot = structuredClone(current.current);
-    const savedRevision = revision.current;
-    queue.current = queue.current.catch(() => {}).then(() => saveWorkspace(snapshot)).then(() => {
-      if (savedRevision === revision.current) setSaveStatus('已保存在本机');
-    }).catch(() => setSaveStatus('保存失败，请先导出备份'));
-  }, []);
+  const [backupWarning, setBackupWarning] = useState('');
+  const [lastBackup, setLastBackup] = useState<number>();
+  const session = useRef<WorkspaceSession | null>(null);
+  if (!session.current) session.current = new WorkspaceSession({ save: saveWorkspace, onChange: value => { current.current = value; setWorkspace(value); }, onStatus: setSaveStatus });
+  const backupRevision = useRef(-1);
+  const backupQueue = useRef(Promise.resolve());
+  const flush = useCallback(() => session.current!.flush(), []);
+  const checkpoint = useCallback(async () => {
+    if (!desktop() || !current.current) return;
+    const result = backupQueue.current.catch(() => {}).then(async () => {
+      await flush();
+      const revision = session.current!.revision;
+      if (revision === backupRevision.current) return;
+      const entry = await desktop()!.backups.write(await exportWorkspaceWithFiles(current.current!));
+      backupRevision.current = revision;
+      setLastBackup(entry.createdAt); setBackupWarning('');
+    });
+    backupQueue.current = result;
+    try { await result; } catch (error) { setBackupWarning('自动备份未完成，当前记录仍在本机。请在“备份与恢复”中重试或导出备份。'); throw error; }
+  }, [flush]);
   useEffect(() => {
     let alive = true;
     loadWorkspace().then(data => {
       if (!alive) return;
-      current.current = data;
-      setWorkspace(data);
-      setSaveStatus('已保存在本机');
-    }).catch(() => { if (alive) setLoadError('无法打开本地记录。请检查浏览器是否允许本地存储，然后刷新重试。'); });
-    const flush = () => persist();
-    window.addEventListener('pagehide', flush);
+      session.current!.load(data);
+    }).catch(() => { if (alive) setLoadError('无法打开本地记录。原记录仍保留在本机，可以从备份恢复，或重启后再试。'); });
+    const saveOnHide = () => { void flush().catch(() => {}); };
+    window.addEventListener('pagehide', saveOnHide);
+    const interval = setInterval(() => { void checkpoint().catch(() => {}); }, 60_000);
     return () => {
       alive = false;
-      window.removeEventListener('pagehide', flush);
-      if (timer.current) clearTimeout(timer.current);
+      window.removeEventListener('pagehide', saveOnHide);
+      clearInterval(interval);
+      session.current!.dispose();
     };
-  }, [persist]);
-  const update = useCallback((change: (previous: Workspace) => Workspace) => {
-    if (!current.current) throw new Error('正在读取本地记录。');
-    const next = change(current.current);
-    current.current = next;
-    revision.current += 1;
-    setWorkspace(next);
-    setSaveStatus('正在保存…');
-    if (!timer.current) {
-      timer.current = setTimeout(() => { timer.current = null; persist(); }, 180);
-    }
-    return next;
-  }, [persist]);
-  return { workspace, current, update, saveStatus, loadError };
+  }, [flush, checkpoint]);
+  useEffect(() => {
+    if (!workspace || loadError) return;
+    const timer = setTimeout(() => { void checkpoint().catch(() => {}); }, 3000);
+    return () => clearTimeout(timer);
+  }, [workspace, loadError, checkpoint]);
+  const update = useCallback((change: (previous: Workspace) => Workspace) => session.current!.update(change), []);
+  const recover = useCallback(async (text: string) => {
+    const restored = await restoreWorkspaceWithFiles(text);
+    session.current!.load(restored);
+    setLoadError(''); backupRevision.current = -1;
+  }, []);
+  return { workspace, current, update, saveStatus, loadError, flush, checkpoint, recover, backupWarning, lastBackup };
 }

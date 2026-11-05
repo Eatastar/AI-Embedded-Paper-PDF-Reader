@@ -3,6 +3,7 @@ import type {
   InputMessage, MessageVersion, Workspace,
 } from './types';
 import { DEMO_MAIN_ANSWER } from '../demo';
+import { WORKSPACE_LIMITS } from './capacity';
 
 const now = () => Date.now();
 export const makeId = () => globalThis.crypto?.randomUUID?.() ?? `id-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
@@ -224,7 +225,7 @@ function obj(value: unknown, keys: string[], label: string): Obj {
   return Object.fromEntries(Object.entries(value).filter(([key]) => keys.includes(key)));
 }
 function str(value: unknown, label: string, allowEmpty = false): string {
-  if (typeof value !== 'string' || value.length > 2_000_000 || (!allowEmpty && !value.trim())) invalid(`${label}应为${allowEmpty ? '' : '非空'}文本。`);
+  if (typeof value !== 'string' || value.length > WORKSPACE_LIMITS.text || (!allowEmpty && !value.trim())) invalid(`${label}应为${allowEmpty ? '' : '非空'}文本。`);
   return value;
 }
 function timestamp(value: unknown, label: string): number {
@@ -261,18 +262,18 @@ export function validateImport(input: unknown): Workspace {
     ids.add(result);
     return result;
   };
-  const conversations = list(data.conversations, '对话', 1000).map(raw => {
+  const conversations = list(data.conversations, '对话', WORKSPACE_LIMITS.conversations).map(raw => {
     const c = obj(raw, ['id', 'title', 'createdAt', 'updatedAt', 'messages', 'annotations', 'documents', 'deletedAt'], '对话');
     const conversation: Conversation = {
       id: id(c.id, '对话 ID'), title: str(c.title, '对话标题'), createdAt: timestamp(c.createdAt, '创建时间'),
       updatedAt: timestamp(c.updatedAt, '修改时间'), messages: [], annotations: [],
     };
     if (c.deletedAt !== undefined) conversation.deletedAt = timestamp(c.deletedAt, '对话删除时间');
-    conversation.messages = list(c.messages, '消息', 10000).map(rawMessage => {
+    conversation.messages = list(c.messages, '消息', WORKSPACE_LIMITS.messages).map(rawMessage => {
       const m = obj(rawMessage, ['id', 'role', 'versions', 'activeVersionId'], '消息');
       if (m.role !== 'user' && m.role !== 'assistant') invalid('消息角色不受支持。');
       const messageId = id(m.id, '消息 ID');
-      const versions = list(m.versions, '消息版本', 1000).map(rawVersion => {
+      const versions = list(m.versions, '消息版本', WORKSPACE_LIMITS.versions).map(rawVersion => {
         const v = obj(rawVersion, ['id', 'content', 'status', 'createdAt', 'modelLabel', 'error'], '消息版本');
         if (!GENERATION_STATUSES.has(v.status as GenerationStatus)) invalid('消息状态不受支持。');
         const version: MessageVersion = {
@@ -310,7 +311,7 @@ export function validateImport(input: unknown): Workspace {
       if (!pages.length) invalid('附件至少应有一页。');
       return { id: documentId, name, kind: d.kind, mimeType, size: d.size, createdAt: timestamp(d.createdAt, '附件创建时间'), pages };
     });
-    conversation.annotations = list(c.annotations, '批注', 10000).map(rawAnnotation => {
+    conversation.annotations = list(c.annotations, '批注', WORKSPACE_LIMITS.annotations).map(rawAnnotation => {
       const a = obj(rawAnnotation, ['id', 'conversationId', 'messageId', 'versionId', 'quote', 'anchor', 'color', 'question', 'answer', 'mode', 'note', 'originalQuestion', 'originalAnswer', 'edited', 'status', 'createdAt', 'updatedAt', 'context', 'error', 'deletedAt'], '批注');
       if (!ANNOTATION_STATUSES.has(a.status as AnnotationStatus)) invalid('批注状态不受支持。');
       if (a.mode !== undefined && a.mode !== 'ask' && a.mode !== 'note') invalid('批注类型不受支持。');
@@ -341,7 +342,7 @@ export function validateImport(input: unknown): Workspace {
         const isEdited = annotation.question !== annotation.originalQuestion || annotation.answer !== annotation.originalAnswer;
         if (annotation.edited !== isEdited) invalid('批注编辑状态与原始问答不一致。');
       } else if (annotation.originalAnswer !== undefined || annotation.edited) invalid('未完成批注不应包含成功问答。');
-      if (a.context !== undefined) annotation.context = list(a.context, '批注上下文', 10012).map((rawContext, index) => {
+      if (a.context !== undefined) annotation.context = list(a.context, '批注上下文', WORKSPACE_LIMITS.context).map((rawContext, index) => {
         const ctx = obj(rawContext, ['role', 'content'], '上下文消息');
         if (ctx.role !== 'user' && ctx.role !== 'assistant' && !(ctx.role === 'system' && index === 0)) invalid('上下文角色不受支持。');
         return { role: ctx.role, content: str(ctx.content, '上下文正文', true) };

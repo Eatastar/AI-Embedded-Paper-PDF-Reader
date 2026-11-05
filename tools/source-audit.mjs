@@ -28,7 +28,7 @@ const gitHash = bytes => createHash('sha1').update(`blob ${bytes.length}\0`).upd
 
 function allowedPath(path) {
   if (path.startsWith('/') || path.includes('\\') || path.split('/').includes('..')) return false;
-  if (/(^|\/)(node_modules|dist|runtime|logs|IndexedDB|Local Storage|Session Storage|databases|Session)(\/|$)/i.test(path)) return false;
+  if (/(^|\/)(node_modules|dist|runtime|logs|IndexedDB|Local Storage|Session Storage|databases|Session|Backups)(\/|$)/i.test(path)) return false;
   if (/(^|\/)\.env(?:\..+)?$/i.test(path) && path !== app + '.env.example') return false;
   if (/\.(?:pdf|docx|xlsx|pptx|exe|dll|asar|zip|7z|db|sqlite3?|ldb|log|jsonl|tsbuildinfo)$/i.test(path)) return false;
   if (/(^|\/)(?:model-profiles|credentials|secrets)(?:\.|$)/i.test(path) || /(?:备份|backup).*\.json$/i.test(path)) return false;
@@ -69,7 +69,7 @@ function contentFindings(path, text) {
 }
 
 if (process.argv.includes('--self-test')) {
-  for (const path of ['work/backup.json', app + 'runtime/server.json', app + '.env', app + '.env.local', app + 'src/credentials.json', 'outputs/windows/LearnSomething.exe', 'docs/paper.pdf', 'docs/readme-private.json', app + 'desktop/photo.png']) assert.equal(allowedPath(path), false, path);
+  for (const path of ['work/backup.json', app + 'runtime/server.json', app + '.env', app + '.env.local', app + 'src/credentials.json', 'outputs/windows/LearnSomething.exe', 'docs/paper.pdf', 'docs/readme-private.json', app + 'desktop/photo.png', app + 'desktop/Backups/1234567890000.json', app + 'src/Backups/notes.ts']) assert.equal(allowedPath(path), false, path);
   for (const path of ['README.md', app + '.env.example', app + 'src/App.tsx', app + 'desktop/icon.png', app + 'tests/domain.test.ts']) assert.equal(allowedPath(path), true, path);
   const credential = ['api', 'Key'].join('') + ' = ' + JSON.stringify('a'.repeat(40));
   assert.ok(contentFindings(app + 'src/unsafe.ts', credential).failures.length);
@@ -77,7 +77,7 @@ if (process.argv.includes('--self-test')) {
   assert.ok(contentFindings(app + 'src/unsafe.ts', JSON.stringify(key)).failures.some(item => item.kind === 'provider-key'));
   assert.ok(contentFindings(app + '.env.example', ['AI_API', 'KEY'].join('_') + '=value').failures.length);
   assert.equal(contentFindings(app + 'tests/demo.test.ts', ['api', 'Key'].join('') + " = 'fake-test-key'").failures.length, 0);
-  console.log(JSON.stringify({ passed: true, checks: 18 }));
+  console.log(JSON.stringify({ passed: true, checks: 20 }));
   process.exit(0);
 }
 
@@ -122,7 +122,7 @@ if (failures.length) {
   console.error(JSON.stringify({ passed: false, findings: failures }, null, 2));
   process.exit(1);
 }
-const manifest = { checkedAt: new Date().toISOString(), version: '0.1.6', files, fixtures, totalBytes: files.reduce((sum, file) => sum + file.bytes, 0) };
+const manifest = { checkedAt: new Date().toISOString(), version: JSON.parse(await readFile(join(root, app, 'package.json'), 'utf8')).version, files, fixtures, totalBytes: files.reduce((sum, file) => sum + file.bytes, 0) };
 await mkdir(join(root, 'work'), { recursive: true });
 await writeFile(join(root, 'work/github-publish-manifest.json'), JSON.stringify(manifest));
 await writeFile(join(root, 'work/github-allowlist.txt'), files.map(file => file.path).join('\n') + '\n');

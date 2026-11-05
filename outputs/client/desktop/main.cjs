@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, dialog, session, shell, safeStorage } = require('electron');
+const { app, BrowserWindow, Menu, dialog, session, shell, safeStorage, ipcMain } = require('electron');
 const { join, resolve } = require('node:path');
 const { randomBytes } = require('node:crypto');
 const { once } = require('node:events');
@@ -6,10 +6,13 @@ const { mkdir, writeFile } = require('node:fs/promises');
 const { createStartupLog, errorCode, withStartupTimeout } = require('./startup.cjs');
 const { createModelFetch } = require('./model-network.cjs');
 const { createRequestLog } = require('./request-log.cjs');
+const { createBackupStore } = require('./backup-store.cjs');
+const { installDesktopBridge, createCloseGuard } = require('./desktop-bridge.cjs');
 
 const smoke = process.argv.includes('--smoke-test');
-const profile = smoke && process.env.MARGIN_TEST_USER_DATA
-  ? resolve(process.env.MARGIN_TEST_USER_DATA)
+const interactiveSmoke = smoke && process.argv.includes('--interactive');
+const profile = smoke
+  ? process.env.MARGIN_TEST_USER_DATA ? resolve(process.env.MARGIN_TEST_USER_DATA) : join(app.getPath('temp'), `LearnSomethingSmoke-${process.pid}`)
   : join(app.getPath('appData'), 'MarginChat');
 // Keep the original profile and app identity so upgrades retain chats and keys.
 app.setName('learn something');
@@ -25,6 +28,8 @@ let quitting = false;
 let origin;
 let focusRequested = false;
 let failureReported = false;
+let desktopBridge;
+let closeGuard;
 const report = { app: 'MarginChat', packaged: app.isPackaged, started: false, rendererLoaded: false, rendererErrors: 0 };
 
 function isLocalPage(url) {
@@ -79,8 +84,8 @@ if (!ownsLock) {
   app.on('before-quit', event => {
     if (quitting) return;
     event.preventDefault();
-    quitting = true;
-    void shutdown().finally(() => app.quit());
+    if (closeGuard) void closeGuard.request();
+    else { quitting = true; void shutdown().finally(() => app.quit()); }
   });
   app.whenReady().then(async () => {
     startupLog.write('app-ready');
@@ -96,7 +101,7 @@ if (!ownsLock) {
       fetch: createModelFetch(desktopSession), transport: 'system-proxy', onRequestLog: record => requestLog.write(record),
       profileStore: createProfileStore({ filePath: join(profile, 'model-profiles.json'), safeStorage }),
     });
-    server.listen(smoke ? 0 : 4327, '127.0.0.1');
+    server.listen(smoke ? interactiveSmoke ? 4338 : 0 : 4327, '127.0.0.1');
     await withStartupTimeout(once(server, 'listening'));
     origin = `http://127.0.0.1:${server.address().port}`;
     startupLog.write('local-service-ready');
@@ -119,11 +124,23 @@ if (!ownsLock) {
     ]));
     window = new BrowserWindow({
       width: 1280, height: 860, minWidth: 760, minHeight: 600, title: 'learn something',
-      backgroundColor: '#fff8e7', show: !smoke, autoHideMenuBar: true, icon: join(__dirname, 'icon.png'),
-      webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, allowRunningInsecureContent: false, spellcheck: false, devTools: !app.isPackaged },
+      backgroundColor: '#fff8e7', show: !smoke || interactiveSmoke, autoHideMenuBar: true, icon: join(__dirname, 'icon.png'),
+      webPreferences: { preload: join(__dirname, 'preload.cjs'), nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, allowRunningInsecureContent: false, spellcheck: false, devTools: !app.isPackaged },
     });
+    desktopBridge = installDesktopBridge({ ipcMain, window, isLocalPage, backupStore: createBackupStore({ directory: join(profile, 'Backups') }) });
+    closeGuard = createCloseGuard({
+      save: async () => { const saved = await desktopBridge.waitForSave(); report.exitSaveAcknowledged = saved; if (smoke && !saved) report.passed = false; return saved; }, shutdown,
+      quit: () => { quitting = true; if (smoke) void saveSmokeReport().finally(() => app.quit()); else app.quit(); },
+      choose: async () => {
+        if (smoke && !interactiveSmoke) return 'leave';
+        const { response } = await dialog.showMessageBox(window, { type: 'warning', title: '保存尚未完成', message: '本次保存或自动备份尚未完成，是否重试？', detail: '选择取消会留在当前窗口。直接退出可能丢失最近的修改，已有记录和自动备份会保留。', buttons: ['重试保存', '取消退出', '直接退出'], defaultId: 1, cancelId: 1, noLink: true });
+        if (response === 1) window.webContents.send('learn:cancel-close');
+        return ['retry', 'cancel', 'leave'][response];
+      },
+    });
+    window.on('close', event => { if (!quitting) { event.preventDefault(); void closeGuard.request(); } });
     startupLog.write('window-created');
-    if (focusRequested && !smoke) window.focus();
+    if (focusRequested && (!smoke || interactiveSmoke)) window.focus();
     window.webContents.setWindowOpenHandler(({ url }) => { openDocumentation(url); return { action: 'deny' }; });
     window.webContents.on('will-navigate', (event, url) => { if (!isLocalPage(url)) { event.preventDefault(); openDocumentation(url); } });
     window.webContents.on('will-redirect', (event, url) => { if (!isLocalPage(url)) event.preventDefault(); });
@@ -138,13 +155,13 @@ if (!ownsLock) {
       startupLog.write('renderer-process-gone', { reason: details.reason, exitCode: details.exitCode });
       if (!smoke) void failStartup(Object.assign(new Error('Renderer stopped'), { code: 'RENDERER_FAILED' }));
     });
-    window.on('closed', () => { window = null; });
+    window.on('closed', () => { desktopBridge?.dispose(); window = null; });
     startupLog.write('page-loading');
     await withStartupTimeout(window.loadURL(origin));
     report.started = true;
     report.rendererLoaded = true;
     startupLog.write('page-ready');
-    if (!smoke) { window.show(); return; }
+    if (!smoke || interactiveSmoke) { window.show(); return; }
     // Startup verification reads only the application's HTTP contract and its
     // lifecycle events. No renderer script or UI automation is injected.
     const headers = { 'X-Margin-Session': token };

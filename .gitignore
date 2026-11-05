@@ -50,6 +50,8 @@
 **/Session Storage/
 **/databases/
 **/Session/
+**/Backups/
+**/backups/
 **/.env
 **/.env.*
 !**/.env.example

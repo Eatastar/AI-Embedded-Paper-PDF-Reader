@@ -1,6 +1,7 @@
 {
   "name": "learn-something-client",
-  "version": "0.1.6",
+  "version": "0.1.7",
+  "buildId": "20261105.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -38,5 +39,6 @@
     "tsx": "4.23.15",
     "typescript": "7.0.2",
     "vite": "8.3.4"
-  }
+  },
+  "buildTime": "2026-11-05T09:44:09.168Z"
 }

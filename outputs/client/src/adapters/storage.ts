@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type { Workspace } from '../domain/types';
 import { createWorkspace, validateImport, mergeImportedWorkspace } from '../domain/workspace';
+import { assertWorkspaceCapacity } from '../domain/capacity';
 
 interface SavedWorkspace { id: string; workspace: Workspace }
 interface SavedDocument { id: string; bytes: Uint8Array }
@@ -20,7 +21,10 @@ export async function getDocumentBytes(id: string): Promise<Uint8Array | undefin
 
 export async function loadWorkspace(): Promise<Workspace> {
   const saved = await database.workspaces.get('current');
-  return saved ? validateImport(saved.workspace) : createWorkspace();
+  if (saved) return validateImport(saved.workspace);
+  const initial = createWorkspace();
+  await saveWorkspace(initial);
+  return initial;
 }
 
 export async function saveWorkspace(workspace: Workspace): Promise<void> {
@@ -63,8 +67,7 @@ export async function exportWorkspaceWithFiles(workspace: Workspace): Promise<st
   return JSON.stringify({ ...clean, ...(documentFiles.length ? { documentFiles } : {}) });
 }
 
-/** Validate every file before saving any; remap files with their imported document IDs. */
-export async function importWorkspaceWithFiles(text: string, current: Workspace): Promise<Workspace> {
+async function decodeWorkspaceWithFiles(text: string) {
   const raw = parseBackupData(text) as { documentFiles?: unknown };
   const imported = validateImport(raw);
   const documents = imported.conversations.flatMap(c => c.documents || []);
@@ -84,11 +87,34 @@ export async function importWorkspaceWithFiles(text: string, current: Workspace)
     if (document.kind === 'pdf' && !new TextDecoder().decode(bytes.subarray(0, 1024)).includes('%PDF-')) throw new Error('备份中的 PDF 原文件无效。');
     decoded.set(document.id, bytes);
   }
+  return { imported, decoded };
+}
+
+/** Validate every file and the final workspace before writing any attachment. */
+export async function importWorkspaceWithFiles(text: string, current: Workspace): Promise<Workspace> {
+  const { imported, decoded } = await decodeWorkspaceWithFiles(text);
   const remapped = new Map<string, string>();
   const merged = mergeImportedWorkspace(current, imported, (oldId, newId) => remapped.set(oldId, newId));
+  assertWorkspaceCapacity(merged);
   // One transaction keeps failed imports from leaving partial binary attachments.
   await database.transaction('rw', database.documents, async () => {
     for (const [oldId, bytes] of decoded) await saveDocumentBytes(remapped.get(oldId)!, bytes);
   });
   return merged;
+}
+
+/** Recovery replaces the unreadable current record atomically with all its files.
+ * The previous record is archived locally; unrelated attachments are never erased. */
+export async function restoreWorkspaceWithFiles(text: string): Promise<Workspace> {
+  const { imported, decoded } = await decodeWorkspaceWithFiles(text);
+  assertWorkspaceCapacity(imported);
+  await database.transaction('rw', database.workspaces, database.documents, async () => {
+    const previous = await database.workspaces.get('current');
+    if (previous) await database.workspaces.put({ ...previous, id: `recovery-archive-${Date.now()}-${crypto.randomUUID()}` });
+    for (const [id, bytes] of decoded) await saveDocumentBytes(id, bytes);
+    await database.workspaces.put({ id: 'current', workspace: imported });
+    const archives = (await database.workspaces.toArray()).filter(row => row.id.startsWith('recovery-archive-')).sort((a, b) => b.id.localeCompare(a.id));
+    await database.workspaces.bulkDelete(archives.slice(3).map(row => row.id));
+  });
+  return imported;
 }

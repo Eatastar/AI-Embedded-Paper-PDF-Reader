@@ -4,7 +4,7 @@ import 'fake-indexeddb/auto';
 import Dexie from 'dexie';
 import {
   exportWorkspace, exportWorkspaceWithFiles, getDocumentBytes, importWorkspaceWithFiles,
-  loadWorkspace, saveDocumentBytes, saveWorkspace,
+  loadWorkspace, restoreWorkspaceWithFiles, saveDocumentBytes, saveWorkspace,
 } from '../src/adapters/storage';
 import { createAnnotation, createConversation, deleteConversation, makeId, saveNoteAnnotation, validateImport } from '../src/domain/workspace';
 import type { Conversation, Workspace } from '../src/domain/types';
@@ -29,6 +29,61 @@ function fixture(): { workspace: Workspace; bytes: Uint8Array } {
 }
 
 function countFiles() { return auditDatabase.table('documents').count(); }
+
+test('首次打开会先提交初始记录，再显示为已保存', async () => {
+  await auditDatabase.table('workspaces').delete('current');
+  const loaded = await loadWorkspace();
+  const persisted = await auditDatabase.table('workspaces').get('current');
+  assert.deepEqual(persisted.workspace, loaded);
+});
+
+test('读取失败后完整恢复在同一事务写入元数据和附件，并保留原始记录副本', async () => {
+  const source = fixture(), document = source.workspace.conversations[0].documents![0];
+  await saveDocumentBytes(document.id, source.bytes);
+  const backup = await exportWorkspaceWithFiles(source.workspace);
+  const corrupt = { schemaVersion: 999, conversations: ['unreadable-original-record'] };
+  await auditDatabase.table('workspaces').put({ id: 'current', workspace: corrupt });
+  await auditDatabase.table('documents').delete(document.id);
+  await assert.rejects(loadWorkspace(), /备份格式无效/);
+  const restored = await restoreWorkspaceWithFiles(backup);
+  assert.deepEqual(await loadWorkspace(), restored);
+  assert.deepEqual(await getDocumentBytes(document.id), source.bytes);
+  const archives = (await auditDatabase.table('workspaces').toArray()).filter(row => row.id.startsWith('recovery-archive-'));
+  assert.ok(archives.some(row => JSON.stringify(row.workspace) === JSON.stringify(corrupt)));
+});
+
+test('恢复途中附件写入失败会回滚整笔事务，当前记录、旧附件和存档均不改变', async () => {
+  const source = fixture(), first = source.workspace.conversations[0].documents![0];
+  const second = { ...first, id: makeId(), pages: first.pages.map(page => ({ ...page, messageId: makeId(), versionId: makeId() })) };
+  source.workspace.conversations[0].documents!.push(second);
+  await saveDocumentBytes(first.id, source.bytes); await saveDocumentBytes(second.id, source.bytes);
+  const text = await exportWorkspaceWithFiles(source.workspace);
+  await auditDatabase.table('documents').bulkDelete([first.id, second.id]);
+  const previous = workspace(); await saveWorkspace(previous);
+  const records = await auditDatabase.table('workspaces').toArray();
+  const originalPut = IDBObjectStore.prototype.put;
+  IDBObjectStore.prototype.put = function(value: any, key?: IDBValidKey) {
+    if (this.name === 'documents' && value.id === second.id) throw new DOMException('simulated write failure', 'QuotaExceededError');
+    return key === undefined ? originalPut.call(this, value) : originalPut.call(this, value, key);
+  };
+  try { await assert.rejects(restoreWorkspaceWithFiles(text), /simulated write failure/); }
+  finally { IDBObjectStore.prototype.put = originalPut; }
+  assert.deepEqual(await loadWorkspace(), previous);
+  assert.deepEqual(await auditDatabase.table('workspaces').toArray(), records);
+  assert.equal(await getDocumentBytes(first.id), undefined); assert.equal(await getDocumentBytes(second.id), undefined);
+});
+
+test('追加导入导致对话超限时，在写入任何附件之前拒绝', async () => {
+  const source = fixture(), document = source.workspace.conversations[0].documents![0];
+  await saveDocumentBytes(document.id, source.bytes);
+  const text = await exportWorkspaceWithFiles(source.workspace);
+  await auditDatabase.table('documents').delete(document.id);
+  const conversations = Array.from({ length: 1000 }, () => createConversation());
+  const full: Workspace = { schemaVersion: 1, conversations, activeConversationId: conversations[0].id };
+  const before = await countFiles();
+  await assert.rejects(importWorkspaceWithFiles(text, full), /对话.*最多/);
+  assert.equal(await countFiles(), before);
+});
 
 test('附件原文件独立保存，传入和返回字节的修改不会改变数据库副本', async () => {
   const id = makeId();

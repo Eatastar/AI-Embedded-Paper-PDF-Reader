@@ -69,6 +69,24 @@ button svg { flex-shrink: 0; }
 .topbar-heading { display: flex; align-items: center; gap: 12px; min-width: 0; font-size: 12px; color: var(--ls-text); }
 .topbar-heading > span:first-of-type { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .version-badge { border: 1px solid var(--ls-border); border-radius: 4px; padding: 2px 5px; font-size: 9px; color: var(--ls-muted); flex-shrink: 0; }
+.backup-time { color: var(--ls-muted); font-size: 10px; padding: 0 10px 7px; }
+.recovery-dialog { width: min(660px, calc(100vw - 32px)); }
+.recovery-intro { color: var(--ls-muted); font-size: 12px; line-height: 1.9; margin: 10px 0; }
+.recovery-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 9px; margin: 20px 0; }
+.recovery-dialog .recovery-toolbar { justify-content: flex-start; }
+.secondary-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; color: var(--ls-ink); font: inherit; font-size: 12px; background: var(--ls-panel); border: 1px solid var(--ls-border); border-radius: 8px; padding: 9px 12px; cursor: pointer; }
+.secondary-button:hover:not(:disabled) { background: #f7e9bd; }
+.secondary-button:disabled { cursor: default; opacity: .5; }
+.recovery-list { border-block: 1px solid var(--ls-border); max-height: 360px; overflow-y: auto; }
+.recovery-empty { font-size: 12px; padding: 25px 10px; color: var(--ls-muted); text-align: center; }
+.recovery-entry { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 16px 2px; border-bottom: 1px solid var(--ls-border); }
+.recovery-entry:last-child { border-bottom: 0; }
+.recovery-entry strong { display: block; font-size: 12px; font-weight: 550; }
+.recovery-entry span { display: block; font-size: 10px; color: var(--ls-muted); margin-top: 5px; }
+.recovery-entry-actions { display: flex; align-items: center; gap: 8px; }
+.recovery-message { color: #965c28; font-size: 12px; line-height: 1.8; }
+.recovery-footer { font-size: 10px; color: var(--ls-muted); margin-top: 18px; }
+.closing-overlay { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; background: #fff8e7e8; color: var(--ls-ink); font-size: 16px; }
 .connection-button { display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--ls-border); background: var(--ls-surface); color: var(--ls-text); border-radius: 7px; font-size: 11px; padding: 8px 11px; max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .connection-button:hover { border-color: var(--ls-border-strong); }
 .status-dot { height: 5px; width: 5px; background: var(--ls-accent); border-radius: 50%; flex-shrink: 0; }

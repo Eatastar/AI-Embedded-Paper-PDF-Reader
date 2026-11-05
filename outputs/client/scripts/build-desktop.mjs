@@ -24,6 +24,7 @@ await copyFile(resolve(root, 'desktop/startup.cjs'), resolve(stage, 'startup.cjs
 await copyFile(resolve(root, 'desktop/profile-store.cjs'), resolve(stage, 'profile-store.cjs'));
 await copyFile(resolve(root, 'desktop/model-network.cjs'), resolve(stage, 'model-network.cjs'));
 await copyFile(resolve(root, 'desktop/request-log.cjs'), resolve(stage, 'request-log.cjs'));
+for (const name of ['preload.cjs', 'desktop-bridge.cjs', 'backup-store.cjs']) await copyFile(resolve(root, 'desktop', name), resolve(stage, name));
 await copyFile(resolve(root, 'desktop/icon.png'), resolve(stage, 'icon.png'));
 // Include actual installed license texts, while keeping source, credentials,
 // package-manager links and personal runtime data out of the desktop payload.
@@ -45,7 +46,7 @@ for (const entry of await readdir(resolve(root, 'node_modules/.pnpm'))) {
   } catch { /* Not every pnpm entry is a package root. */ }
 }
 await writeFile(resolve(stage, 'THIRD-PARTY-NOTICES.txt'), notices.join('\n\n'));
-await writeFile(resolve(stage, 'package.json'), JSON.stringify({ name: 'learn-something-desktop', productName: 'learn something', version: metadata.version, description: '支持原文高亮与单次批注问答的 AI 客户端', author: 'learn something', main: 'main.cjs', private: true, packageManager: 'pnpm@11.25.0', dependencies: {} }, null, 2));
+await writeFile(resolve(stage, 'package.json'), JSON.stringify({ name: 'learn-something-desktop', productName: 'learn something', version: metadata.version, buildId: metadata.buildId, buildTime: metadata.buildTime, description: '支持原文高亮与单次批注问答的 AI 客户端', author: 'learn something', main: 'main.cjs', private: true, packageManager: 'pnpm@11.25.0', dependencies: {} }, null, 2));
 await writeFile(resolve(stage, 'pnpm-lock.yaml'), "lockfileVersion: '9.0'\nimporters:\n  .: {}\n");
 await mkdir(resolve(stage, 'node_modules'), { recursive: true });
 const paths = await packageApp({
@@ -56,7 +57,7 @@ const paths = await packageApp({
     directories: { app: stage, output },
     electronVersion: JSON.parse(await readFile(require.resolve('electron/package.json'), 'utf8')).version,
     electronDist: dirname(require('electron')),
-    files: ['main.cjs', 'startup.cjs', 'profile-store.cjs', 'model-network.cjs', 'request-log.cjs', 'server.cjs', 'icon.png', 'THIRD-PARTY-NOTICES.txt', 'dist/**/*', 'package.json'],
+    files: ['main.cjs', 'startup.cjs', 'profile-store.cjs', 'model-network.cjs', 'request-log.cjs', 'preload.cjs', 'desktop-bridge.cjs', 'backup-store.cjs', 'server.cjs', 'icon.png', 'THIRD-PARTY-NOTICES.txt', 'dist/**/*', 'package.json'],
     extraFiles: [
       { from: resolve(root, 'desktop/diagnose-launch.ps1'), to: 'diagnose-launch.ps1' },
       { from: resolve(root, 'desktop/启动诊断.cmd'), to: '启动诊断.cmd' },
