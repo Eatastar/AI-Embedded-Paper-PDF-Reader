@@ -27,7 +27,8 @@
 .document-reader-empty { padding: 65px 20px; font-size: 12px; text-align: center; color: var(--ls-muted); }
 .document-reader-empty button { margin-top: 12px; padding: 8px 14px; border: 1px solid var(--ls-border-strong); border-radius: 8px; background: var(--ls-panel); color: var(--ls-text); }
 .document-pdf-wrap { width: fit-content; max-width: none; min-width: min(100%, 250px); margin: 0 auto; position: relative; }
-.document-render-status { position: absolute; left: 0; right: 0; top: 18px; z-index: 4; text-align: center; color: var(--ls-muted); font-size: 12px; pointer-events: none; }
+.document-render-status { position: absolute; left: 0; right: 0; top: 18px; z-index: 4; width: fit-content; margin: 0 auto; padding: 6px 10px; border-radius: 5px; text-align: center; color: var(--reader-ink, var(--ls-muted)); background: var(--reader-paper, var(--ls-panel)); font-size: 12px; pointer-events: none; }
+.document-page-presentation { width: fit-content; }
 .document-page-annotator { width: fit-content; position: relative; line-height: 1; box-shadow: 0 2px 12px #62471616; }
 .document-page-stage { position: relative; width: 250px; min-height: 300px; background: var(--reader-paper, #fff); --scale-round-x: 1px; --scale-round-y: 1px; --total-scale-factor: 1; }
 .document-page-canvas { position: absolute; display: block; top: 0; left: 0; z-index: 0; }

@@ -1,13 +1,17 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { PDFDocumentProxy, RenderTask, TextLayer } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { ChevronLeft, ChevronRight, FileText, Minus, Plus, X, Palette, Columns2, Maximize2, Eye } from 'lucide-react';
 import type { CSSProperties } from 'react';
 import type { DocumentAttachment, MessageVersion } from '../domain/types';
 import { loadPdfDocument, loadPdfJs } from '../adapters/documents';
 import { bindPdfTextSelection } from '../adapters/pdf-selection';
+import { bindPdfZoom } from '../adapters/pdf-zoom';
+import { paintPdfFrame, startPdfFrame } from '../adapters/pdf-frame';
 import { getDocumentBytes } from '../adapters/storage';
 import { loadReaderAppearance, loadReaderPosition, saveReaderAppearance, saveReaderPosition } from '../adapters/reader';
-import { colorLuminance, recolorPagePixels } from '../domain/reader';
+import { colorLuminance } from '../domain/reader';
+import { clampPdfZoom, pdfAnchorScrollDelta, pdfPageSize, pdfZoomAnchor } from '../domain/pdf-zoom';
+import type { PdfZoomAnchor } from '../domain/pdf-zoom';
 import type { ReaderAppearance, ReaderPosition } from '../domain/reader';
 import { ReaderAppearancePanel } from './ReaderAppearancePanel';
 import { AnnotatedAnswer } from './AnnotatedAnswer';
@@ -35,38 +39,44 @@ function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appearance, c
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const presentationRef = useRef<HTMLDivElement>(null);
   const [readyKey, setReadyKey] = useState(0);
   const [renderError, setRenderError] = useState('');
   const [colorError, setColorError] = useState(false);
   const originalRef = useRef<ImageData | null>(null);
+  const pageSize = useRef<{ width: number; height: number } | null>(null);
+  const publishedScale = useRef<number | null>(null);
+  const requested = useRef({ availableWidth, zoom });
+  requested.current = { availableWidth, zoom };
+  const preview = () => {
+    if (!presentationRef.current || !pageSize.current || !publishedScale.current) return;
+    const size = pdfPageSize(pageSize.current, requested.current.availableWidth, requested.current.zoom);
+    // Scale the whole completed page, including its text, while the next raster
+    // is prepared. CSS zoom also gives the viewport the correct scroll extent.
+    presentationRef.current.style.zoom = String(size.scale / publishedScale.current);
+  };
+  useLayoutEffect(preview, [availableWidth, zoom]);
   const readyRef = useRef(onPageReady);
   readyRef.current = onPageReady;
-  const paintRef = useRef(() => {});
-  paintRef.current = () => {
-    const original = originalRef.current, canvas = canvasRef.current;
-    if (!original || !canvas) return;
-    const context = canvas.getContext('2d');
-    if (!context) return;
+  const paintRef = useRef((original?: ImageData | null) => Boolean(original));
+  paintRef.current = (original = originalRef.current) => {
+    const canvas = canvasRef.current;
+    if (!original || !canvas) return false;
     try {
-      if (compareOriginal || appearance.preset === 'original') context.putImageData(original, 0, 0);
-      else {
-        const display = context.createImageData(original.width, original.height);
-        recolorPagePixels(original.data, appearance, display.data);
-        context.putImageData(display, 0, 0);
-      }
+      paintPdfFrame(canvas, original, appearance, compareOriginal);
+      canvas.style.visibility = 'visible';
       setColorError(false);
-    } catch { setColorError(true); }
+      return true;
+    } catch { canvas.style.visibility = 'hidden'; setColorError(true); return false; }
   };
-  useEffect(() => { paintRef.current(); }, [appearance.paper, appearance.ink, appearance.preserveColors, appearance.preset, compareOriginal]);
+  useLayoutEffect(() => { paintRef.current(); }, [appearance.paper, appearance.ink, appearance.preserveColors, appearance.preset, compareOriginal]);
 
   useEffect(() => {
     let cancelled = false;
-    let renderTask: RenderTask | undefined;
-    let textLayer: TextLayer | undefined;
+    let frameJob: ReturnType<typeof startPdfFrame> | undefined;
     let unbindSelection: (() => void) | undefined;
     setReadyKey(0);
     setRenderError('');
-    originalRef.current = null;
     const render = async () => {
       const [page, library] = await Promise.all([pdf.getPage(pageNumber), loadPdfJs()]);
       const canvas = canvasRef.current;
@@ -74,54 +84,48 @@ function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appearance, c
       const stage = stageRef.current;
       if (cancelled || !canvas || !text || !stage) return;
       const unscaled = page.getViewport({ scale: 1 });
-      const fit = Math.min(Math.max(240, availableWidth - 40), 1000) / unscaled.width;
-      const viewport = page.getViewport({ scale: fit * zoom });
+      pageSize.current = unscaled;
+      const size = pdfPageSize(unscaled, availableWidth, zoom);
+      const viewport = page.getViewport({ scale: size.scale });
       const width = Math.floor(viewport.width);
       const height = Math.floor(viewport.height);
       const outputScale = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(16_000_000 / (width * height)));
-      stage.style.width = `${width}px`;
-      stage.style.height = `${height}px`;
-      stage.style.setProperty('--total-scale-factor', String(viewport.scale * viewport.userUnit));
-      canvas.width = Math.max(1, Math.floor(width * outputScale));
-      canvas.height = Math.max(1, Math.floor(height * outputScale));
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-      text.replaceChildren();
-      // An alpha-capable canvas avoids colored subpixel fringes when mapping text.
-      // PDF.js still paints the original page on an opaque white background.
-      const context = canvas.getContext('2d', { alpha: true, willReadFrequently: true });
-      if (!context) throw new Error('Canvas unavailable');
-      renderTask = page.render({ canvas, canvasContext: context, viewport, transform: outputScale === 1 ? undefined : [outputScale, 0, 0, outputScale, 0, 0], background: '#ffffff' });
-      // A page/zoom change can cancel this task while text extraction is pending.
-      void renderTask.promise.catch(() => {});
-      const content = await page.getTextContent();
-      if (cancelled) return;
-      textLayer = new library.TextLayer({ container: text, textContentSource: content, viewport });
-      await Promise.all([renderTask.promise, textLayer.render()]);
-      if (!cancelled) {
-        unbindSelection = bindPdfTextSelection(text);
-        try { originalRef.current = context.getImageData(0, 0, canvas.width, canvas.height); paintRef.current(); }
-        catch { setColorError(true); }
+      if (!publishedScale.current) { stage.style.width = `${width}px`; stage.style.height = `${height}px`; }
+      frameJob = startPdfFrame(page, library, viewport, outputScale, canvas.ownerDocument);
+      const frame = await frameJob.promise;
+      if (!cancelled && requested.current.zoom === zoom && requested.current.availableWidth === availableWidth) {
+        if (!paintRef.current(frame.original)) throw new Error('Page color preparation failed');
+        // This whole commit is synchronous. The white source bitmap never enters
+        // the visible canvas, and the new text and geometry arrive together.
+        originalRef.current = frame.original;
+        stage.style.width = canvas.style.width = `${width}px`;
+        stage.style.height = canvas.style.height = `${height}px`;
+        stage.style.setProperty('--total-scale-factor', String(viewport.scale * viewport.userUnit));
+        text.replaceChildren(frame.text);
+        canvas.dataset.pageReady = 'true';
+        publishedScale.current = viewport.scale;
+        preview();
+        unbindSelection = bindPdfTextSelection(frame.text);
         setReadyKey(Date.now() || 1);
         readyRef.current();
       }
     };
-    void render().catch((error: unknown) => {
+    const timer = setTimeout(() => { void render().catch((error: unknown) => {
       if (!cancelled && !(error instanceof Error && error.name === 'RenderingCancelledException')) setRenderError('这页暂时无法显示，请试试“可批注文本”视图。');
-    });
-    return () => { cancelled = true; unbindSelection?.(); renderTask?.cancel(); textLayer?.cancel(); originalRef.current = null; };
+    }); }, publishedScale.current ? 120 : 0);
+    return () => { cancelled = true; clearTimeout(timer); unbindSelection?.(); frameJob?.cancel(); };
   }, [pdf, pageNumber, availableWidth, zoom]);
 
   return <div className="document-pdf-wrap">
     {!readyKey && !renderError && <div className="document-render-status" role="status">正在显示原页面…</div>}
     {renderError && <div className="document-reader-warning" role="alert">{renderError}</div>}
-    {colorError && <div className="document-reader-warning" role="status">这一页暂时无法换色，已保留原色。</div>}
-    <AnnotatedAnswer {...annotationProps} contentReadyKey={readyKey} contentClassName="document-page-annotator" content={
+    {colorError && <div className="document-reader-warning" role="status">这一页暂时无法换色，可切换“可批注文本”，或主动选择“原色对照”查看。</div>}
+    <div ref={presentationRef} className="document-page-presentation"><AnnotatedAnswer {...annotationProps} contentReadyKey={readyKey} contentClassName="document-page-annotator" content={
       <div ref={stageRef} className="document-page-stage">
         <canvas ref={canvasRef} className="document-page-canvas" aria-label={`PDF 第 ${pageNumber} 页原页面`} role="img" />
-        <div ref={textRef} className="document-text-layer" />
+        <div ref={textRef} />
       </div>
-    } />
+    } /></div>
   </div>;
 }
 
@@ -143,17 +147,37 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, ...ann
   const viewportRef = useRef<HTMLDivElement>(null);
   const positionRef = useRef<ReaderPosition>(initialPosition);
   const pendingScroll = useRef<Pick<ReaderPosition, 'scrollY' | 'scrollX'> | null>(initialPosition);
+  const zoomAnchor = useRef<PdfZoomAnchor | null>(null);
   const restoring = useRef(true);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const restoreFrame = useRef(0);
+  const captureZoomAnchor = (point?: { x: number; y: number }) => {
+    const element = viewportRef.current;
+    const stage = element?.querySelector<HTMLElement>('.document-page-stage:has(canvas[data-page-ready="true"])');
+    if (!element || !stage) return false;
+    const viewport = element.getBoundingClientRect();
+    zoomAnchor.current = pdfZoomAnchor(stage.getBoundingClientRect(), viewport, point?.x ?? viewport.left + element.clientWidth / 2, point?.y ?? viewport.top + element.clientHeight / 2);
+    return true;
+  };
+  const applyZoomAnchor = () => {
+    const element = viewportRef.current, anchor = zoomAnchor.current;
+    const stage = element?.querySelector<HTMLElement>('.document-page-stage');
+    if (!element || !stage || !anchor) return;
+    const delta = pdfAnchorScrollDelta(anchor, stage.getBoundingClientRect(), element.getBoundingClientRect());
+    element.scrollLeft += delta.x; element.scrollTop += delta.y;
+  };
+  useLayoutEffect(() => { if (zoomAnchor.current) applyZoomAnchor(); }, [zoom, availableWidth]);
   const restoreScroll = () => {
     cancelAnimationFrame(restoreFrame.current);
     restoreFrame.current = requestAnimationFrame(() => {
       const element = viewportRef.current, pending = pendingScroll.current;
-      if (!element || !pending) return;
-      element.scrollTo({ top: pending.scrollY * Math.max(0, element.scrollHeight - element.clientHeight), left: pending.scrollX * Math.max(0, element.scrollWidth - element.clientWidth) });
+      if (!element || (!pending && !zoomAnchor.current)) return;
+      if (zoomAnchor.current) applyZoomAnchor();
+      else if (pending) element.scrollTo({ top: pending.scrollY * Math.max(0, element.scrollHeight - element.clientHeight), left: pending.scrollX * Math.max(0, element.scrollWidth - element.clientWidth) });
+      zoomAnchor.current = null;
       pendingScroll.current = null;
       restoring.current = false;
+      recordScroll();
     });
   };
   const recordScroll = () => {
@@ -172,18 +196,27 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, ...ann
   const flushRef = useRef(flushPosition);
   flushRef.current = flushPosition;
   const resetScroll = () => {
+    zoomAnchor.current = null;
     positionRef.current = { ...positionRef.current, scrollY: 0, scrollX: 0 };
     pendingScroll.current = { scrollY: 0, scrollX: 0 };
     restoring.current = true;
   };
-  const changeZoom = (value: number) => {
-    const next = Math.max(.5, Math.min(2.5, Math.round(value * 100) / 100));
-    if (next === zoom) return;
+  const changeZoom = (value: number, point?: { x: number; y: number }) => {
+    const next = clampPdfZoom(value);
+    if (next === positionRef.current.zoom) return;
+    captureZoomAnchor(point);
     pendingScroll.current = { scrollY: positionRef.current.scrollY, scrollX: positionRef.current.scrollX };
     restoring.current = true;
     positionRef.current = { ...positionRef.current, zoom: next };
     setZoom(next);
   };
+  const changeZoomRef = useRef(changeZoom);
+  changeZoomRef.current = changeZoom;
+  useEffect(() => {
+    const element = viewportRef.current;
+    if (!element || source.kind !== 'pdf' || view !== 'original') return;
+    return bindPdfZoom(element, { zoom: () => positionRef.current.zoom, onZoom: (value, point) => changeZoomRef.current(value, point) });
+  }, [source.id, source.kind, view]);
   useEffect(() => { setAppearanceSaved(saveReaderAppearance(appearance)); }, [appearance]);
   useEffect(() => { setPositionSaved(saveReaderPosition(source.id, positionRef.current)); }, [source.id, pageIndex, view, zoom]);
   useEffect(() => () => { clearTimeout(saveTimer.current); cancelAnimationFrame(restoreFrame.current); saveReaderPosition(source.id, positionRef.current); }, [source.id]);
@@ -214,8 +247,14 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, ...ann
   useEffect(() => {
     const element = viewportRef.current;
     if (!element) return;
+    let lastWidth = 0;
     const observer = new ResizeObserver(([entry]) => {
-      if (entry.contentRect.width > 0) setAvailableWidth(Math.round(entry.contentRect.width));
+      const width = Math.round(entry.contentRect.width);
+      if (width > 0 && width !== lastWidth) {
+        lastWidth = width;
+        if (captureZoomAnchor()) restoring.current = true;
+        setAvailableWidth(width);
+      }
     });
     observer.observe(element);
     return () => observer.disconnect();
@@ -280,7 +319,7 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, ...ann
       <div className="document-color-actions"><button type="button" className="document-tool-button" aria-expanded={appearanceOpen} onClick={() => setAppearanceOpen(value => !value)}><Palette size={14} />阅读配色</button><button type="button" className="document-tool-button" aria-pressed={compareOriginal} disabled={appearance.preset === 'original'} onClick={() => setCompareOriginal(value => !value)}><Eye size={14} />原色对照</button></div>
     </div>
     {appearanceOpen && <ReaderAppearancePanel appearance={appearance} saved={appearanceSaved && positionSaved} onChange={value => { setCompareOriginal(false); setAppearance(value); }} />}
-    <p className="document-reader-hint">划选文字可选择询问 AI 或仅加批注。询问时会发送本对话和文档提取文字；原文件保存在本机。</p>
+    <p className="document-reader-hint">划选文字可询问 AI 或仅加批注。PDF 支持触控板双指捏合缩放、双指滑动滚动，也可用 Ctrl + 滚轮。询问会发送本对话和文档提取文字；原文件保存在本机。</p>
     <div ref={viewportRef} className={`document-reader-viewport ${view === 'text' ? 'document-reader-text-viewport' : ''}`} onScroll={recordScroll}>
       {!hasText && <p className="document-reader-warning">这一页没有可提取的文字，可能是扫描页。可查看原页面；暂不支持 OCR 识别和图片内容询问。扫描页使用深色配色时，可关闭“保留彩色区域”来调整整页明暗。</p>}
       {view === 'original' && loading && <div className="document-reader-empty" role="status">正在打开 PDF…</div>}
