@@ -286,6 +286,17 @@ button svg { flex-shrink: 0; }
 .app-shell.reader-focused .document-pane { flex: 1; width: 100%; padding: 0; position: relative; inset: auto; }
 .app-shell.reader-focused .topbar { display: none; }
 .app-shell.reader-focused .mobile-menu { display: none; }
+.chat-local-files { flex: none; border-bottom: 1px solid var(--ls-border); font-size: 11px; }
+.chat-local-files > summary { display: flex; align-items: center; gap: 7px; padding: 9px 22px; color: var(--ls-muted); cursor: pointer; list-style: none; }
+.chat-local-files > summary::-webkit-details-marker { display: none; }
+.chat-local-files > summary::after { content: '⌄'; margin-left: auto; }
+.chat-local-files[open] > summary::after { content: '⌃'; }
+.chat-local-files > summary small { color: var(--ls-text); }
+.chat-local-files > div { max-height: 160px; overflow: auto; padding: 0 18px 8px; }
+.chat-local-files > div > button { width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 5px; border: 0; background: transparent; color: var(--ls-text); text-align: start; font: inherit; cursor: pointer; }
+.chat-local-files > div > button:hover { background: var(--ls-surface); }
+.chat-local-files > div > button > span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-local-files > div > button > small { flex: none; color: var(--ls-muted); font-size: 10px; }
 .document-attachments { display: flex; flex-wrap: wrap; gap: 7px; padding: 13px 25px 9px; border-bottom: 1px solid var(--ls-border); }
 .document-attachments > button { display: flex; align-items: center; gap: 7px; max-width: 100%; padding: 7px 9px; border: 1px solid var(--ls-border); border-radius: 6px; background: var(--ls-surface); color: var(--ls-text); font-size: 11px; text-align: left; }
 .document-attachments > button > span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -298,6 +309,8 @@ button svg { flex-shrink: 0; }
   .document-pane { position: absolute; inset: 0; z-index: 30; padding: 10px; background: var(--ls-paper); }
   .with-reader .conversation-pane { max-width: none; }
   .with-reader .composer-model-controls select { max-width: min(330px, 40vw); }
+  .reader-primary.chat-open .with-reader .document-pane { position: relative; inset: auto; z-index: 0; padding: 0; }
+  .reader-primary.chat-open .with-reader .conversation-pane { position: absolute; inset: 0; z-index: 3; background: var(--ls-paper); max-width: none; }
 }
 @media (max-width: 760px) {
   .profile-settings-dialog { padding: 22px 18px; }

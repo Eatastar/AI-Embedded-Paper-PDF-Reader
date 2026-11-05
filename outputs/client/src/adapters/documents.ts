@@ -99,11 +99,12 @@ function page(pageNumber: number, text: string): DocumentPage {
 }
 
 export interface ParsedDocument { document: DocumentAttachment; bytes: Uint8Array }
-export interface DocumentParseOptions { onProgress?: (pageNumber: number, pageCount: number) => void }
+export interface DocumentParseOptions { bytes?: Uint8Array; onProgress?: (pageNumber: number, pageCount: number) => void }
 
 export async function parseDocumentFile(file: File, options: DocumentParseOptions = {}): Promise<ParsedDocument> {
   const kind = documentFileKind(file);
-  const bytes = new Uint8Array(await file.arrayBuffer());
+  const bytes = options.bytes ?? new Uint8Array(await file.arrayBuffer());
+  if (bytes.length !== file.size) throw new DocumentImportError('原文件大小发生变化，请重新选择文件。');
   const pages: DocumentPage[] = [];
   if (kind === 'text') {
     let text: string;

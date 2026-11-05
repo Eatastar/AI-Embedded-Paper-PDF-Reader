@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { ChevronLeft, ChevronRight, Columns2, Download, Eye, Maximize2, Minus, PanelLeft, Plus, Settings2, SlidersHorizontal, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Columns2, Download, Eye, FolderOpen, Maximize2, Minus, PanelLeft, Plus, Settings2, SlidersHorizontal, X } from 'lucide-react';
 import type { ReaderAppearance } from '../domain/reader';
 import { ReaderAppearancePanel } from './ReaderAppearancePanel';
 
@@ -12,7 +12,7 @@ interface Props {
   appearance: ReaderAppearance; onAppearance: (value: ReaderAppearance) => void; saved: boolean;
   compareOriginal: boolean; onCompareOriginal: () => void;
   navigationOpen: boolean; onToggleNavigation: () => void; focused: boolean; onToggleFocus: () => void; onClose: () => void;
-  modelLabel?: string; onOpenModelSettings?: () => void; onBackup?: () => void;
+  modelLabel?: string; onOpenModelSettings?: () => void; onBackup?: () => void; onOpenFile?: () => void;
 }
 
 export function ReaderToolbar(props: Props) {
@@ -41,6 +41,7 @@ export function ReaderToolbar(props: Props) {
   </>;
   return <>
     <header className="reader-toolbar" aria-label="阅读工具栏" data-testid="reader-toolbar">
+      {props.onOpenFile && <button type="button" className="document-icon-button" aria-label="打开本地 PDF" title="打开本地 PDF" onClick={props.onOpenFile}><FolderOpen size={18} /></button>}
       <button type="button" className="document-icon-button" aria-label="文档导航" title="目录、搜索与批注" aria-expanded={props.navigationOpen} onClick={props.onToggleNavigation}><PanelLeft size={18} /></button>
       <div className="reader-toolbar-title" title={`${props.name} · ${mode}`}><strong>{props.name}</strong><span className="reader-mode-label">{mode}</span></div>
       <div className="document-page-navigation">
