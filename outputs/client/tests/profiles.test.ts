@@ -3,6 +3,7 @@ import { once } from 'node:events';
 import test from 'node:test';
 import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
+import { otherConnectionPresets, profileFromPreset } from '../src/domain/model-presets';
 // @ts-expect-error Native JavaScript modules are exercised through the server interface.
 import { createAppServer } from '../server/app.mjs';
 
@@ -251,5 +252,46 @@ test('profile validation rejects unsafe endpoints, invalid identifiers, formats 
     assert.equal((await post(app.base, '/api/profiles/delete', { profileId: 12 })).status, 400);
     assert.equal((await post(app.base, '/api/chat', { ...chat, profileId: false })).status, 400);
     assert.equal((await post(app.base, '/api/chat', { ...chat, profileId: 'missing' })).status, 404);
+  } finally { await app.close(); }
+});
+
+test('other-provider presets send main and annotation requests to their exact compatible routes with isolated authentication', async () => {
+  const calls: { url: string; authorization: string | null; body: { model: string; messages: { role: string; content: string }[] } }[] = [];
+  const app = await running({ fetch: async (url: unknown, init: RequestInit) => {
+    calls.push({ url: String(url), authorization: new Headers(init.headers).get('authorization'), body: JSON.parse(String(init.body)) });
+    return response('兼容接口完整回答');
+  } });
+  const messages = [{ role: 'system', content: '中文回答' }, { role: 'user', content: '完整论文上下文'.repeat(2000) }, { role: 'assistant', content: '上一条完整回答' }, { role: 'user', content: '解释这一段' }];
+  const frozenMessages = structuredClone(messages);
+  try {
+    // Save a keyed remote service first, so the following keyless local services
+    // must not accidentally inherit its credential.
+    await post(app.base, '/api/profiles', preset('原远端连接', { apiKey: 'mock-previous-provider-key' }));
+    for (const service of otherConnectionPresets) {
+      const local = service.id === 'ollama' || service.id === 'lmstudio';
+      const baseURL = service.baseURL || 'https://custom-provider.example/compatible/v1';
+      const input = { ...profileFromPreset(service, '中文回答'), baseURL, model: `${service.id}-selected-model`, ...(local ? {} : { apiKey: `${service.id}-mock-key` }) };
+      const savedResponse = await post(app.base, '/api/profiles', input);
+      assert.equal(savedResponse.status, 200, service.id);
+      const saved = await savedResponse.json();
+      assert.equal(saved.hasApiKey, !local);
+      for (const kind of ['main', 'annotation']) {
+        const start = calls.length;
+        const result = await post(app.base, '/api/chat', { kind, messages, profileId: saved.activeProfileId, ...(kind === 'annotation' ? { quote: '选中的原文' } : {}) });
+        assert.equal(result.status, 200, `${service.id} ${kind}`);
+        const wire = await result.text();
+        assert.match(wire, /兼容接口完整回答/);
+        assert.match(wire, /"type":"done"/);
+        assert.equal(calls.length, start + 1);
+        const call = calls[start];
+        assert.equal(call.url, baseURL + '/chat/completions');
+        assert.equal(call.authorization, local ? null : `Bearer ${service.id}-mock-key`);
+        assert.equal(call.body.model, input.model);
+        assert.deepEqual(call.body.messages.slice(-messages.length), messages);
+        if (kind === 'annotation') assert.match(call.body.messages[0].content, /选中的原文/);
+        assert.doesNotMatch(wire, /mock-previous-provider-key|mock-key/);
+      }
+    }
+    assert.deepEqual(messages, frozenMessages);
   } finally { await app.close(); }
 });

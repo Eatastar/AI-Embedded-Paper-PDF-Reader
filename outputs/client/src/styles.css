@@ -233,16 +233,12 @@ button svg { flex-shrink: 0; }
 .profile-text-button.danger:hover { background: var(--ls-danger-bg); }
 .profile-text-button:disabled { opacity: .45; }
 .profile-empty { margin: 6px 0 13px; padding: 12px 13px; background: var(--ls-surface); border-radius: 7px; color: var(--ls-muted); font-size: 11px; line-height: 1.8; }
-.profile-list { display: flex; flex-direction: column; gap: 7px; max-height: 240px; overflow-y: auto; }
-.profile-list-item { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 7px 8px; border: 1px solid var(--ls-border); border-radius: 8px; background: var(--ls-panel); }
-.profile-list-item.editing { border-color: var(--ls-border-strong); background: var(--ls-panel); }
-.profile-list-name { min-width: 0; flex: 1; border: 0; background: transparent; text-align: left; padding: 4px 5px; color: var(--ls-text); }
-.profile-list-name > strong { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 550; line-height: 1.6; overflow-wrap: anywhere; }
-.profile-list-name > span { display: block; margin-top: 3px; color: var(--ls-muted); font-size: 10px; line-height: 1.6; overflow-wrap: anywhere; }
-.profile-active-label { display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0; color: var(--ls-text); font-size: 9px; font-weight: 400; }
-.profile-key-state { display: inline-block; margin-left: 8px; color: var(--ls-muted); }
-.profile-list-actions { display: flex; align-items: center; gap: 1px; }
-.profile-list-actions .icon-button { width: 27px; height: 27px; }
+.profile-picker-row { display: flex; align-items: center; gap: 7px; }
+.profile-picker { flex: 1; min-width: 0; width: 0; margin: 0; text-overflow: ellipsis; }
+.profile-picker-actions { display: flex; align-items: center; gap: 1px; flex-shrink: 0; }
+.profile-picker-actions .icon-button { width: 28px; height: 28px; }
+.profile-selection-status { margin: 7px 0 0; color: var(--ls-muted); font-size: 10px; line-height: 1.7; overflow-wrap: anywhere; }
+.profile-selection-status > span { display: block; }
 .profile-delete-confirm { flex-basis: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 5px 2px; border-top: 1px solid var(--ls-border); color: var(--ls-danger); font-size: 10px; line-height: 1.7; }
 .profile-delete-confirm > div { display: flex; flex-shrink: 0; }
 .profile-demo-button { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; border: 0; border-radius: 6px; background: transparent; margin-top: 8px; padding: 7px 10px; color: var(--ls-muted); font-size: 11px; }
@@ -255,6 +251,8 @@ button svg { flex-shrink: 0; }
 .connection-template:hover { border-color: var(--ls-border-strong); background: var(--ls-surface); }
 .connection-template.selected { border-color: var(--ls-border-strong); background: var(--ls-surface); color: var(--ls-text); }
 .profile-template-help { margin-top: 0; }
+.other-connection-presets { padding: 12px; margin-bottom: 12px; border: 1px solid var(--ls-border); border-radius: 7px; background: var(--ls-surface); }
+.other-connection-presets .field-help { margin-bottom: 0; }
 .profile-key-notice { margin: -5px 0 15px; border-radius: 6px; padding: 9px 11px; background: var(--ls-surface); color: var(--ls-text); font-size: 10px; line-height: 1.8; }
 .profile-storage-help { margin-bottom: 17px; }
 .profile-dialog-footer > div { display: flex; align-items: center; gap: 7px; }
@@ -316,7 +314,6 @@ button svg { flex-shrink: 0; }
   .profile-settings-dialog { padding: 22px 18px; }
   .connection-templates { gap: 6px; }
   .connection-template { min-width: calc(50% - 3px); flex-basis: calc(50% - 3px); }
-  .profile-list { max-height: 215px; }
   .profile-delete-confirm { align-items: flex-start; }
   .profile-dialog-footer { gap: 8px; }
   .profile-dialog-footer > span { max-width: 90px; line-height: 1.7; }

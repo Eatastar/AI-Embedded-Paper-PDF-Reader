@@ -1,6 +1,6 @@
 # learn something 项目总纲
 
-当前版本：客户端 0.1.11，构建 20261105.8，2026年11月5日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
+当前版本：客户端 0.1.11，构建 20261105.9，2026年11月5日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
 
 ## 产品目标
 
@@ -18,6 +18,7 @@
 8. 文件原字节保存在本机。阅读配色只改变显示，不改写 PDF。
 9. 普通删除移入回收站；回收站支持恢复、单条永久删除和清空，永久删除对话时原子移除记录与附件原字节，正在排队的旧保存不能复活记录。历史自动备份和导出文件不随当前记录删除而改写。JSON 备份包含文档原字节和批注，追加导入不覆盖已有记录。
 10. 模型配置与聊天分别存储，桌面凭证使用系统加密，不进入聊天备份或源码仓库。
+11. 已保存的模型使用原生下拉列表；选择只加载配置，点击“使用”或“保存并使用”才切换。新增“其他”模板与常用服务快捷填写，地址、端口和模型名可修改；未开启鉴权的本机接口可留空密钥。
 
 ## 模块职责
 
@@ -38,7 +39,7 @@
 | 阅读配色与进度 | `src/domain/reader.ts`、`src/adapters/reader.ts` | 显示副本换色、本机配色和按文档保存位置 |
 | 本机保存与备份 | `src/adapters/storage.ts`、`src/hooks/useWorkspace.ts` | Dexie 元数据、独立文档字节表、保存屏障、容量门槛及完整 JSON |
 | 共享快照与增量保存 | `src/domain/context-pool.ts`、`src/domain/workspace-codec.ts`、`src/adapters/record-store.ts` | 不可变完整上下文、内容标识去重、按记录事务提交及旧记录迁移 |
-| 模型预载与协议 | `src/adapters/model.ts`、`server/` | 配置管理和三种文字流式协议 |
+| 模型预载与协议 | `src/domain/model-presets.ts`、`src/components/SettingsDialog.tsx`、`src/adapters/model.ts`、`server/` | 原生下拉选择连接、其他服务及本地模型快捷填写，配置管理和三种文字流式协议 |
 | 回收站与永久删除 | `src/domain/trash.ts`、`src/components/TrashDialog.tsx`、存储事务与保存队列 | 恢复、确认删除、清空与关联文件清理 |
 | 本机自动备份与退出 | `desktop/backup-store.cjs`、`desktop/desktop-bridge.cjs`、`desktop/preload.cjs` | 完整检查点、内容校验、恢复入口和退出保存握手 |
 | 桌面运行与诊断 | `desktop/` | Electron、系统代理、加密凭证和安全诊断日志 |

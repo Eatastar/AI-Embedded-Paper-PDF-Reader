@@ -1,5 +1,15 @@
 # 版本记录
 
+## 0.1.11 构建 20261105.9 - 2026年11月5日
+
+模型设置增加“其他”模板，提供自定义 API、Ollama、LM Studio、Kimi、千问、Gemini 与 Grok 的快捷填写；继续使用三种现有协议，以上快捷服务默认走聊天兼容接口。地址、端口和模型名可修改，本机未启用鉴权时可留空密钥，区域服务提示地址与密钥匹配。
+
+已保存连接改为一行原生下拉框，选中后在原表单中编辑，旁边保留使用、编辑和删除按钮；使用中标记和密钥状态继续显示，删除仍需确认。选择、新建、模板切换及取消均不发送模型请求。原加密配置、聊天保存格式和阅读体验沿用。
+
+215 项自动检查及 551 项交付核对通过。六种快捷服务与自定义服务均以模拟接口验证主聊天、批注全文上下文、准确路径和凭证隔离；界面验证下拉展开、选择后按需使用、旧连接编辑保留密钥、删除取消、快捷填入及本地无密钥保存/回答，零界面错误。打包目录和原程序目录两次实际启动、保存、完整备份及正常退出通过；原 0.1.11 目录和 ZIP 更新，测试不使用个人数据或真实付费 API。
+
+快捷地址参照服务商官方说明：[Ollama](https://docs.ollama.com/api/openai-compatibility)、[LM Studio](https://lmstudio.ai/docs/developer/openai-compat)、[Kimi](https://platform.moonshot.cn/docs/guide/migrating-from-openai-to-kimi)、[百炼地域地址](https://www.alibabacloud.com/help/en/model-studio/base-url)、[Gemini 兼容接口](https://ai.google.dev/gemini-api/docs/openai)、[xAI 聊天接口](https://docs.x.ai/developers/rest-api-reference/inference/chat-completions)。模型名称仍以本机或账户当前可用标识为准。
+
 ## 0.1.11 构建 20261105.8 - 2026年11月5日
 
 程序默认进入本地阅读器。首次使用可从“打开本地 PDF”直接选择文件；已有续读记录时恢复上次文档，关闭文档回到阅读首页。PDF 顶栏左侧可打开其他本地文件，右侧原位置按需打开聊天；窄窗口聊天覆盖阅读器，收起后保留原文档和页码。
