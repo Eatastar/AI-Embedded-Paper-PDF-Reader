@@ -26,7 +26,7 @@ test('停止会唤醒等待中的流读取，已停止的请求不会再发出',
   } finally { globalThis.fetch = original; }
 });
 
-test('中断记录跨保存与重开后仍重试首次上下文，一次成功后禁止第二次问答', () => {
+test('中断跨保存后仍重试原上下文，成功后需显式重新提问', () => {
   const conversation = createConversation('停止与重试');
   const message = createAssistantMessage('完整原文', 'complete'); conversation.messages = [createUserMessage('原始主问题'), message];
   const annotation = createAnnotation(conversation, { messageId: message.id, versionId: message.activeVersionId, quote: '原文', anchor: {}, color: '#ffe099', question: '解释一下' }); conversation.annotations = [annotation];

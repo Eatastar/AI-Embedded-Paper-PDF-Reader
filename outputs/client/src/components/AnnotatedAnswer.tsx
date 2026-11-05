@@ -25,6 +25,7 @@ export interface AnnotatedAnswerProps {
   onUpdate: (id: string, patch: Partial<Annotation>) => void;
   onAsk: (id: string) => void;
   onStop: (id: string) => void;
+  onReask: (id: string, action: 'start' | 'cancel' | 'edit') => void;
   onDelete: (id: string) => void;
   onNotify: (message: string) => void;
   disabled?: boolean;
@@ -74,7 +75,7 @@ function popupPosition(rect: DOMRect | null, height = 440, preferredWidth = 390)
   return { width, maxHeight, left, top: Math.max(16, Math.min(idealTop, window.innerHeight - Math.min(height, maxHeight) - 16)) };
 }
 
-export function AnnotatedAnswer({ conversationId, messageId, version, annotations, reservedColors = [], openAnnotationId, onOpen, onCreate, onUpdate, onAsk, onStop, onDelete, onNotify, disabled, plainText = false, content, contentReadyKey, contentClassName = '' }: AnnotatedAnswerProps) {
+export function AnnotatedAnswer({ conversationId, messageId, version, annotations, reservedColors = [], openAnnotationId, onOpen, onCreate, onUpdate, onAsk, onStop, onReask, onDelete, onNotify, disabled, plainText = false, content, contentReadyKey, contentClassName = '' }: AnnotatedAnswerProps) {
   const proseRef = useRef<HTMLDivElement>(null);
   const annotatorRef = useRef<TextAnnotator<TextAnnotation, TextAnnotation> | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
@@ -438,7 +439,7 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
       )}
       {openAnnotation && createPortal(
         <MovableAnnotationPopup key={openAnnotation.id} popupRef={popupRef} style={popupStyle}>
-          <AnnotationCard key={openAnnotation.id} annotation={openAnnotation} onClose={() => onOpen(null)} onUpdate={(patch) => onUpdate(openAnnotation.id, patch)} onAsk={() => onAsk(openAnnotation.id)} onStop={() => onStop(openAnnotation.id)} onDelete={() => onDelete(openAnnotation.id)} disabled={disabled} />
+          <AnnotationCard key={openAnnotation.id} annotation={openAnnotation} onClose={() => onOpen(null)} onUpdate={(patch) => onUpdate(openAnnotation.id, patch)} onAsk={() => onAsk(openAnnotation.id)} onStop={() => onStop(openAnnotation.id)} onReask={action => onReask(openAnnotation.id, action)} onDelete={() => onDelete(openAnnotation.id)} disabled={disabled} />
         </MovableAnnotationPopup>, document.body,
       )}
     </>

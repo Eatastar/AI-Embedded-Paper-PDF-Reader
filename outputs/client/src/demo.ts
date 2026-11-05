@@ -22,7 +22,7 @@ export const DEMO_MAIN_ANSWER = `> **体验示例**：下面是预先准备的�
 
 export function demoMainAnswer(question: string): string {
   if (/相对论|引力|时空/.test(question)) return DEMO_MAIN_ANSWER;
-  return `> **本地演示回答**：当前没有调用 AI API。连接模型后会生成真实回答。\n\n你刚才提出了这个问题：\n\n${question}\n\n这个演示用于体验“阅读正文 → 选中片段 → 添加一次批注问答”的流程。你可以选中这一段里的任何词句，为它建立独立批注。点击高亮就能重新打开已经保存的批注，右上角的 × 只会收起窗口。\n\n每条批注只进行一次问答，回答后可以修改保存的文字。重新生成正文会创建一个新版本，旧批注继续保留在旧版本上。`;
+  return `> **本地演示回答**：当前没有调用 AI API。连接模型后会生成真实回答。\n\n你刚才提出了这个问题：\n\n${question}\n\n这个演示用于体验“阅读正文 → 选中片段 → 添加一次批注问答”的流程。你可以选中这一段里的任何词句，为它建立独立批注。点击高亮就能重新打开已经保存的批注，右上角的 × 只会收起窗口。\n\n每处高亮保留一组当前问答，回答后可编辑，也可重新提问；新回答成功后替换旧问答。重新生成正文会创建一个新版本，旧批注继续保留在旧版本上。`;
 }
 
 export function demoAnnotationAnswer(quote: string, question: string): string {

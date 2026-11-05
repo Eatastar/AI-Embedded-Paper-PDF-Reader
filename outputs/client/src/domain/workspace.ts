@@ -4,6 +4,7 @@ import type {
 } from './types';
 import { DEMO_MAIN_ANSWER } from '../demo';
 import { WORKSPACE_LIMITS } from './capacity';
+import { isAnnotationGenerating } from './annotation-state';
 
 const now = () => Date.now();
 export const makeId = () => globalThis.crypto?.randomUUID?.() ?? `id-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
@@ -48,6 +49,7 @@ export function deleteConversation(workspace: Workspace, conversationId: string)
   const source = workspace.conversations.find(item => item.id === conversationId);
   if (!source) throw new Error('对话不存在。');
   if (source.deletedAt !== undefined) return workspace;
+  if (source.annotations.some(isAnnotationGenerating) || source.messages.some(m => m.versions.some(v => v.status === 'streaming'))) throw new Error('请先停止这个对话中正在生成的回答。');
   const timestamp = now();
   const conversations = workspace.conversations.map(item => item.id === conversationId ? { ...item, deletedAt: timestamp, updatedAt: timestamp } : item);
   const visible = conversations.filter(item => item.deletedAt === undefined);
@@ -138,15 +140,22 @@ function replaceAnnotation(conversation: Conversation, annotation: Annotation): 
   return { ...conversation, updatedAt: now(), annotations: conversation.annotations.map(item => item.id === annotation.id ? annotation : item) };
 }
 
-/** Errors and interrupted requests may be retried; a successful answer permanently consumes the one request. */
+/** Retrying freezes a single attempt. Replacing success requires explicit reask intent. */
 export function prepareAnnotationRequest(conversation: Conversation, annotationId: string, systemPrompt = ''): {
   conversation: Conversation; annotation: Annotation; messages: InputMessage[];
 } {
   const source = conversation.annotations.find(item => item.id === annotationId);
   if (!source || source.deletedAt !== undefined) throw new Error('批注不存在或已删除。');
   if (source.mode === 'note') throw new Error('普通批注不需要发起 AI 询问。');
-  if (source.status === 'answered' || source.originalAnswer !== undefined) throw new Error('这条批注已经完成一次问答，只能编辑文字。');
-  if (source.status === 'generating') throw new Error('这条批注正在回答，请稍候。');
+  if (isAnnotationGenerating(source)) throw new Error('这条批注正在回答，请稍候。');
+  if (source.reask) {
+    if (source.status !== 'answered' || source.originalAnswer === undefined) throw new Error('重新提问需要一份已完成的问答。');
+    assertAnnotationSource(conversation, source);
+    const messages = source.reask.context ? structuredClone(source.reask.context) : buildAnnotationContext(conversation, { ...source, question: source.reask.question }, systemPrompt);
+    const annotation: Annotation = { ...source, reask: { question: source.reask.question, answer: '', status: 'generating', context: structuredClone(messages) }, updatedAt: now() };
+    return { conversation: replaceAnnotation(conversation, annotation), annotation, messages };
+  }
+  if (source.status === 'answered' || source.originalAnswer !== undefined) throw new Error('这条批注已经完成一次问答，请点击“重新提问”来替换。');
   const messages = source.context ? structuredClone(source.context) : buildAnnotationContext(conversation, source, systemPrompt);
   const annotation: Annotation = { ...source, status: 'generating', answer: '', originalQuestion: source.originalQuestion ?? source.question, context: structuredClone(messages), updatedAt: now() };
   delete annotation.error;
@@ -155,19 +164,45 @@ export function prepareAnnotationRequest(conversation: Conversation, annotationI
 
 export function completeAnnotation(conversation: Conversation, annotationId: string, answer: string): Conversation {
   const source = conversation.annotations.find(item => item.id === annotationId);
-  if (!source || source.mode === 'note' || source.deletedAt !== undefined || source.status !== 'generating' || source.originalAnswer !== undefined) throw new Error('这条批注没有可完成的请求。');
+  if (!source || source.mode === 'note' || source.deletedAt !== undefined || !isAnnotationGenerating(source)) throw new Error('这条批注没有可完成的请求。');
   if (!answer.trim()) throw new Error('AI 返回了空回答，请重试。');
-  const originalQuestion = source.originalQuestion ?? source.question;
-  const annotation: Annotation = { ...source, question: originalQuestion, answer, originalQuestion, originalAnswer: answer, edited: false, status: 'answered', updatedAt: now() };
+  const originalQuestion = source.reask?.question ?? source.originalQuestion ?? source.question;
+  const annotation: Annotation = { ...source, question: originalQuestion, answer, originalQuestion, originalAnswer: answer, ...(source.reask ? { context: source.reask.context } : {}), edited: false, status: 'answered', updatedAt: now() };
+  delete annotation.reask;
   delete annotation.error;
   return replaceAnnotation(conversation, annotation);
+}
+
+export function changeAnnotationReask(conversation: Conversation, annotationId: string, action: 'start' | 'cancel' | 'edit', question?: string): Conversation {
+  const source = conversation.annotations.find(item => item.id === annotationId);
+  if (!source || source.deletedAt !== undefined || source.mode === 'note' || source.status !== 'answered') throw new Error('只有已完成的询问批注可以重新提问。');
+  if (isAnnotationGenerating(source)) throw new Error('请先停止当前回答。');
+  const annotation = { ...source, updatedAt: now() };
+  if (action === 'cancel') delete annotation.reask;
+  else if (action === 'start') {
+    if (source.reask) return conversation;
+    annotation.reask = { question: source.question, answer: '', status: 'draft' };
+  } else {
+    if (!source.reask) throw new Error('请先点击重新提问。');
+    if (question !== undefined && source.reask.status !== 'draft') throw new Error('重试会沿用本次问题和上下文，请先选择修改问题。');
+    annotation.reask = { question: question ?? source.reask.question, answer: '', status: 'draft' };
+  }
+  return replaceAnnotation(conversation, annotation);
+}
+
+export function updateAnnotationRequest(conversation: Conversation, annotationId: string, answer: string, failure?: { error: string; interrupted: boolean }): Conversation {
+  const source = conversation.annotations.find(item => item.id === annotationId);
+  if (!source || !isAnnotationGenerating(source)) throw new Error('这条批注没有进行中的请求。');
+  const status = failure ? failure.interrupted ? 'interrupted' as const : 'error' as const : 'generating' as const;
+  const patch = { answer, status, ...(failure ? { error: failure.error } : {}) };
+  return replaceAnnotation(conversation, source.reask ? { ...source, reask: { ...source.reask, ...patch }, updatedAt: now() } : { ...source, ...patch, updatedAt: now() });
 }
 
 /** Edits only change the visible copy. The original request/answer remain available in backups. */
 export function updateAnnotationCopy(conversation: Conversation, annotationId: string, update: { question?: string; answer?: string; mode?: 'ask' | 'note'; note?: string }): Conversation {
   const source = conversation.annotations.find(item => item.id === annotationId);
   if (!source || source.deletedAt !== undefined) throw new Error('批注不存在或已删除。');
-  if (source.status === 'generating') throw new Error('回答完成后才能修改。');
+  if (isAnnotationGenerating(source) || source.reask) throw new Error('请完成或取消重新提问后再编辑原问答。');
   if (update.mode !== undefined && update.mode !== 'ask' && update.mode !== 'note') throw new Error('批注类型不受支持。');
   const mode = update.mode ?? source.mode ?? 'ask';
   const switching = mode !== (source.mode ?? 'ask');
@@ -202,7 +237,7 @@ export function deleteAnnotation(conversation: Conversation, annotationId: strin
   const source = conversation.annotations.find(item => item.id === annotationId);
   if (!source) throw new Error('批注不存在。');
   if (source.deletedAt !== undefined) return conversation;
-  if (source.status === 'generating') throw new Error('请等批注回答完成后再删除。');
+  if (isAnnotationGenerating(source)) throw new Error('请等批注回答完成后再删除。');
   const timestamp = now();
   return replaceAnnotation(conversation, { ...source, deletedAt: timestamp, updatedAt: timestamp });
 }
@@ -249,6 +284,14 @@ function jsonSafe(value: unknown, depth = 0): unknown {
     result[key] = jsonSafe(item, depth + 1);
   }
   return result;
+}
+
+function importContext(value: unknown): InputMessage[] {
+  return list(value, '批注上下文', WORKSPACE_LIMITS.context).map((raw, index) => {
+    const ctx = obj(raw, ['role', 'content'], '上下文消息');
+    if (ctx.role !== 'user' && ctx.role !== 'assistant' && !(ctx.role === 'system' && index === 0)) invalid('上下文角色不受支持。');
+    return { role: ctx.role, content: str(ctx.content, '上下文正文', true) };
+  });
 }
 
 /** Validates and constructs a clean object, never trusts backup fields or retains API settings. */
@@ -312,7 +355,7 @@ export function validateImport(input: unknown): Workspace {
       return { id: documentId, name, kind: d.kind, mimeType, size: d.size, createdAt: timestamp(d.createdAt, '附件创建时间'), pages };
     });
     conversation.annotations = list(c.annotations, '批注', WORKSPACE_LIMITS.annotations).map(rawAnnotation => {
-      const a = obj(rawAnnotation, ['id', 'conversationId', 'messageId', 'versionId', 'quote', 'anchor', 'color', 'question', 'answer', 'mode', 'note', 'originalQuestion', 'originalAnswer', 'edited', 'status', 'createdAt', 'updatedAt', 'context', 'error', 'deletedAt'], '批注');
+      const a = obj(rawAnnotation, ['id', 'conversationId', 'messageId', 'versionId', 'quote', 'anchor', 'color', 'question', 'answer', 'mode', 'note', 'originalQuestion', 'originalAnswer', 'edited', 'status', 'createdAt', 'updatedAt', 'context', 'error', 'deletedAt', 'reask'], '批注');
       if (!ANNOTATION_STATUSES.has(a.status as AnnotationStatus)) invalid('批注状态不受支持。');
       if (a.mode !== undefined && a.mode !== 'ask' && a.mode !== 'note') invalid('批注类型不受支持。');
       if (typeof a.edited !== 'boolean') invalid('批注编辑状态无效。');
@@ -342,11 +385,17 @@ export function validateImport(input: unknown): Workspace {
         const isEdited = annotation.question !== annotation.originalQuestion || annotation.answer !== annotation.originalAnswer;
         if (annotation.edited !== isEdited) invalid('批注编辑状态与原始问答不一致。');
       } else if (annotation.originalAnswer !== undefined || annotation.edited) invalid('未完成批注不应包含成功问答。');
-      if (a.context !== undefined) annotation.context = list(a.context, '批注上下文', WORKSPACE_LIMITS.context).map((rawContext, index) => {
-        const ctx = obj(rawContext, ['role', 'content'], '上下文消息');
-        if (ctx.role !== 'user' && ctx.role !== 'assistant' && !(ctx.role === 'system' && index === 0)) invalid('上下文角色不受支持。');
-        return { role: ctx.role, content: str(ctx.content, '上下文正文', true) };
-      });
+      if (a.context !== undefined) annotation.context = importContext(a.context);
+      if (a.reask !== undefined) {
+        if (annotation.mode === 'note' || annotation.status !== 'answered') invalid('只有已完成问答可以保留重新提问草稿。');
+        const r = obj(a.reask, ['question', 'answer', 'status', 'context', 'error'], '重新提问');
+        if (!['draft', 'generating', 'error', 'interrupted'].includes(r.status as string)) invalid('重新提问状态无效。');
+        const status = r.status === 'generating' ? 'interrupted' : r.status as 'draft' | 'error' | 'interrupted';
+        const question = str(r.question, '重新提问问题', status === 'draft'), answer = str(r.answer, '重新提问回答', true);
+        if (status === 'draft' && (answer !== '' || r.context !== undefined || r.error !== undefined)) invalid('重新提问草稿不应包含请求结果。');
+        if (status !== 'draft' && (r.context === undefined || !Array.isArray(r.context) || !r.context.length)) invalid('重新提问缺少固定上下文。');
+        annotation.reask = { question, answer, status, ...(r.context !== undefined ? { context: importContext(r.context) } : {}), ...(r.error !== undefined ? { error: str(r.error, '重新提问错误说明', true) } : {}) };
+      }
       return annotation;
     });
     return conversation;

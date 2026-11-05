@@ -126,3 +126,7 @@
 @keyframes annotation-rise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 @media (max-width: 600px) { .annotation-card-scroll { padding: 15px; } .annotation-card { border-radius: 12px; } .annotation-card-header { padding-left: 15px; } }
 @media (prefers-reduced-motion: reduce) { .annotation-popup, .annotation-selection-button, .annotation-choice-popup, .annotation-context-menu { animation: none; } }
+.annotation-reask-actions { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+.annotation-kept-answer { border-top: 1px solid #e4d6ae; margin-top: 20px; padding-top: 13px; font-size: 12px; line-height: 1.8; }
+.annotation-kept-answer > summary { color: #8b7957; cursor: pointer; }
+.annotation-kept-answer[open] > summary { margin-bottom: 12px; }

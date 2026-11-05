@@ -40,6 +40,16 @@ export interface Annotation {
   context?: InputMessage[];
   error?: string;
   deletedAt?: number;
+  reask?: AnnotationAttempt;
+}
+
+/** A pending replacement. The current successful exchange stays intact until commit. */
+export interface AnnotationAttempt {
+  question: string;
+  answer: string;
+  status: 'draft' | 'generating' | 'error' | 'interrupted';
+  context?: InputMessage[];
+  error?: string;
 }
 
 export interface DocumentPage {

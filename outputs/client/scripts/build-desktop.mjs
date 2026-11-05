@@ -46,7 +46,7 @@ for (const entry of await readdir(resolve(root, 'node_modules/.pnpm'))) {
   } catch { /* Not every pnpm entry is a package root. */ }
 }
 await writeFile(resolve(stage, 'THIRD-PARTY-NOTICES.txt'), notices.join('\n\n'));
-await writeFile(resolve(stage, 'package.json'), JSON.stringify({ name: 'learn-something-desktop', productName: 'learn something', version: metadata.version, buildId: metadata.buildId, buildTime: metadata.buildTime, description: '支持原文高亮与单次批注问答的 AI 客户端', author: 'learn something', main: 'main.cjs', private: true, packageManager: 'pnpm@11.25.0', dependencies: {} }, null, 2));
+await writeFile(resolve(stage, 'package.json'), JSON.stringify({ name: 'learn-something-desktop', productName: 'learn something', version: metadata.version, buildId: metadata.buildId, buildTime: metadata.buildTime, description: '支持原文高亮、批注问答与 PDF 阅读的 AI 客户端', author: 'learn something', main: 'main.cjs', private: true, packageManager: 'pnpm@11.25.0', dependencies: {} }, null, 2));
 await writeFile(resolve(stage, 'pnpm-lock.yaml'), "lockfileVersion: '9.0'\nimporters:\n  .: {}\n");
 await mkdir(resolve(stage, 'node_modules'), { recursive: true });
 const paths = await packageApp({

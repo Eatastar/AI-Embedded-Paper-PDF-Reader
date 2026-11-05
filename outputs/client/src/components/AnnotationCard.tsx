@@ -9,12 +9,13 @@ interface AnnotationCardProps {
   onUpdate: (patch: Partial<Annotation>) => void;
   onAsk: () => void;
   onStop: () => void;
+  onReask: (action: 'start' | 'cancel' | 'edit') => void;
   onDelete: () => void;
   disabled?: boolean;
 }
 
-/** An anchored personal note or single-turn AI exchange, without nested annotation. */
-export function AnnotationCard({ annotation, onClose, onUpdate, onAsk, onStop, onDelete, disabled }: AnnotationCardProps) {
+/** An anchored note or replaceable exchange, without nested annotation or chat history. */
+export function AnnotationCard({ annotation, onClose, onUpdate, onAsk, onStop, onReask, onDelete, disabled }: AnnotationCardProps) {
   const [editing, setEditing] = useState(false);
   const [question, setQuestion] = useState(annotation.question);
   const [answer, setAnswer] = useState(annotation.answer);
@@ -22,7 +23,8 @@ export function AnnotationCard({ annotation, onClose, onUpdate, onAsk, onStop, o
   const cardRef = useRef<HTMLElement>(null);
   const questionRef = useRef<HTMLTextAreaElement>(null);
   const isDraft = annotation.status === 'draft';
-  const isGenerating = annotation.status === 'generating';
+  const reask = annotation.reask;
+  const isGenerating = annotation.status === 'generating' || reask?.status === 'generating';
   const canRetry = annotation.status === 'error' || annotation.status === 'interrupted';
   const isNote = annotation.mode === 'note';
   const canChooseMode = isDraft && !annotation.context && !annotation.originalQuestion;
@@ -35,8 +37,8 @@ export function AnnotationCard({ annotation, onClose, onUpdate, onAsk, onStop, o
   }, [annotation.id]);
 
   useEffect(() => {
-    if (isDraft) questionRef.current?.focus({ preventScroll: true });
-  }, [annotation.id, isNote, isDraft]);
+    if (isDraft || reask?.status === 'draft') questionRef.current?.focus({ preventScroll: true });
+  }, [annotation.id, isNote, isDraft, reask?.status]);
 
   const startEditing = () => {
     setQuestion(annotation.question);
@@ -98,7 +100,7 @@ export function AnnotationCard({ annotation, onClose, onUpdate, onAsk, onStop, o
       }}
     >
       <header className="annotation-card-header" tabIndex={0} title="按住标题栏拖动；聚焦后也可用方向键移动" aria-label="批注标题栏，可拖动或使用方向键移动">
-        <div className="annotation-card-heading"><GripHorizontal size={14} className="annotation-drag-icon" /><span className="annotation-color-dot" style={{ background: annotation.color }} /><strong>{isDraft ? '添加批注' : isNote ? '批注' : '批注问答'}</strong><span className="annotation-card-badge">{isNote ? '个人笔记' : '单次提问'}</span></div>
+        <div className="annotation-card-heading"><GripHorizontal size={14} className="annotation-drag-icon" /><span className="annotation-color-dot" style={{ background: annotation.color }} /><strong>{isDraft ? '添加批注' : isNote ? '批注' : reask ? '重新提问' : '批注问答'}</strong><span className="annotation-card-badge">{isNote ? '个人笔记' : reask ? '替换问答' : '原文问答'}</span></div>
         <div className="annotation-card-header-actions"><button type="button" className="annotation-icon-button annotation-delete-button" aria-label="删除批注与高亮" title={isGenerating ? '请等回答完成后再删除' : '删除这条批注及其高亮，可撤销'} disabled={isGenerating} onClick={(event) => { event.stopPropagation(); onDelete(); }}><Trash2 size={15} /></button><button type="button" className="annotation-icon-button" aria-label="关闭批注" title="关闭，批注会保留" onClick={closeCard}><X size={17} /></button></div>
       </header>
 
@@ -157,6 +159,22 @@ export function AnnotationCard({ annotation, onClose, onUpdate, onAsk, onStop, o
             </div>
             <p className="annotation-shortcut"><CornerDownLeft size={11} /> Ctrl / ⌘ + Enter 发送 · 草稿自动保存</p>
           </div>
+        ) : reask ? (
+          <div className="annotation-reask">
+            <p className="annotation-footnote">新回答成功后替换当前问答，原高亮继续保留。</p>
+            {reask.status === 'draft' ? <div className="annotation-draft">
+              <label htmlFor={`annotation-reask-${annotation.id}`}>关于这段原文，你想重新问什么？</label>
+              <textarea ref={questionRef} id={`annotation-reask-${annotation.id}`} className="annotation-textarea" rows={4} value={reask.question} disabled={disabled} onChange={event => onUpdate({ reask: { ...reask, question: event.target.value } })} onKeyDown={event => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && reask.question.trim() && !disabled) { event.preventDefault(); onAsk(); } }} />
+              <div className="annotation-edit-actions"><button className="annotation-text-button" onClick={() => onReask('cancel')}>取消重新提问</button><button className="annotation-primary-button" disabled={disabled || !reask.question.trim()} onClick={onAsk}><Send size={14} />发送并替换</button></div>
+              <p className="annotation-footnote">使用当前完整主对话和附件，不附加旧批注问答。</p>
+            </div> : <div className="annotation-response">
+              <div className="annotation-section-label">新的问题</div><p className="annotation-question-text">{reask.question}</p>
+              <div className="annotation-section-label annotation-answer-label">{isGenerating ? <><LoaderCircle size={13} className="annotation-spin" />正在重新回答</> : '新的回答未完成'}</div>
+              {reask.answer ? <MathMarkdown streaming={isGenerating}>{reask.answer}</MathMarkdown> : isGenerating ? <p className="annotation-waiting">正在结合原文思考…</p> : null}
+              {isGenerating ? <div className="annotation-response-actions"><span>× 只收起，回答会继续</span><button className="annotation-text-button" onClick={onStop}><Square size={12} />停止回答</button></div> : <div className="annotation-error" role="status"><p>{reask.error || '这次回答未完成。'} 旧问答仍保留。</p><div className="annotation-reask-actions"><button className="annotation-text-button" disabled={disabled} onClick={onAsk}><RotateCcw size={13} />重试原问题</button><button className="annotation-text-button" onClick={() => onReask('edit')}>修改问题</button><button className="annotation-text-button" onClick={() => onReask('cancel')}>返回原问答</button></div></div>}
+            </div>}
+            <details className="annotation-kept-answer"><summary>查看当前保留的问答</summary><p className="annotation-question-text">{annotation.question}</p><MathMarkdown>{annotation.answer}</MathMarkdown></details>
+          </div>
         ) : editing ? (
           <div className="annotation-edit-fields">
             {isNote ? <>
@@ -185,7 +203,7 @@ export function AnnotationCard({ annotation, onClose, onUpdate, onAsk, onStop, o
             <div className="annotation-section-label annotation-answer-label">{isGenerating ? <><LoaderCircle size={13} className="annotation-spin" />正在回答</> : <>AI 回答 {annotation.edited && <span className="annotation-edited-label">已编辑</span>}</>}</div>
             {annotation.answer ? <MathMarkdown streaming={isGenerating}>{annotation.answer}</MathMarkdown> : isGenerating ? <p className="annotation-waiting">正在结合主对话思考…</p> : null}
             {canRetry && <div className="annotation-error" role="status"><p>{annotation.error || '上次回答未完成，可以重试原问题。'}</p><button type="button" className="annotation-text-button" disabled={disabled} onClick={onAsk}><RotateCcw size={13} />重试原问题</button></div>}
-            {!isGenerating && !canRetry && <div className="annotation-response-actions"><span>内容已自动保存</span><button type="button" className="annotation-text-button" onClick={startEditing}><Pencil size={13} />编辑</button></div>}
+            {!isGenerating && !canRetry && <div className="annotation-response-actions"><span>内容已自动保存</span><div className="annotation-reask-actions"><button type="button" className="annotation-text-button" onClick={startEditing}><Pencil size={13} />编辑</button><button type="button" className="annotation-text-button" disabled={disabled} onClick={() => onReask('start')}><RotateCcw size={13} />重新提问</button></div></div>}
             {isGenerating && <><div className="annotation-response-actions"><span>关闭窗口后仍会继续回答</span><button type="button" className="annotation-text-button" onClick={onStop}><Square size={12} />停止回答</button></div><p className="annotation-footnote">停止后可以用原问题和首次上下文重试。</p></>}
           </div>
         )}

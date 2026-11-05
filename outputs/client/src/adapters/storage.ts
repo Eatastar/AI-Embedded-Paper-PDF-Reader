@@ -34,6 +34,17 @@ export async function saveWorkspace(workspace: Workspace): Promise<void> {
   await database.workspaces.put({ id: 'current', workspace: clean });
 }
 
+/** Metadata removal and removal of its unreferenced binary files succeed together. */
+export async function saveWorkspaceAndPruneFiles(next: Workspace, previous: Workspace): Promise<void> {
+  const clean = validateImport(next);
+  const kept = new Set(clean.conversations.flatMap(c => (c.documents || []).map(d => d.id)));
+  const removed = previous.conversations.flatMap(c => (c.documents || []).map(d => d.id)).filter(id => !kept.has(id));
+  await database.transaction('rw', database.workspaces, database.documents, async () => {
+    await database.workspaces.put({ id: 'current', workspace: clean });
+    await database.documents.bulkDelete(removed);
+  });
+}
+
 export function exportWorkspace(workspace: Workspace): string {
   return JSON.stringify(validateImport(workspace), null, 2);
 }

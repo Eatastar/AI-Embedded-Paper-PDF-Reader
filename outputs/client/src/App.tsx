@@ -13,6 +13,10 @@ import { DocumentReader } from './components/DocumentReader';
 import { RecoveryDialog } from './components/RecoveryDialog';
 import { assertWorkspaceCapacity } from './domain/capacity';
 import { desktop } from './adapters/desktop';
+import { changeAnnotationReask, updateAnnotationRequest } from './domain/workspace';
+import { isAnnotationGenerating } from './domain/annotation-state';
+import type { TrashTarget } from './domain/trash';
+import { TrashDialog } from './components/TrashDialog';
 
 const DEFAULT_SETTINGS: ModelSettings = { mode: 'demo', baseURL: 'https://api.openai.com/v1', model: '', systemPrompt: '请用中文清晰地回答，解释概念时适当举例。', hasApiKey: false, apiFormat: 'openai-chat', profiles: [], activeProfileId: null, persistence: 'session' };
 type Busy = { conversationId: string; messageId: string; versionId: string; controller: AbortController };
@@ -26,7 +30,8 @@ function patchVersion(c: Conversation, messageId: string, versionId: string, pat
 const errorText = (e: unknown) => e instanceof Error ? e.message : '操作未完成，请重试。';
 
 export default function App() {
-  const { workspace, current, update, saveStatus, loadError, flush, checkpoint, recover, backupWarning, lastBackup } = useWorkspace();
+  const { workspace, current, update, saveStatus, loadError, flush, checkpoint, recover, purge, backupWarning, lastBackup } = useWorkspace();
+  const [trashOpen, setTrashOpen] = useState(false);
   const [recoveryOpen, setRecoveryOpen] = useState(false);
   const [closing, setClosing] = useState(false);
   const closingRef = useRef(false);
@@ -110,13 +115,8 @@ export default function App() {
   function removeConversation(id: string) {
     if (fileOperation.current) return;
     const conversation = current.current?.conversations.find(c => c.id === id);
-    if (mainRequest.current?.conversationId === id || conversation?.annotations.some(a => a.status === 'generating')) { notify('请等这个对话的回答完成，或停止生成后再删除。'); return; }
-    try { update(w => deleteConversation(w, id)); setOpenAnnotationId(null); setOpenDocumentId(null); notify('对话已删除，可在“已删除的对话”中恢复。'); }
-    catch (e) { notify(errorText(e)); }
-  }
-  function recoverConversation(id: string) {
-    if (fileOperation.current) return;
-    try { update(w => restoreConversation(w, id)); setOpenAnnotationId(null); setOpenDocumentId(null); setSidebarOpen(false); notify('对话及其附件、批注已恢复。'); }
+    if (mainRequest.current?.conversationId === id || conversation?.annotations.some(isAnnotationGenerating)) { notify('请等这个对话的回答完成，或停止生成后再删除。'); return; }
+    try { update(w => deleteConversation(w, id)); setOpenAnnotationId(null); setOpenDocumentId(null); notify('对话已移入回收站，可在那里恢复或永久删除。'); }
     catch (e) { notify(errorText(e)); }
   }
   async function runMain(conversationId: string, messageId: string, versionId: string, messages: InputMessage[], variant = 0) {
@@ -184,7 +184,8 @@ export default function App() {
     try {
       mutateConversation(conversationId, c => {
         const annotation = c.annotations.find(a => a.id === id);
-        if (!annotation || annotation.status === 'generating') return c;
+        if (!annotation || isAnnotationGenerating(annotation)) return c;
+        if (patch.reask) return changeAnnotationReask(c, id, 'edit', patch.reask.question);
         if (annotation.mode === 'note' && (patch.status === 'noted' || (annotation.status === 'noted' && patch.note !== undefined))) return saveNoteAnnotation(c, id, patch.note ?? annotation.note ?? '');
         const textPatch: { question?: string; answer?: string; mode?: 'ask' | 'note'; note?: string } = {};
         if (patch.mode !== undefined) textPatch.mode = patch.mode;
@@ -202,6 +203,11 @@ export default function App() {
       if (openAnnotationId === id) setOpenAnnotationId(null);
       notify('已删除批注与高亮，可撤销。');
     } catch (e) { notify(errorText(e)); }
+  }
+  function reaskAnnotation(conversationId: string, id: string, action: 'start' | 'cancel' | 'edit') {
+    if (fileOperation.current || closingRef.current) return;
+    try { mutateConversation(conversationId, c => changeAnnotationReask(c, id, action)); }
+    catch (error) { notify(errorText(error)); }
   }
   function undoDelete() {
     if (mainRequest.current) { notify('请等主回答完成后再恢复批注。'); return; }
@@ -236,12 +242,12 @@ export default function App() {
     try {
       await streamReply({ messages: prepared.messages, kind: 'annotation', quote: prepared.annotation.quote, ...(settings.activeProfileId ? { profileId: settings.activeProfileId } : settings.mode === 'demo' ? { profileId: null } : {}) }, delta => {
         const next = answer + delta;
-        mutateConversation(conversationId, c => ({ ...c, annotations: c.annotations.map(a => a.id === annotationId ? { ...a, answer: next, updatedAt: Date.now() } : a) }));
+        mutateConversation(conversationId, c => updateAnnotationRequest(c, annotationId, next));
         answer = next;
       }, controller.signal);
       mutateConversation(conversationId, c => completeAnnotation(c, annotationId, answer));
     } catch (e) {
-      mutateConversation(conversationId, c => ({ ...c, updatedAt: Date.now(), annotations: c.annotations.map(a => a.id === annotationId ? { ...a, answer, status: controller.signal.aborted ? 'interrupted' : 'error', error: controller.signal.aborted ? '回答已停止，可以用原问题和首次上下文重试。' : errorText(e), updatedAt: Date.now() } : a) }));
+      mutateConversation(conversationId, c => updateAnnotationRequest(c, annotationId, answer, { interrupted: controller.signal.aborted, error: controller.signal.aborted ? '回答已停止，可以用原问题和本次上下文重试。' : errorText(e) }));
     } finally { annotationRequests.current.delete(annotationId); }
   }
   async function downloadBackup(conversationId?: string) {
@@ -302,6 +308,29 @@ export default function App() {
       setOpenAnnotationId(null); setOpenDocumentId(null); setSidebarOpen(false); notify('备份已恢复，附件和批注可以继续使用。');
     } finally { fileOperation.current = false; setFileBusy(false); }
   }
+  async function purgeTrash(target: TrashTarget) {
+    if (fileOperation.current || mainRequest.current || annotationRequests.current.size) throw new Error('请先停止正在生成的回答，等待文件处理完成后再清理回收站。');
+    fileOperation.current = true; setFileBusy(true);
+    try { await purge(target); setOpenAnnotationId(null); notify(target.kind === 'all' ? '回收站已清空，相关附件原文件已清理。' : '已永久删除，无法从回收站恢复。'); }
+    finally { fileOperation.current = false; setFileBusy(false); }
+  }
+  async function restoreTrash(target: Exclude<TrashTarget, { kind: 'all' }>) {
+    if (fileOperation.current || mainRequest.current || annotationRequests.current.size) throw new Error('请等文件处理和回答结束后再恢复。');
+    fileOperation.current = true; setFileBusy(true);
+    try {
+      if (target.kind === 'conversation') {
+        update(w => restoreConversation(w, target.id)); setOpenAnnotationId(null); setOpenDocumentId(null);
+      } else {
+        const annotation = current.current?.conversations.find(c => c.id === target.conversationId)?.annotations.find(a => a.id === target.id);
+        if (!annotation) throw new Error('这条批注已不在回收站。');
+        update(w => ({ ...updateConversation(w, target.conversationId, c => ({ ...restoreAnnotation(c, target.id), messages: c.messages.map(m => m.id === annotation.messageId ? { ...m, activeVersionId: annotation.versionId } : m) })), activeConversationId: target.conversationId }));
+        setOpenAnnotationId(target.id);
+        const document = current.current?.conversations.find(c => c.id === target.conversationId)?.documents?.find(d => d.pages.some(p => p.messageId === annotation.messageId));
+        setOpenDocumentId(document?.id || null); setReaderFocused(Boolean(document));
+      }
+      await flush(); setTrashOpen(false); setSidebarOpen(false); notify('记录已恢复。');
+    } finally { fileOperation.current = false; setFileBusy(false); }
+  }
   const recoveryDialog = recoveryOpen && <RecoveryDialog recovery={Boolean(loadError)} onClose={() => setRecoveryOpen(false)} onRestore={restoreBackup} onCreate={checkpoint} onExport={workspace ? () => downloadBackup() : undefined} />;
   if (!workspace || !active) return <div className="loading-screen"><PenLine size={30} /><h1>learn something</h1><p>{loadError || '正在打开你的阅读空间…'}</p>{loadError && <div className="recovery-toolbar"><button onClick={() => setRecoveryOpen(true)} className="primary-button">从备份恢复</button><button onClick={() => location.reload()} className="secondary-button">重新打开</button></div>}{recoveryDialog}</div>;
   return <div className={'app-shell' + (openDocument && readerFocused ? ' reader-focused' : '')}>
@@ -314,10 +343,10 @@ export default function App() {
       <nav className="conversation-list" aria-label="对话列表">
         {workspace.conversations.filter(c => c.deletedAt === undefined).sort((a, b) => b.updatedAt - a.updatedAt).map(c => <div key={c.id} className={'conversation-row ' + (c.id === active.id ? 'active' : '')}><button className={'conversation-item ' + (c.id === active.id ? 'active' : '')} disabled={fileBusy} onClick={() => selectConversation(c.id)} aria-current={c.id === active.id ? 'page' : undefined}>
           <MessageSquare size={16} /><span>{c.title}</span>{c.annotations.some(a => a.deletedAt === undefined) && <small>{c.annotations.filter(a => a.deletedAt === undefined).length}</small>}
-        </button><button className="conversation-delete icon-button" aria-label={`删除对话：${c.title}`} title="删除对话，可恢复" disabled={fileBusy || mainBusyId === c.id || c.annotations.some(a => a.status === 'generating')} onClick={() => removeConversation(c.id)}><Trash2 size={14} /></button></div>)}
-        {deletedConversations.length > 0 && <details className="deleted-conversations"><summary>已删除的对话（{deletedConversations.length}）</summary>{deletedConversations.map(c => <div key={c.id}><span title={c.title}>{c.title}</span><button disabled={fileBusy} aria-label={`恢复对话：${c.title}`} onClick={() => recoverConversation(c.id)}>恢复</button></div>)}</details>}
+        </button><button className="conversation-delete icon-button" aria-label={`删除对话：${c.title}`} title="删除对话，可恢复" disabled={fileBusy || mainBusyId === c.id || c.annotations.some(isAnnotationGenerating)} onClick={() => removeConversation(c.id)}><Trash2 size={14} /></button></div>)}
       </nav>
       <div className="sidebar-bottom">
+        <button className="sidebar-settings" disabled={fileBusy} onClick={() => setTrashOpen(true)}><Trash2 size={16} /><span>回收站（{deletedConversations.length + workspace.conversations.filter(c => c.deletedAt === undefined).reduce((sum, c) => sum + c.annotations.filter(a => a.deletedAt !== undefined).length, 0)}）</span></button>
         {latestDeleted && <button className="sidebar-settings undo-deletion" onClick={undoDelete} disabled={mainBusyId !== null} title="恢复最近删除的批注与高亮，刷新后仍可使用"><RotateCcw size={16} /><span>撤销删除</span></button>}
         <div className="backup-actions"><button disabled={fileBusy} onClick={() => fileInput.current?.click()}><FileUp size={15} />导入</button><button onClick={() => setRecoveryOpen(true)}><RotateCcw size={15} />备份与恢复</button></div>
         <button className="sidebar-settings" onClick={() => setSettingsOpen(true)}><Settings2 size={17} /><span>模型与设置</span></button>
@@ -332,9 +361,9 @@ export default function App() {
       </header>
       <div className={'workspace-content ' + (openDocument ? 'with-reader' : '')}>
       <div className="conversation-pane">
-      <ChatView key={active.id} conversation={active} isRunning={mainBusyId === active.id} globallyBusy={mainBusyId !== null || modelSwitchBusy || fileBusy} modelSwitchDisabled={modelSwitchBusy || mainBusyId !== null || active.annotations.some(a => a.status === 'generating')} onChooseModel={id => { void chooseModel(id).catch(e => notify(errorText(e))); }} onManageModels={() => setSettingsOpen(true)} settings={settings} openAnnotationId={openAnnotationId} onOpen={setOpenAnnotationId} onSend={q => sendMain(active.id, q)} onStop={() => mainRequest.current?.controller.abort()} onRegenerate={id => regenerate(active.id, id)} onVersion={(messageId, versionId) => setVersion(active.id, messageId, versionId)} onCreate={a => addAnnotation(active.id, a)} onUpdate={(id, patch) => editAnnotation(active.id, id, patch)} onAsk={id => askAnnotation(active.id, id)} onStopAnnotation={id => annotationRequests.current.get(id)?.abort()} onDelete={id => removeAnnotation(active.id, id)} onNotify={notify} onUpload={() => uploadInput.current?.click()} onOpenDocument={id => { setOpenAnnotationId(null); setOpenDocumentId(id); setReaderFocused(true); setSidebarOpen(false); }} fileBusy={fileBusy} />
+      <ChatView key={active.id} conversation={active} isRunning={mainBusyId === active.id} globallyBusy={mainBusyId !== null || modelSwitchBusy || fileBusy} modelSwitchDisabled={modelSwitchBusy || mainBusyId !== null || active.annotations.some(isAnnotationGenerating)} onChooseModel={id => { void chooseModel(id).catch(e => notify(errorText(e))); }} onManageModels={() => setSettingsOpen(true)} settings={settings} openAnnotationId={openAnnotationId} onOpen={setOpenAnnotationId} onSend={q => sendMain(active.id, q)} onStop={() => mainRequest.current?.controller.abort()} onRegenerate={id => regenerate(active.id, id)} onVersion={(messageId, versionId) => setVersion(active.id, messageId, versionId)} onCreate={a => addAnnotation(active.id, a)} onUpdate={(id, patch) => editAnnotation(active.id, id, patch)} onAsk={id => askAnnotation(active.id, id)} onReask={(id, action) => reaskAnnotation(active.id, id, action)} onStopAnnotation={id => annotationRequests.current.get(id)?.abort()} onDelete={id => removeAnnotation(active.id, id)} onNotify={notify} onUpload={() => uploadInput.current?.click()} onOpenDocument={id => { setOpenAnnotationId(null); setOpenDocumentId(id); setReaderFocused(true); setSidebarOpen(false); }} fileBusy={fileBusy} />
       </div>
-      {openDocument && <div className="document-pane"><DocumentReader key={openDocument.id} focused={readerFocused} onToggleFocus={() => { if (readerFocused && window.innerWidth <= 1050) { setOpenDocumentId(null); setOpenAnnotationId(null); } setReaderFocused(value => !value); }} source={openDocument} conversationId={active.id} annotations={active.annotations.filter(a => a.deletedAt === undefined)} reservedColors={active.annotations.map(a => a.color)} openAnnotationId={openAnnotationId} onOpen={setOpenAnnotationId} onCreate={a => addAnnotation(active.id, a)} onUpdate={(id, patch) => editAnnotation(active.id, id, patch)} onAsk={id => askAnnotation(active.id, id)} onStop={id => annotationRequests.current.get(id)?.abort()} onDelete={id => removeAnnotation(active.id, id)} onNotify={notify} disabled={mainBusyId !== null || fileBusy} onClose={() => { setOpenDocumentId(null); setOpenAnnotationId(null); setReaderFocused(false); }} /></div>}
+      {openDocument && <div className="document-pane"><DocumentReader key={openDocument.id} focused={readerFocused} onToggleFocus={() => { if (readerFocused && window.innerWidth <= 1050) { setOpenDocumentId(null); setOpenAnnotationId(null); } setReaderFocused(value => !value); }} source={openDocument} conversationId={active.id} annotations={active.annotations.filter(a => a.deletedAt === undefined)} reservedColors={active.annotations.map(a => a.color)} openAnnotationId={openAnnotationId} onOpen={setOpenAnnotationId} onCreate={a => addAnnotation(active.id, a)} onUpdate={(id, patch) => editAnnotation(active.id, id, patch)} onAsk={id => askAnnotation(active.id, id)} onReask={(id, action) => reaskAnnotation(active.id, id, action)} onStop={id => annotationRequests.current.get(id)?.abort()} onDelete={id => removeAnnotation(active.id, id)} onNotify={notify} disabled={mainBusyId !== null || fileBusy} onClose={() => { setOpenDocumentId(null); setOpenAnnotationId(null); setReaderFocused(false); }} /></div>}
       </div>
     </main>
     <input ref={fileInput} className="visually-hidden" type="file" accept=".json,application/json" onChange={e => { const file = e.target.files?.[0]; if (file) void importBackup(file); }} aria-label="导入聊天备份" />
@@ -343,6 +372,7 @@ export default function App() {
     {saveStatus.startsWith('保存失败') && <div className="save-failure" role="alert">{saveStatus}<button onClick={() => void downloadBackup()}>导出备份</button></div>}
     {settingsOpen && <SettingsDialog settings={settings} onClose={() => setSettingsOpen(false)} onSaveProfile={storeProfile} onDeleteProfile={removeProfile} onSelectProfile={chooseModel} />}
     {recoveryDialog}
+    {trashOpen && <TrashDialog workspace={workspace} busy={fileBusy || mainBusyId !== null || annotationRequests.current.size > 0} onClose={() => setTrashOpen(false)} onPurge={purgeTrash} onRestore={restoreTrash} />}
     {backupWarning && <div className="save-failure" role="alert">{backupWarning}<button onClick={() => setRecoveryOpen(true)}>备份与恢复</button></div>}
     {closing && <div className="closing-overlay" role="status">正在保存并关闭…</div>}
   </div>;
@@ -353,7 +383,7 @@ type ChatViewProps = {
   openAnnotationId: string | null; onOpen: (id: string | null) => void;
   onSend: (question: string) => Promise<void>; onStop: () => void; onRegenerate: (id: string) => void;
   onVersion: (messageId: string, versionId: string) => void;
-  onCreate: (annotation: Annotation) => void; onUpdate: (id: string, patch: Partial<Annotation>) => void; onAsk: (id: string) => void; onStopAnnotation: (id: string) => void;
+  onCreate: (annotation: Annotation) => void; onUpdate: (id: string, patch: Partial<Annotation>) => void; onAsk: (id: string) => void; onReask: (id: string, action: 'start' | 'cancel' | 'edit') => void; onStopAnnotation: (id: string) => void;
   onDelete: (id: string) => void; onNotify: (message: string) => void;
   modelSwitchDisabled: boolean; onChooseModel: (id: string | null) => void; onManageModels: () => void;
   onUpload: () => void; onOpenDocument: (id: string) => void; fileBusy: boolean;
@@ -392,7 +422,7 @@ function ChatView(props: ChatViewProps) {
               const annotations = conversation.annotations.filter(a => a.deletedAt === undefined && a.messageId === message.id && a.versionId === version.id);
               return <article className="assistant-message" key={message.id} data-message-id={message.id}>
                 <div className="assistant-label"><span className="mini-brand"><PenLine size={14} /></span><strong>learn something</strong><span>{version.modelLabel || (conversation.title.includes('体验示例') ? '本地示例回答' : settings.mode === 'demo' ? '本地演示' : settings.model)}</span>{version.status === 'streaming' && <span className="streaming-label"><span />正在思考与书写</span>}</div>
-                <AnnotatedAnswer key={version.id} conversationId={conversation.id} messageId={message.id} version={version} annotations={annotations} reservedColors={conversation.annotations.filter(a => a.messageId === message.id && a.versionId === version.id).map(a => a.color)} openAnnotationId={props.openAnnotationId} onOpen={props.onOpen} onCreate={props.onCreate} onUpdate={props.onUpdate} onAsk={props.onAsk} onStop={props.onStopAnnotation} onDelete={props.onDelete} onNotify={props.onNotify} disabled={isRunning} />
+                <AnnotatedAnswer key={version.id} conversationId={conversation.id} messageId={message.id} version={version} annotations={annotations} reservedColors={conversation.annotations.filter(a => a.messageId === message.id && a.versionId === version.id).map(a => a.color)} openAnnotationId={props.openAnnotationId} onOpen={props.onOpen} onCreate={props.onCreate} onUpdate={props.onUpdate} onAsk={props.onAsk} onReask={props.onReask} onStop={props.onStopAnnotation} onDelete={props.onDelete} onNotify={props.onNotify} disabled={isRunning} />
                 {version.error && version.status !== 'complete' && <div className="answer-error" role="alert">{version.error}<p>你可以直接继续发送新问题，也可以重新生成。需要更换 API 时，在左下角切换模型即可。</p></div>}
                 <footer className="answer-actions">
                   {index === conversation.messages.length - 1 && <button disabled={globallyBusy} onClick={() => props.onRegenerate(message.id)}><RefreshCw size={14} />{version.status === 'error' || version.status === 'interrupted' ? '重试这次回答' : '重新生成'}</button>}

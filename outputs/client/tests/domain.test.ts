@@ -24,7 +24,7 @@ function fixture(): Conversation {
 
 function asWorkspace(c: Conversation): Workspace { return { schemaVersion: 1, conversations: [c], activeConversationId: c.id }; }
 
-test('删除和撤销保留问答、颜色、锚点与版本，并且不恢复第二次提问资格', () => {
+test('删除和撤销保留问答、颜色、锚点与版本，替换问答仍需显式重新提问', () => {
   const c = fixture();
   const id = c.annotations[0].id;
   const completed = completeAnnotation(prepareAnnotationRequest(c, id).conversation, id, '已回答的原稿');
@@ -101,7 +101,7 @@ test('重新生成保留旧版本，新版本不继承批注，批注问题固�
   assert.equal(buildAnnotationContext(c, c.annotations[0])[1].content, oldVersion.content);
 });
 
-test('只允许一次成功批注问答，修改副本不触发第二次请求', () => {
+test('已成功问答不能直接重发，编辑副本不触发模型请求', () => {
   const c = fixture();
   const prepared = prepareAnnotationRequest(c, c.annotations[0].id);
   assert.equal(prepared.annotation.status, 'generating');

@@ -1,4 +1,5 @@
 import type { Workspace } from './types';
+import { isAnnotationGenerating } from './annotation-state';
 
 export const WORKSPACE_LIMITS = Object.freeze({ conversations: 1000, messages: 10000, versions: 1000, annotations: 10000, context: 10012, text: 2_000_000, backupBytes: 350_000_000 });
 const sizes = new WeakMap<object, number>();
@@ -41,6 +42,7 @@ export function assertWorkspaceCapacity(workspace: Workspace): void {
       }
       for (const annotation of conversation.annotations) if (!checked.has(annotation)) {
         count(annotation.context?.length || 0, WORKSPACE_LIMITS.context, '批注上下文');
+        count(annotation.reask?.context?.length || 0, WORKSPACE_LIMITS.context, '重新提问上下文');
         checked.add(annotation);
       }
       for (const document of conversation.documents || []) if (!checked.has(document)) {
@@ -51,7 +53,7 @@ export function assertWorkspaceCapacity(workspace: Workspace): void {
       checked.add(conversation);
     }
     for (const document of conversation.documents || []) fileBytes += Math.ceil(document.size / 3) * 4 + jsonBytes(document.id) + 64;
-    running += conversation.annotations.filter(a => a.status === 'generating').length;
+    running += conversation.annotations.filter(isAnnotationGenerating).length;
     running += conversation.messages.reduce((sum, message) => sum + message.versions.filter(v => v.status === 'streaming').length, 0);
   }
   // Reserve a little space for interrupted statuses and a useful error message at
