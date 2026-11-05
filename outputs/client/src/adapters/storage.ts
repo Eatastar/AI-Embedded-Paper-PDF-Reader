@@ -1,13 +1,16 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type { Workspace } from '../domain/types';
-import { createWorkspace, validateImport, mergeImportedWorkspace } from '../domain/workspace';
+import { validateImport, mergeImportedWorkspace } from '../domain/workspace';
 import { assertWorkspaceCapacity } from '../domain/capacity';
+import { WorkspaceRecordStore } from './record-store';
+import type { SavedMetadata, SavedDocument } from './record-store';
+import { unpackWorkspace, WorkspaceCodec } from '../domain/workspace-codec';
 
-interface SavedWorkspace { id: string; workspace: Workspace }
-interface SavedDocument { id: string; bytes: Uint8Array }
-const database = new Dexie('margin-chat-workspace') as Dexie & { workspaces: EntityTable<SavedWorkspace, 'id'>; documents: EntityTable<SavedDocument, 'id'> };
+const database = new Dexie('margin-chat-workspace') as Dexie & { workspaces: EntityTable<SavedMetadata, 'id'>; documents: EntityTable<SavedDocument, 'id'> };
 database.version(1).stores({ workspaces: 'id' });
 database.version(2).stores({ workspaces: 'id', documents: 'id' });
+const records = new WorkspaceRecordStore(database);
+const backupCodec = new WorkspaceCodec();
 
 export async function saveDocumentBytes(id: string, bytes: Uint8Array): Promise<void> {
   if (!id || bytes.byteLength > 25 * 1024 * 1024) throw new Error('附件大小不得超过 25 MB。');
@@ -19,34 +22,26 @@ export async function getDocumentBytes(id: string): Promise<Uint8Array | undefin
   return saved ? new Uint8Array(saved.bytes) : undefined;
 }
 
-export async function loadWorkspace(): Promise<Workspace> {
-  const saved = await database.workspaces.get('current');
-  if (saved) return validateImport(saved.workspace);
-  const initial = createWorkspace();
-  await saveWorkspace(initial);
-  return initial;
-}
+export function loadWorkspace(beforeMigration?: (workspace: Workspace) => Promise<void>): Promise<Workspace> { return records.load(beforeMigration); }
 
-export async function saveWorkspace(workspace: Workspace): Promise<void> {
+export async function saveWorkspace(workspace: Workspace, options: { trusted?: boolean } = {}): Promise<void> {
   // Persist only known data fields. Running copies are stored as interrupted because
   // no network request can survive a page reload; the live UI object stays untouched.
-  const clean = validateImport(workspace);
-  await database.workspaces.put({ id: 'current', workspace: clean });
+  await records.write(workspace, options);
 }
+export const getStorageWriteMetrics = () => records.metrics;
 
 /** Metadata removal and removal of its unreferenced binary files succeed together. */
 export async function saveWorkspaceAndPruneFiles(next: Workspace, previous: Workspace): Promise<void> {
-  const clean = validateImport(next);
-  const kept = new Set(clean.conversations.flatMap(c => (c.documents || []).map(d => d.id)));
+  const kept = new Set(next.conversations.flatMap(c => (c.documents || []).map(d => d.id)));
   const removed = previous.conversations.flatMap(c => (c.documents || []).map(d => d.id)).filter(id => !kept.has(id));
-  await database.transaction('rw', database.workspaces, database.documents, async () => {
-    await database.workspaces.put({ id: 'current', workspace: clean });
-    await database.documents.bulkDelete(removed);
-  });
+  await records.write(next, { checkRevision: true, documentDeletes: removed });
 }
 
-export function exportWorkspace(workspace: Workspace): string {
-  return JSON.stringify(validateImport(workspace), null, 2);
+export function exportWorkspace(workspace: Workspace, options: { compact?: boolean } = {}): string {
+  const clean = validateImport(workspace);
+  const packed = options.compact ? backupCodec.pack(clean) : undefined;
+  return JSON.stringify(packed ? { ...packed.header, records: packed.rows } : clean, null, options.compact ? undefined : 2);
 }
 
 function parseBackupData(text: string): unknown {
@@ -55,7 +50,10 @@ function parseBackupData(text: string): unknown {
   try { data = JSON.parse(text); } catch { throw new Error('无法读取备份，请选择有效的 JSON 文件。'); }
   return data;
 }
-export function parseWorkspace(text: string): Workspace { return validateImport(parseBackupData(text)); }
+function unpackBackup(raw: unknown): Workspace {
+  return validateImport(raw && typeof raw === 'object' && (raw as { schemaVersion?: unknown }).schemaVersion === 2 ? unpackWorkspace(raw) : raw);
+}
+export function parseWorkspace(text: string): Workspace { return unpackBackup(parseBackupData(text)); }
 
 function base64(bytes: Uint8Array): string {
   let binary = '';
@@ -64,9 +62,11 @@ function base64(bytes: Uint8Array): string {
 }
 
 /** Binary files are read only for a backup; streaming chat saves never clone them. */
-export async function exportWorkspaceWithFiles(workspace: Workspace): Promise<string> {
+export async function exportWorkspaceWithFiles(workspace: Workspace, options: { compact?: boolean } = {}): Promise<string> {
   const clean = validateImport(workspace);
-  const metadataSize = new TextEncoder().encode(JSON.stringify(clean)).byteLength;
+  const packed = options.compact ? backupCodec.pack(clean) : undefined;
+  const metadata = packed ? { ...packed.header, records: packed.rows } : clean;
+  const metadataSize = packed?.bytes ?? new TextEncoder().encode(JSON.stringify(clean)).byteLength;
   const binarySize = clean.conversations.flatMap(c => c.documents || []).reduce((sum, document) => sum + Math.ceil(document.size / 3) * 4 + new TextEncoder().encode(JSON.stringify(document.id)).byteLength + 64, 0);
   if (metadataSize + binarySize + 64 > 350_000_000) throw new Error('完整备份超过 350 MB。请分别备份较小范围的对话，附件原文件仍保存在本机。');
   const documentFiles = [];
@@ -75,12 +75,12 @@ export async function exportWorkspaceWithFiles(workspace: Workspace): Promise<st
     if (!bytes || bytes.length !== document.size) throw new Error(`无法读取附件“${document.name}”，未生成不完整备份。`);
     documentFiles.push({ documentId: document.id, data: base64(bytes) });
   }
-  return JSON.stringify({ ...clean, ...(documentFiles.length ? { documentFiles } : {}) });
+  return JSON.stringify({ ...metadata, ...(documentFiles.length ? { documentFiles } : {}) });
 }
 
 async function decodeWorkspaceWithFiles(text: string) {
   const raw = parseBackupData(text) as { documentFiles?: unknown };
-  const imported = validateImport(raw);
+  const imported = unpackBackup(raw);
   const documents = imported.conversations.flatMap(c => c.documents || []);
   const files = raw.documentFiles === undefined ? [] : raw.documentFiles;
   if (!Array.isArray(files) || files.length !== documents.length) throw new Error('备份缺少附件原文件，或附件列表不完整。');
@@ -119,13 +119,6 @@ export async function importWorkspaceWithFiles(text: string, current: Workspace)
 export async function restoreWorkspaceWithFiles(text: string): Promise<Workspace> {
   const { imported, decoded } = await decodeWorkspaceWithFiles(text);
   assertWorkspaceCapacity(imported);
-  await database.transaction('rw', database.workspaces, database.documents, async () => {
-    const previous = await database.workspaces.get('current');
-    if (previous) await database.workspaces.put({ ...previous, id: `recovery-archive-${Date.now()}-${crypto.randomUUID()}` });
-    for (const [id, bytes] of decoded) await saveDocumentBytes(id, bytes);
-    await database.workspaces.put({ id: 'current', workspace: imported });
-    const archives = (await database.workspaces.toArray()).filter(row => row.id.startsWith('recovery-archive-')).sort((a, b) => b.id.localeCompare(a.id));
-    await database.workspaces.bulkDelete(archives.slice(3).map(row => row.id));
-  });
+  await records.write(imported, { replace: true, archive: 'recovery', documentWrites: [...decoded].map(([id, bytes]) => ({ id, bytes })) });
   return imported;
 }

@@ -16,5 +16,6 @@ contextBridge.exposeInMainWorld('learnSomething', {
     list: () => ipcRenderer.invoke('learn:backups-list'),
     read: id => ipcRenderer.invoke('learn:backups-read', id),
     write: text => ipcRenderer.invoke('learn:backups-write', text),
+    baseline: text => ipcRenderer.invoke('learn:backups-baseline', text),
   },
 });

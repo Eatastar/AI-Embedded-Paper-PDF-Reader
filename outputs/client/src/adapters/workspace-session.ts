@@ -15,6 +15,7 @@ export class WorkspaceSession {
   private queue: Promise<void> = Promise.resolve();
   private timer?: ReturnType<typeof setTimeout>;
   private committing = false;
+  private flushing?: Promise<void>;
   constructor(private options: SessionOptions) {}
   load(workspace: Workspace) {
     this.value = workspace;
@@ -40,6 +41,7 @@ export class WorkspaceSession {
   async commit(change: (previous: Workspace) => Workspace, write: (next: Workspace, previous: Workspace) => Promise<void>): Promise<Workspace> {
     if (!this.value || this.committing) throw new Error('本机记录尚未就绪，请稍候。');
     this.committing = true;
+    this.flushing = undefined; // A later flush must also wait for this commit.
     if (this.timer) { clearTimeout(this.timer); this.timer = undefined; }
     const operation = this.queue.catch(() => {}).then(async () => {
       const previous = this.value!;
@@ -56,8 +58,9 @@ export class WorkspaceSession {
     catch (error) { this.options.onStatus(this.savedRevision === this.revision ? '已保存在本机' : '保存失败，请先导出备份'); throw error; }
     finally { this.committing = false; }
   }
-  async flush(): Promise<void> {
+  flush(): Promise<void> {
     if (this.timer) { clearTimeout(this.timer); this.timer = undefined; }
+    if (this.flushing) return this.flushing;
     const write = async () => {
       while (this.value && this.savedRevision !== this.revision) {
         const snapshot = this.value;
@@ -69,8 +72,9 @@ export class WorkspaceSession {
       this.options.onStatus('已保存在本机');
     };
     const result = this.queue.catch(() => {}).then(write);
-    this.queue = result;
-    return result;
+    const barrier = result.finally(() => { if (this.flushing === barrier) this.flushing = undefined; });
+    this.flushing = barrier; this.queue = barrier;
+    return barrier;
   }
   dispose() { if (this.timer) clearTimeout(this.timer); }
 }

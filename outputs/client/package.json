@@ -1,7 +1,7 @@
 {
   "name": "learn-something-client",
-  "version": "0.1.8",
-  "buildId": "20261105.2",
+  "version": "0.1.9",
+  "buildId": "20261105.3",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,12 +9,14 @@
     "build": "node scripts/copy-pdfjs-assets.mjs && tsc -b && vite build",
     "start": "node server/index.mjs",
     "test": "node --import tsx --test tests/*.test.ts",
+    "benchmark:storage": "node --import tsx scripts/benchmark-storage.ts",
     "build:desktop": "pnpm run build && node scripts/build-desktop.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "3.0.71",
     "@annotorious/react": "3.9.4",
     "@assistant-ui/react": "0.15.29",
+    "@noble/hashes": "2.4.0",
     "@recogito/react-text-annotator": "4.3.7",
     "@recogito/text-annotator": "4.3.7",
     "@streamdown/math": "1.0.3",
@@ -40,5 +42,5 @@
     "typescript": "7.0.2",
     "vite": "8.3.4"
   },
-  "buildTime": "2026-11-05T10:23:47.871Z"
+  "buildTime": "2026-11-05T11:29:05.706Z"
 }

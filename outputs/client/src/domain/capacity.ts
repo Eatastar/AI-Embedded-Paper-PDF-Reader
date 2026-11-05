@@ -1,10 +1,12 @@
 import type { Workspace } from './types';
 import { isAnnotationGenerating } from './annotation-state';
+import { WorkspaceCodec } from './workspace-codec';
 
 export const WORKSPACE_LIMITS = Object.freeze({ conversations: 1000, messages: 10000, versions: 1000, annotations: 10000, context: 10012, text: 2_000_000, backupBytes: 350_000_000 });
 const sizes = new WeakMap<object, number>();
 const checked = new WeakSet<object>();
 const encoder = new TextEncoder();
+const capacityCodec = new WorkspaceCodec();
 const count = (length: number, maximum: number, label: string) => {
   if (length > maximum) throw new Error(`${label}最多 ${maximum.toLocaleString('zh-CN')} 条，当前操作未执行。请先导出备份。`);
 };
@@ -58,5 +60,6 @@ export function assertWorkspaceCapacity(workspace: Workspace): void {
   }
   // Reserve a little space for interrupted statuses and a useful error message at
   // shutdown. This prevents a valid live stream from becoming an unsavable backup.
-  if (jsonBytes(workspace) + fileBytes + 4096 + running * 1024 > WORKSPACE_LIMITS.backupBytes) throw new Error('完整备份将超过 350 MB，已保留操作前的记录。请先分别导出对话备份。');
+  jsonBytes(workspace); // Still checks every changed string before UI mutation.
+  if (capacityCodec.pack(workspace).bytes + fileBytes + 4096 + running * 1024 > WORKSPACE_LIMITS.backupBytes) throw new Error('完整备份将超过 350 MB，已保留操作前的记录。请先分别导出对话备份。');
 }

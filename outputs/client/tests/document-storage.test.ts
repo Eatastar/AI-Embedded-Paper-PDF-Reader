@@ -34,7 +34,8 @@ test('首次打开会先提交初始记录，再显示为已保存', async () =>
   await auditDatabase.table('workspaces').delete('current');
   const loaded = await loadWorkspace();
   const persisted = await auditDatabase.table('workspaces').get('current');
-  assert.deepEqual(persisted.workspace, loaded);
+  assert.equal(persisted.workspace.schemaVersion, 2);
+  assert.deepEqual(await loadWorkspace(), loaded);
 });
 
 test('读取失败后完整恢复在同一事务写入元数据和附件，并保留原始记录副本', async () => {
@@ -112,6 +113,24 @@ test('完整备份同时保存 PDF 原字节、页面、普通批注，不混入
   assert.equal(exported.conversations[0].annotations[0].note, '我自己的论文笔记。');
   assert.deepEqual(exported.conversations[0].documents[0].pages, document.pages);
   assert.doesNotMatch(JSON.stringify(exported), /never-export-secret/);
+});
+
+test('紧凑完整备份恢复 PDF 原字节和批注，追加导入与旧版兼容导出均保留全文', async () => {
+  const source = fixture(), original = source.workspace.conversations[0], document = original.documents![0];
+  await saveDocumentBytes(document.id, source.bytes);
+  const compact = await exportWorkspaceWithFiles({ ...source.workspace, apiKey: 'never-export-secret' } as Workspace, { compact: true });
+  assert.equal(JSON.parse(compact).schemaVersion, 2); assert.doesNotMatch(compact, /never-export-secret/);
+  const imported = await importWorkspaceWithFiles(compact, workspace());
+  const added = imported.conversations[1];
+  assert.notEqual(added.id, original.id); assert.equal(added.annotations[0].note, original.annotations[0].note);
+  assert.deepEqual(await getDocumentBytes(added.documents![0].id), source.bytes);
+  await auditDatabase.table('documents').delete(document.id);
+  const restored = await restoreWorkspaceWithFiles(compact);
+  assert.deepEqual(restored, validateImport(source.workspace));
+  assert.deepEqual(await loadWorkspace(), restored); assert.deepEqual(await getDocumentBytes(document.id), source.bytes);
+  const compatible = JSON.parse(await exportWorkspaceWithFiles(restored));
+  assert.equal(compatible.schemaVersion, 1); assert.deepEqual(compatible.conversations[0].documents[0].pages, document.pages);
+  assert.deepEqual(Buffer.from(compatible.documentFiles[0].data, 'base64'), Buffer.from(source.bytes));
 });
 
 test('完整备份导入为独立新对话，重映射文档、页面、批注 ID 并恢复原字节', async () => {

@@ -44,6 +44,25 @@ test('写入期间产生新修改，退出屏障要等最后一版也提交成�
   session.dispose();
 });
 
+test('同一轮的重复保存共用屏障，排队期间跳过被替代的流式状态', async () => {
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  const writes: Workspace[] = [];
+  const { session } = harness(async value => { writes.push(value); if (writes.length === 1) await gate; });
+  const first = session.update(value => ({ ...value, activeConversationId: value.activeConversationId }));
+  const barrier = session.flush();
+  await new Promise(resolve => setImmediate(resolve));
+  let latest = first;
+  for (let i = 0; i < 100; i++) {
+    latest = session.update(value => ({ ...value, conversations: value.conversations.map(c => ({ ...c, title: `流式更新 ${i}` })) }));
+    assert.equal(session.flush(), barrier);
+  }
+  release(); await barrier;
+  assert.deepEqual(writes, [first, latest]);
+  assert.equal(session.savedRevision, session.revision);
+  session.dispose();
+});
+
 test('保存失败可被退出屏障观察到，修改仍保留，重试会再次写入', async () => {
   let calls = 0;
   const { session, statuses } = harness(async () => { if (++calls === 1) throw new Error('disk-full'); });

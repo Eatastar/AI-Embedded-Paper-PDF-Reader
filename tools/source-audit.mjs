@@ -17,7 +17,7 @@ const staticFiles = [
 const directories = new Map([
   [app + 'src', new Set(['.ts', '.tsx', '.css'])],
   [app + 'server', new Set(['.mjs'])],
-  [app + 'scripts', new Set(['.mjs', '.py'])],
+  [app + 'scripts', new Set(['.mjs', '.ts', '.py'])],
   [app + 'tests', new Set(['.ts'])],
   [app + 'desktop', new Set(['.cjs', '.cmd', '.ps1', '.md', '.png', '.ico', '.bmp'])],
 ]);

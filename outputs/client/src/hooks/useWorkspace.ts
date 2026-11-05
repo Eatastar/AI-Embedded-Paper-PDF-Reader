@@ -14,7 +14,7 @@ export function useWorkspace() {
   const [backupWarning, setBackupWarning] = useState('');
   const [lastBackup, setLastBackup] = useState<number>();
   const session = useRef<WorkspaceSession | null>(null);
-  if (!session.current) session.current = new WorkspaceSession({ save: saveWorkspace, onChange: value => { current.current = value; setWorkspace(value); }, onStatus: setSaveStatus });
+  if (!session.current) session.current = new WorkspaceSession({ save: value => saveWorkspace(value, { trusted: true }), onChange: value => { current.current = value; setWorkspace(value); }, onStatus: setSaveStatus });
   const backupRevision = useRef(-1);
   const backupQueue = useRef(Promise.resolve());
   const flush = useCallback(() => session.current!.flush(), []);
@@ -24,7 +24,7 @@ export function useWorkspace() {
       await flush();
       const revision = session.current!.revision;
       if (revision === backupRevision.current) return;
-      const entry = await desktop()!.backups.write(await exportWorkspaceWithFiles(current.current!));
+      const entry = await desktop()!.backups.write(await exportWorkspaceWithFiles(current.current!, { compact: true }));
       backupRevision.current = revision;
       setLastBackup(entry.createdAt); setBackupWarning('');
     });
@@ -33,10 +33,12 @@ export function useWorkspace() {
   }, [flush]);
   useEffect(() => {
     let alive = true;
-    loadWorkspace().then(data => {
+    loadWorkspace(async previous => {
+      if (desktop()) await desktop()!.backups.baseline(await exportWorkspaceWithFiles(previous));
+    }).then(data => {
       if (!alive) return;
       session.current!.load(data);
-    }).catch(() => { if (alive) setLoadError('无法打开本地记录。原记录仍保留在本机，可以从备份恢复，或重启后再试。'); });
+    }).catch(error => { if (alive) setLoadError(error instanceof Error && error.message.startsWith('升级前备份') ? error.message : '无法打开本地记录。原记录仍保留在本机，可以从备份恢复，或重启后再试。'); });
     const saveOnHide = () => { void flush().catch(() => {}); };
     window.addEventListener('pagehide', saveOnHide);
     const interval = setInterval(() => { void checkpoint().catch(() => {}); }, 60_000);

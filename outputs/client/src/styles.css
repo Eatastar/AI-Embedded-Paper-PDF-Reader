@@ -328,3 +328,5 @@ button svg { flex-shrink: 0; }
 .trash-confirm-label { padding: 12px 14px; border-radius: 8px; background: #f8edce; overflow-wrap: anywhere; }
 .trash-backup-note { color: var(--ls-muted); }
 .trash-confirm-actions { justify-content: flex-end; margin-top: 24px; }
+.backup-scope { display: flex; align-items: center; gap: 12px; font-size: 12px; margin-top: 20px; }
+.backup-scope select { border: 1px solid var(--ls-border); border-radius: 7px; color: var(--ls-ink); background: var(--ls-panel); font: inherit; padding: 8px 10px; }

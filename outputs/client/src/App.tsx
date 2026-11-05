@@ -250,17 +250,17 @@ export default function App() {
       mutateConversation(conversationId, c => updateAnnotationRequest(c, annotationId, answer, { interrupted: controller.signal.aborted, error: controller.signal.aborted ? '回答已停止，可以用原问题和本次上下文重试。' : errorText(e) }));
     } finally { annotationRequests.current.delete(annotationId); }
   }
-  async function downloadBackup(conversationId?: string) {
+  async function downloadBackup(conversationId?: string, legacy = false, propagate = false) {
     if (!current.current) return;
     try {
       const snapshot = current.current;
       const selected = conversationId ? snapshot.conversations.find(c => c.id === conversationId && c.deletedAt === undefined) : undefined;
       const source = selected ? { ...snapshot, conversations: [selected], activeConversationId: selected.id } : snapshot;
-      const blob = new Blob([await exportWorkspaceWithFiles(source)], { type: 'application/json' });
+      const blob = new Blob([await exportWorkspaceWithFiles(source, { compact: !legacy })], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-      const link = document.createElement('a'); link.href = url; link.download = 'learn-something-备份-' + new Date().toISOString().slice(0, 10) + '.json'; link.click();
+      const link = document.createElement('a'); link.href = url; link.download = 'learn-something-' + (legacy ? '兼容旧版-' : '') + '备份-' + new Date().toISOString().slice(0, 10) + '.json'; link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000); notify('完整备份已导出，包含附件原文件、所有回答版本和批注。');
-    } catch (e) { notify(errorText(e)); }
+    } catch (e) { if (propagate) throw e; notify(errorText(e)); }
   }
   async function importBackup(file: File) {
     if (fileOperation.current || mainRequest.current || annotationRequests.current.size) { notify('请等文件处理和回答结束后再导入。'); return; }
@@ -331,7 +331,7 @@ export default function App() {
       await flush(); setTrashOpen(false); setSidebarOpen(false); notify('记录已恢复。');
     } finally { fileOperation.current = false; setFileBusy(false); }
   }
-  const recoveryDialog = recoveryOpen && <RecoveryDialog recovery={Boolean(loadError)} onClose={() => setRecoveryOpen(false)} onRestore={restoreBackup} onCreate={checkpoint} onExport={workspace ? () => downloadBackup() : undefined} />;
+  const recoveryDialog = recoveryOpen && <RecoveryDialog recovery={Boolean(loadError)} onClose={() => setRecoveryOpen(false)} onRestore={restoreBackup} onCreate={checkpoint} onExport={workspace ? (legacy, currentOnly) => downloadBackup(currentOnly ? current.current?.activeConversationId : undefined, legacy, true) : undefined} />;
   if (!workspace || !active) return <div className="loading-screen"><PenLine size={30} /><h1>learn something</h1><p>{loadError || '正在打开你的阅读空间…'}</p>{loadError && <div className="recovery-toolbar"><button onClick={() => setRecoveryOpen(true)} className="primary-button">从备份恢复</button><button onClick={() => location.reload()} className="secondary-button">重新打开</button></div>}{recoveryDialog}</div>;
   return <div className={'app-shell' + (openDocument && readerFocused ? ' reader-focused' : '')}>
     {sidebarOpen && <button className="mobile-overlay" aria-label="关闭对话列表" onClick={() => setSidebarOpen(false)} />}
