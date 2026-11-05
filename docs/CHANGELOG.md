@@ -1,4 +1,27 @@
-# 版本记录
+# 版本记录 / Changelog
+
+## 0.1.12 · 20261106.1 · 2026-11-06
+
+更名为 **AI-Embedded Paper PDF Reader**（AI 嵌入式论文 PDF 阅读器）。应用、介绍、使用说明及本条发布记录支持中英文；首页、阅读设置和模型设置可切换简体中文 / English，并在本机记住。切换不改写论文、聊天、笔记、已保存连接名称或回答偏好。
+
+Renamed to **AI-Embedded Paper PDF Reader**. Introductions, user guides and this release entry are bilingual. Choose Chinese / English on the home screen or in reading/model settings; the app remembers it locally without rewriting papers, conversations, notes, saved connection names or answer preferences.
+
+批注增加八种预设色、自定义颜色及 #RRGGBB / #RRGGBBAA 输入。颜色随原批注保存并进入备份；改色不改变来源、问答和冻结上下文，生成中也可换色。
+
+Annotations now offer eight preset colors, custom colors and #RRGGBB / #RRGGBBAA input. Colors are saved and backed up with each annotation. Recoloring preserves the source, Q&A and frozen context, including during generation.
+
+明确欢迎下载、fork 和用 AI agent / vibe coding 改造，发布衍生版请链接上游。原创应用代码全部由 GPT 通过 Codex 实现，人类发起者负责想法、需求和功能取舍。MIT 与第三方许可保持原有条款。
+
+Everyone is welcome to download, fork and adapt this project with AI agents / vibe coding. Please link upstream when publishing a derivative. GPT through Codex implemented all original application code; the human initiator supplied ideas, requirements and feature trade-offs. MIT and third-party license terms are unchanged.
+
+兼容性：沿用原应用标识、数据目录、数据库和备份格式；已公开的 v0.1.11 附件保持原样。新增功能只属于 0.1.12。
+
+Compatibility: app identity, data directory, database and backup formats are preserved. Published v0.1.11 assets remain unchanged; these features belong to 0.1.12.
+
+
+验证：223 项自动检查、554 项交付包检查通过。隔离界面验证中英文切换与刷新记忆、PDF 原文自定义高亮、非法颜色拒绝、中文笔记在英文界面保持原样，以及重开后颜色恢复。实际导出备份与合成 PDF 原字节一致。打包目录和交付目录均实际启动、保存、建立完整备份并正常退出；未读取个人记录或调用真实 API。
+
+Validation: 223 automated tests and 554 package checks passed. Isolated UI checks covered language switching/reload persistence, custom PDF highlights, invalid-color rejection, verbatim Chinese notes in the English UI and color persistence after reopening. An exported backup retained the exact synthetic PDF bytes. Both packaged and delivered executables passed real startup, save, full backup and normal exit checks. No personal records or real API calls were used.
 
 ## v0.1.11 首个公开正式版
 

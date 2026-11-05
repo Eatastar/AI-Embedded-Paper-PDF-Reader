@@ -1,12 +1,18 @@
-# learn something 项目总纲
+# AI-Embedded Paper PDF Reader 项目总纲 / Project outline
 
-当前版本：客户端 0.1.11，构建 20261105.10，2026年11月5日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
+当前版本：客户端 0.1.12，构建 20261106.1，2026年11月6日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
 
 首个公开正式版沿用 v0.1.11 和现有构建，使用 MIT 许可证。公开范围包括已核对的源码及通用 Windows 发行包；历史检查范围见 [公开发布说明](OPEN_SOURCE_RELEASE.md)，本地数据和请求边界见 [隐私说明](PRIVACY.md)。
 
-## 产品目标
+Current source: **0.1.12 / 20261106.1**. A local paper reader with optional AI questions and personal notes. Public introductions and release notes are bilingual. Users can select Chinese or English in the app; interface language never rewrites their documents, messages, notes or answer preferences.
+
+Original application code was implemented entirely by GPT through Codex; the human initiator proposed ideas, defined requirements and selected features/trade-offs. Everyone may download and adapt it with AI agents or vibe coding. Please link to the upstream repository when publishing a derivative; MIT and third-party notices remain applicable. See [Attribution](ATTRIBUTION.md).
+
+## 产品目标 / Product goal
 
 让问题留在原文旁。在 AI 回答和论文文字中直接划选、提问和记录，减少主对话与原文之间的反复滚动。
+
+Keep questions beside their source. Select, ask and take notes directly in AI answers and paper text, reducing scrolling between the conversation and the original passage.
 
 ## 已确定规则
 
@@ -23,10 +29,17 @@
 11. 已保存的模型使用原生下拉列表；选择只加载配置，点击“使用”或“保存并使用”才切换。新增“其他”模板与常用服务快捷填写，地址、端口和模型名可修改；未开启鉴权的本机接口可留空密钥。
 12. 接口格式表示通信的数据格式，与模型品牌分开。支持通用聊天兼容格式、Responses 和 Anthropic Messages；常用服务自动填写，显示名称调整不改变旧配置。Gemini 当前使用官方兼容入口。
 
-## 模块职责
+13. 批注可自选预设色或自定义颜色，颜色和原批注一起保存、备份与恢复。改色不改变原文锚点、来源版本、当前问答或生成中的重新提问。
+14. 首页、阅读设置和模型设置提供简体中文 / English。默认中文，选择单独保存在本机；界面翻译不写入聊天或备份，不更改回答偏好。桌面编辑菜单和退出提示跟随所选语言。
+
+English: Each highlight may use a preset or custom color. Color changes preserve the source anchor/version, current Q&A and in-flight replacement request, and survive save/backup/restore. Chinese is the default UI; the Chinese/English selector remembers a separate local preference, without changing paper or conversation content, model preferences or backup formats. Native editing menus and exit prompts follow the chosen language. Existing profile and app identities stay stable across the rename.
+
+## 模块职责 / Modules
 
 | 模块 | 实现位置 | 职责 |
 | --- | --- | --- |
+| 界面语言 / Interface language | `src/i18n/`、`src/components/LanguageSelector.tsx` | 独立本机偏好、字典、动态提示与菜单翻译 / Local preference, catalog and UI/native-menu translation |
+| 批注颜色 / Highlight colors | `src/domain/highlight-colors.ts`、`src/components/HighlightColorPicker.tsx` | 预设与自定义颜色、输入校验及原批注完整性 / Presets, custom colors, validation and annotation integrity |
 | 对话与回答版本 | `src/domain/workspace.ts`、`src/App.tsx` | 对话、版本切换、失败续聊与上下文 |
 | 文字选区与高亮 | `src/components/AnnotatedAnswer.tsx` | Recogito 高亮、引用锚点与右键操作 |
 | PDF 鼠标定位 | `src/domain/pdf-selection.ts`、`src/adapters/pdf-selection.ts` | 文字块及字符边界、反向拖选与边缘滚动 |

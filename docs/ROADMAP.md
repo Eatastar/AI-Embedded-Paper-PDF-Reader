@@ -1,6 +1,6 @@
-# 改进清单
+# 改进清单 / Roadmap
 
-审查基准为客户端 0.1.6；截至 0.1.11 已完成项用勾选标记，其余仍为待办。优先处理长期保存、恢复和操作可控性，再补齐论文阅读流程。
+审查基准为客户端 0.1.6；截至 0.1.12 已完成项用勾选标记，其余仍为待办。优先处理长期保存、恢复和操作可控性，再补齐论文阅读流程。
 
 ## 优先处理
 
@@ -48,3 +48,11 @@
 - 0.1.9 的相同规模合成测试：旧格式 11,011,174 字节，紧凑文字记录 2,014,113 字节，减少 81.71%；30 次流式更新每次最多提交 3 条记录、2,432 字节。这是序列化元数据的对比，不代表实际磁盘占用或真实阅读器速度。可在客户端目录运行 `pnpm benchmark:storage` 复测。
 - 0.1.6 审查时创建逻辑可以产生第 1001 条对话；0.1.7 已在改变界面或写入附件之前拒绝超限操作。
 - 退出保存、复杂页面性能等项目属于需要加固或继续测量的设计风险，未据此宣称发生了真实个人数据损失。
+
+## 0.1.12 已落实 / Completed in 0.1.12
+
+- [x] 批注高亮颜色可选择预设或自定义，并随批注保存。 / Preset and custom highlight colors saved with annotations.
+- [x] 应用内中文 / English 切换并记忆。 / Remembered in-app Chinese/English selection.
+- [x] 新名称、双语介绍、GPT 实现署名与衍生项目说明。 / New name, bilingual introductions, GPT implementation credit and derivative guidance.
+
+Next priorities remain request controls, clearer source references, extraction quality, thumbnails/bookmarks and optional OCR/image workflows. These are plans rather than released capabilities. Existing completed items above record earlier storage, recovery and reading improvements.

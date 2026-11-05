@@ -1,256 +1,83 @@
-# learn something · 客户端（0.1.11）
+# AI-Embedded Paper PDF Reader
 
-读到 AI 回答或论文中不明白的地方，选中文字，就地询问 AI，也可以只记录自己的批注。关闭批注后原文保留高亮，再次点击即可打开。
+**AI 嵌入式论文 PDF 阅读器** · 0.1.12 · 20261106.1
 
-首个公开正式版使用 v0.1.11，构建 20261105.10。项目自身代码采用 [MIT 许可证](../../LICENSE)，数据发送与系统代理边界见[隐私说明](../../docs/PRIVACY.md)，第三方组件许可另行保留。
+本地 PDF 阅读、原文批注和按需 AI 问答。项目介绍、功能、实现分工和复用说明见[项目首页](../../README.md)，历史变化见[版本记录](../../docs/CHANGELOG.md)。
 
-## 0.1.11 构建 20261105.10：下拉箭头与格式说明
+Local PDF reading, annotations and optional AI questions. See the [project README](../../README.md) for features, implementation credits and adaptation, and the [changelog](../../docs/CHANGELOG.md) for history.
 
-模型设置中的已保存连接、常用服务和接口格式共用下拉外观。箭头位于右侧 36px 独立区域并居中，文字预留 48px，已保存连接与操作按钮之间保留 12px；仍使用原生选择框，点击箭头、键盘方向键和确认操作继续有效。
+## 桌面版 / Desktop
 
-接口格式改为“通用兼容格式（Chat Completions）”“Responses 格式”和“Messages 格式（Claude / Anthropic）”，说明数据格式和模型品牌的区别。常用服务仍自动填写对应格式，原协议标识、已保存连接和密钥不变；Gemini 使用官方兼容入口，未增加 Gemini 原生协议。
+完整解压 Windows ZIP，运行 `AI-Embedded-Paper-PDF-Reader.exe`，保留同目录所有文件。无需另外安装 Node.js。更新前正常退出旧版，避免同时打开新旧版本。
 
-## 0.1.11 构建 20261105.9：其他 API 与连接下拉选择
+Fully extract the Windows ZIP and run `AI-Embedded-Paper-PDF-Reader.exe`, keeping all accompanying files. No separate Node.js installation is needed. Exit the old version normally before updating; do not run both versions together.
 
-“我的模型”增加“其他”模板，可选择自定义 API、Ollama、LM Studio、Kimi、千问、Gemini 或 Grok，预填兼容接口格式与基础地址；地址、端口、模型名均可修改。模型名按本机安装或服务商账户权限填写，不固定为某个模型版本。Kimi 和百炼的地址需与密钥站点/地域对应；Gemini 使用 Google AI Studio 的聊天兼容入口，本版不新增其原生格式。未启用鉴权的本机接口可留空密钥。
+首页打开本地 PDF，或继续最近阅读。相同内容只显示一次，同名但不同内容分别保留。阅读工具栏左侧打开文件和文档导航，右侧是阅读设置、聊天和关闭。阅读设置支持连续/单页、纸张与文字配色、原色对照及语言选择。
 
-已保存连接改为一行原生下拉框，展开才显示完整列表，保留使用中标记、当前连接密钥状态及使用/编辑/删除按钮。选择只加载配置，点击“使用”或“保存并使用”才切换；新建、取消和模板切换均不改动已保存的连接，也不调用模型。原有加密配置、聊天和批注继续沿用。
+Open a local PDF or continue a recent document. Identical content appears once; different content with the same filename remains separate. The toolbar provides file opening and navigation on the left, with reading settings, chat and close on the right. Reading settings offer continuous/single pages, paper/text colors, original colors and language.
 
-215 项自动检查、551 项交付核对和打包/原目录两次实际 EXE 启动、保存、备份及正常退出通过。界面实测下拉选择、六种服务预填、旧连接编辑密钥保留、删除确认取消及无密钥本地模拟回答，零界面错误；未读取个人凭证或调用真实服务商。服务商地址依据及兼容入口说明见仓库 [版本记录](../../docs/CHANGELOG.md)。
+## 批注与颜色 / Annotations and colors
 
-## 0.1.11 构建 20261105.8：阅读优先与本地文件去重
+划选原文，选择询问 AI 或只写批注。点击高亮打开批注，× 或框外点击收起，拖动标题栏可移动。每条批注的“高亮颜色”提供八种预设、系统颜色选择器和 `#RRGGBB` / `#RRGGBBAA` 输入。颜色随批注保存和备份。
 
-程序默认进入本地阅读器。首次使用可从“打开本地 PDF”直接选择文件；已有续读记录时恢复上次文档，关闭文档回到阅读首页。PDF 顶栏左侧可打开其他本地文件，右侧原位置按需打开聊天；窄窗口聊天覆盖阅读器，收起后保留原文档和页码。
+Select text to ask AI or write a note. Click a highlight to open it; × or an outside click closes the panel. Drag its title bar to move it. Highlight color offers eight presets, a system color picker and `#RRGGBB` / `#RRGGBBAA` input. Colors are saved and backed up with annotations.
 
-本地阅读记录按原文件字节的 SHA-256 分组，同内容改名仍复用，同名不同内容保持独立；只对相同大小的候选读取原字节，结果仅缓存在本机内存。再次从阅读器打开同一文件不新增记录。对话里的“本地文件”默认折叠，重复文件只列一次。已有重复条目只合并显示，同一对话的批注按页映射到当前原文；原始记录、来源标识、冻结上下文和备份不改写，其他对话的阅读记录仍可从首页展开。
+每处高亮保留一组当前问答。可编辑或重新提问，新回答成功后才替换旧问答；失败或停止保留旧结果。批注内没有嵌套批注。重新生成主回答创建独立版本，旧批注留在原回答上。
 
-214 项自动检查通过。隔离界面验证真实本地文件选择器、首次阅读首页、续读、重复打开与改名复用、同名不同内容区分、对话文件折叠及窄窗口聊天后仍保留第 20 页。实际旧构建创建 6 份相同 PDF 和两条批注，升级后只显示一份且两条均可打开，旧问答重新提问成功；升级前后导出的原文件字节、批注 ID、来源版本与锚点逐项一致。界面零错误，未读取个人资料或调用真实 API。
+Each highlight has one current Q&A. Edit it or ask again; replacement happens only after a successful new answer. Failure or stopping keeps the old result. Annotations have no nested annotations. Regenerating the main answer creates a separate version, with old annotations staying on the original.
 
-## 0.1.11 构建 20261105.7：滚动与紧凑工具栏
+## 界面语言 / Interface language
 
-PDF 默认连续滚动，旧版单页偏好首次升级也采用连续阅读；随后在“阅读设置”中手动选择单页会保存该选择。专注阅读仅保留一条 48px 工具栏，合并重复标题、移除常驻提示；显示方式、翻页方式、配色、原色对照、模型与备份移到按需设置浮层，打开设置不挤占正文。旧偏好保留，使用 v2 阅读位置键记录新选择，聊天格式、原文件与模型配置不改动。
+在首页、阅读设置或模型设置中选择“简体中文 / English”，选择会在本机记住。切换只影响菜单、按钮和提示，不改写论文、聊天、笔记、已保存连接名称或回答偏好。AI 回答语言仍由你的问题和模型偏好决定。
 
-208 项自动检查通过。隔离界面从实际旧版升级，同一合成 PDF 复现旧版滚到第 1 页底部停止；新版实际滚轮跨到第 2、4 页，并可反向滚动。1280×720 测试中正文视口顶部由 223.5px 降至 48px，400px 窄窗口仍为单行且无横向溢出。单页选择重开保留、连续模式重开、设置浮层/ESC/模型入口、聊天切换、原文搜索及模拟缩放均验证，界面零错误。未使用个人记录或真实 API，物理触控板手感仍待用户体验。
+Choose 简体中文 / English on the home screen or in reading/model settings. The app remembers your choice locally. Switching changes menus, buttons and hints; it does not rewrite papers, conversations, notes, saved connection names or answer preferences. AI answer language still depends on your question and model preferences.
 
-## 0.1.11 第三轮：阅读效率
+## 模型与联网 / Models and networking
 
-“文档导航”默认收起，按需查看目录、搜索或批注。PDF 内嵌目录支持章节跳转；没有目录时给出说明。全文搜索在本机完成，忽略大小写、空白及断词连字符，显示页码和片段，点击标记原文，可用上/下一个或 Enter、Shift + Enter 切换。统计全部匹配，列表最多显示前 200 处。
+在“模型与设置”保存自己的 API 地址、模型名和密钥。提供 GPT、Claude、DeepSeek、中转站及“其他”模板，其他服务含 Kimi、千问、Gemini 兼容入口、Grok、Ollama、LM Studio 和自定义地址。接口格式表示协议：Chat Completions、Responses 或 Anthropic Messages。
 
-“连续”模式可跨页滚动，页码跟随阅读位置；仍可切回分页。只绘制视野附近页面，任务串行执行，滚出视野后取消无用绘制；保留打开的批注页。横竖混排按真实尺寸占位，护眼底色、双指缩放和高亮继续使用，关闭重开会恢复阅读模式、页码和页内位置。
+Save your API address, model name and key in Models & settings. Templates include GPT, Claude, DeepSeek, relays and Other, with Kimi, Qwen, Gemini's compatible endpoint, Grok, Ollama, LM Studio and custom addresses. API formats are protocols: Chat Completions, Responses or Anthropic Messages.
 
-批注总览可按页码、普通笔记/询问及内容筛选，点击直接定位保存的原句并打开批注。原文定位沿用精确引用规则，歧义不猜测。总览包含草稿和重新提问中的当前批注，删除项不显示；普通笔记不调用 API。
+保存或切换连接不发送问题。远程服务用 HTTPS，本机未启用鉴权时可留空密钥。桌面版沿用系统代理；API 地址仍填服务商地址。发送问题会发送完整有效主对话和该对话全部附件提取文字，不静默截断。详见[隐私说明](../../docs/PRIVACY.md)。
 
-目录取决于 PDF 是否内嵌；搜索依据可提取文字，扫描件暂不含 OCR。批注仍在单页内划选，缩略图和书签留待后续。阅读导航不改变聊天保存格式或发送上下文，不增加 API 调用。当前仅保留可用的 0.1.11 程序和完整 ZIP，源码历史和个人数据另行保留。
+Saving or switching sends no question. Use HTTPS for remote services; leave the key empty for local services without authentication. The desktop app follows the system proxy; use the provider's address in the API field. Asking sends the full valid main conversation and extracted text from all its attachments without silent truncation. See [Privacy](../../docs/PRIVACY.md).
 
-206 项自动检查、551 项交付包核对及打包/交付目录两次隔离实际 EXE 启动、保存、完整备份和正常退出通过。合成 30 页 PDF 实测目录跳转、混合页尺寸、1050 处全文匹配/前 200 处列表、键盘切换、原排版与文本标记、批注筛选、离屏返回原句、位置恢复与窄窗口浮层；界面零错误。暖黄 1165 帧、深色 1906 帧测试记录均未观察到白底角落采样；这是本次合成文档测试，不代表所有 PDF。模拟手势已测试，物理触控板手感待用户体验，未调用真实模型或读取个人数据。
+## 数据与备份 / Data and backups
 
-## 0.1.10 PDF 白闪与手势缩放
+更名不迁移原数据。桌面版沿用 `%APPDATA%\MarginChat`、原数据库名称和应用标识。界面语言、阅读颜色和位置是单独的本机偏好，不进入聊天备份。普通删除进入回收站，可恢复或确认永久删除；以前的自动备份和导出文件可能仍包含旧内容。
 
-PDF 翻页和缩放改为后台绘制、完成换色后再显示，等待时沿用纸张底色，缩放先保留已有页面。阅读区支持触控板双指捏合与 Ctrl + 滚轮，双指滑动继续滚动；以手势位置补偿阅读点，范围仍为 50%–250%。手势短暂停止后更新清晰画面，高亮和文字选取随之对齐。
+Renaming does not move existing data. The desktop app keeps `%APPDATA%\MarginChat`, its database name and app identity. Interface language, reading colors and position are separate local preferences, outside conversation backups. Ordinary deletion moves records to trash for restoration or confirmed permanent deletion. Earlier backups and exports may still contain old content.
 
-当前为 0.1.10 构建 20261105.5，缩放灵敏度在初版基础上提高 50%，按钮步长和普通滚动沿用。按用户要求只保留当前程序和完整 ZIP，旧程序包及临时构建副本已清理，Git 源码历史、聊天、加密模型配置和数据备份保留。195 项自动检查通过，实际触控板手感由用户继续体验。
+“备份与恢复”支持完整/当前对话导出、兼容旧版导出、自动备份和恢复为新对话。备份含批注、回答版本和附件原文件，不含模型配置或密钥。正常关闭会等待保存；保存失败可重试或取消退出。启动无反应时可运行同目录“启动诊断.cmd”，不要向别人发送整个数据目录或模型配置。
 
-## 0.1.9 存储与性能
+Backup & restore supports full/current-conversation export, legacy export, automatic backups and restoration as new conversations. Backups include annotations, answer versions and original attachments, but no model settings or keys. Normal exit waits for saving; retry or cancel exit if saving fails. If startup fails, run the bundled 启动诊断.cmd. Do not share your whole data directory or model configuration.
 
-多条询问批注共用不可变的完整上下文，生成时只保存变化记录并合并过期保存任务；重试、覆盖问答和完整资料发送规则保持一致。合成的百万字符资料配 10 条批注，文字记录约从 11 MB 减至 2 MB。可运行 `pnpm benchmark:storage` 复测序列化体积与隔离内存数据库中的写入量。
+## 限制 / Limits
 
-桌面升级旧记录前先生成含附件原字节的兼容备份，成功后才原子迁移，最近 2 份升级前文件独立于普通 5 份自动备份保护。浏览器版仅保存数据库内的原格式副本。默认导出是紧凑格式 2，仍支持读取旧格式；“备份与恢复”可选全部/当前对话和“兼容旧版导出”。
+单文件最多 25 MiB、PDF 300 页、提取文本 100 万字符，每对话最多 10 个附件。扫描页可看和换色，目前无 OCR 或图像理解。目录依赖内嵌结构，搜索使用本机提取文本。
 
-0.1.9 单独交付并保留 0.1.8。若需回退，先在新版导出兼容备份，再关闭新版，用旧版恢复该文件；升级前备份只能恢复到升级前的状态。旧版不能直接读取新版紧凑记录。数据库名称和版本号、数据目录及模型配置保持原有身份。
+Each file is limited to 25 MiB, 300 PDF pages and 1 million extracted characters; each conversation supports up to 10 attachments. Scanned pages support viewing and recoloring, without OCR or image understanding. Contents depend on embedded outlines; search uses locally extracted text.
 
-## 0.1.8 重新提问与回收站
+## 开发 / Development
 
-一处高亮保留一组当前问答。回答后点击“重新提问”，可修改问题并“发送并替换”；新回答成功后覆盖旧问答，失败或停止时旧问答仍保留，可重试本次问题、修改问题，或返回原问答。重试使用本次冻结上下文，主动发起新问题采用当前完整主对话和附件，不附加旧批注问答。高亮位置、颜色与所属回答版本保持原样。
+需要 Node.js 22.12+ 和 pnpm，在本目录运行：
 
-侧栏“回收站”可恢复对话和批注，也可单条永久删除或清空。永久删除须确认，会从当前库中实际移除条目；删除对话同时清理其附件原字节。记录与文件在同一事务提交，排队保存不会把它们写回来。历史自动备份及导出备份不随当前记录删除而改写。
+Requires Node.js 22.12+ and pnpm. Run in this directory:
 
-0.1.8 交付到独立文件夹，保留 0.1.7，不迁移个人聊天或模型凭证。
+```sh
+pnpm install --frozen-lockfile
+pnpm test
+pnpm build
+pnpm dev
+pnpm build:desktop
+```
 
-## 0.1.7 稳定性更新
+模块职责见 [PROJECT](../../docs/PROJECT.md)，后续计划见 [ROADMAP](../../docs/ROADMAP.md)。公开提交前在仓库根运行 `node tools/source-audit.mjs`。不要提交运行数据、依赖、密钥或论文。
 
-批注使用独立的“停止回答”按钮；× 继续收起窗口。停止后可用原问题和首次完整上下文重试，成功后只可编辑。创建与导入先检查保存容量，超限不会替换当前合法记录。
+See [PROJECT](../../docs/PROJECT.md) for modules and [ROADMAP](../../docs/ROADMAP.md) for plans. Run `node tools/source-audit.mjs` from the repository root before publishing. Do not commit runtime data, dependencies, keys or papers.
 
-桌面在正常退出前等待批注编辑、文件处理、记录提交与完整备份。保存或备份失败时可重试或取消退出；强制结束进程仍只能恢复已完成的保存或检查点。自动备份在内容保存后建立、持续输出时每分钟建立一次，使用原子提交和 SHA-256 校验，最近 5 份保存在本机数据目录的 `Backups` 子目录。
+## 实现与复用 / Credits and reuse
 
-侧栏“备份与恢复”可立即备份、导出记录和恢复。正常恢复追加为新对话；读取失败时，错误页提供恢复入口，恢复元数据与原文件使用同一事务，并保留最近 3 份原记录副本。备份不包含模型配置和密钥，不进入 Git。浏览器版支持手动导入导出。
+原创应用代码全部由 GPT 通过 Codex 实现，人类发起者提出想法、确定需求并选择功能。欢迎任何人下载并用 AI agent / vibe coding 修改；发布衍生版时，请链接[上游](https://github.com/Eatastar/Learn-Something)。项目自身代码采用 MIT，第三方署名和许可继续保留。见[贡献说明](../../docs/ATTRIBUTION.md)。
 
-0.1.7 交付时输出到独立的 0.1.7 文件夹，保留 0.1.6 基准，继续沿用原数据目录、端口与应用标识。
-
-## 名称与暖黄配色（0.1.6）
-
-客户端按用户要求更名为 **learn something**。主界面、设置、批注弹框、文件阅读控件和图标统一采用浅奶油黄、蜂蜜色与深棕文字；PDF 页面可单独调整配色并随时对照原色，批注高亮仍用不同颜色区分。
-
-为兼容旧版，桌面数据目录仍为 `%APPDATA%\MarginChat`，浏览器数据库、服务身份和桌面应用标识保持兼容。升级后沿用原有聊天、批注、文件及加密模型配置，无需导入或重新填写密钥。
-
-## 0.1.6 就地修复
-
-长表格取消默认 300px 高度限制，表格按完整内容参与排版，后续正文不再覆盖表格末尾。主回答与批注回答共用这项修复；宽表格支持横向滚动。
-
-按住批注框的顶部标题栏可以拖动，窗口边缘会限制位置；正文滚动不会把手动移动的卡片拉回，回答增长或窗口变小时会保持标题栏可见。关闭后再次打开恢复原文附近的位置。标题栏支持聚焦后用方向键移动，Shift 加方向键加快移动。正文与高亮文字保留文字光标，按钮及链接仍保留可点击提示。
-
-本次继续使用 0.1.6，直接更新已解压文件夹中的程序与应用资源，原数据目录及模型配置不变。更新前保留原程序文件用于回退。
-
-## 0.1.6 阅读模式与 PDF 配色
-
-侧栏新增“打开文件阅读”。导入 PDF 后直接进入专注阅读；已有附件点击后也会进入。通过“显示聊天”切换到并排聊天，小窗口会返回聊天页；“关闭文档阅读”返回原对话。
-
-“阅读配色”提供原色、暖黄、浅灰、深色预设，以及纸张和文字的颜色选择器与 HEX 输入。换色直接作用于 PDF 显示画面，不改写原 PDF；“原色对照”临时查看原样，再点可回到所选配色。保留彩色区域开启时，黑白和灰色跟随纸色与字色，彩色图表保留颜色；扫描页也能整页换色。扫描件使用深色时可关闭该选项，让整页按前景和背景显示；本版仍不提供 OCR。
-
-全局配色及每份文档的页码、缩放、显示方式与相对滚动位置会单独保存在本机，关闭重开或程序重启后再次打开附件可恢复；存储不可用时不影响本次阅读。阅读设置不随聊天 JSON 备份导出。导出仍保存附件原字节，批注与模型配置沿用原规则。
-
-阅读颜色由独立显示缓冲处理，透明文字层及高亮定位不变；主问答、普通笔记、AI 原文问答、拖动和完整上下文机制继续复用。0.1.11 已补齐连续阅读、内嵌目录及全文搜索。
-
-## Windows EXE
-
-免安装桌面版输出到相邻的 `windows` 文件夹。当前提供 `LearnSomething-0.1.11-Windows-x64.zip`。先关闭旧版 learn something，再全部解压到新文件夹，运行里面的 `LearnSomething.exe`，保留同文件夹全部组件。页面上方版本标记应为 **0.1.11**，并显示构建号。无需另装 Node.js。桌面版内置本机服务，关闭程序即退出服务；原有聊天、批注和加密模型配置沿用同一数据目录。
-
-打开「模型与设置」，选择 DeepSeek 模板，填写自己的密钥后点击「保存并使用」，即可测试真实问答。还可保存 GPT、Claude 和中转站连接，随后在聊天输入框左下角选择。桌面版使用本机系统加密保存密钥，正常退出并重新打开后无需重填；加密不可用时会在设置中说明限制。DeepSeek 模板依据 [DeepSeek 官方说明](https://api-docs.deepseek.com/zh-cn/)填写，地址与模型名仍可自行修改。
-
-桌面版聊天保存在 `%APPDATA%\MarginChat`，更新或移动 EXE 不会更换这份记录。桌面版与原浏览器版的数据独立，可先在网页版导出 JSON 备份，再在桌面版「导入」。测试版尚未进行代码签名。0.1.11 保留官方 Electron 运行文件原字节，构建时校验，避免二次修改 EXE 资源产生新的不受信任文件；Windows 文件属性可能显示运行时信息，客户端版本以界面顶部标记为准。
-
-开发者可运行 `pnpm build:desktop` 生成桌面包；只生成解压版可先构建页面，再运行 `node scripts/build-desktop.mjs --zip-only`。打包仅使用构建产物和桌面入口，不包含 `.env`、开发运行记录或个人聊天数据库。
-
-## 系统代理与请求诊断（0.1.5）
-
-桌面版模型请求改用 Electron 的网络组件，自动遵循 Windows 系统代理（包括 PAC），每次新请求会刷新代理配置。如果使用 Clash，请保持 Clash 运行并开启其「系统代理」，然后在learn something选择原有 GPT 官方配置重试；无需重填密钥或手动填写代理端口。此修复针对桌面版，普通 Node 网页服务仍使用 Node 网络组件。
-
-代理连接失败、连接超时、DNS、证书问题，以及 API 额度与限流会给出不同提示。失败消息包含诊断编号，可以继续发送新问题。模型请求不会自动重发，代理失败也不会偷偷改用 Node 直连。
-
-从本版起，桌面 `%APPDATA%\MarginChat\logs\requests.jsonl` 记录时间、所选模型、服务主机、耗时、结果、HTTP 状态、已识别的错误码、本机诊断编号及可用的服务端请求编号。只保留当前与上一份日志，不记录密钥、请求/响应正文或聊天内容。旧版丢失的错误详情无法补回。失败回答也会保存当次使用的模型名称，切换模型后仍可辨认。
-
-## 启动
-
-Windows 下双击 **启动客户端.cmd**。启动器会打开浏览器，地址固定为 **http://127.0.0.1:4317**。如果learn something已经运行，会直接沿用当前服务。请保留完整客户端文件夹，包括 `dist` 和 `node_modules`。
-
-启动器使用已安装的 Node.js，或 Codex 自带的 Node.js，要求版本为 22 或更新。它不会自动联网下载依赖。若端口被其他程序占用，会显示说明，不会关闭那个程序。
-
-关闭网页后，本地服务仍继续运行。需要退出服务时，先等待回答结束，再双击 **停止客户端.cmd**。停止器先核对应用身份和本次运行的专属编号，再使用本机保存的关闭凭据，请服务自行退出，不通过操作系统结束其他进程。其他方式启动的服务需要在原启动位置关闭。关闭服务不会删除聊天记录。
-
-## 先体验，再预载模型
-
-首次打开带有广义相对论的体验示例。演示模式使用本地预置内容，不调用 AI，也不能回答任意问题。
-
-打开「模型与设置」，或点击输入框左下角的「管理模型」（菜单内也有「添加或管理模型…」），选择连接模板，再填写：
-
-1. 方便自己辨认的连接名称，例如「GPT 工作」或「中转站 A」。
-2. 服务商提供的 API 基础地址，以及它支持的接口格式。
-3. 账户可用的完整模型名称，按服务商控制台或文档填写。
-4. 你自己的 API 密钥。也可以先留空保存连接，正式发送问题前再补充；本机兼容服务可以按其要求留空。
-
-| 模板 | 预设地址 | 默认接口格式 | 模型名称 |
-| --- | --- | --- | --- |
-| 中转站 | 自行填写 | OpenAI 兼容 Chat Completions | 填写中转站提供的实际名称 |
-| GPT 官方 | `https://api.openai.com/v1` | OpenAI Responses | 填写账户可用的 GPT 模型名称 |
-| Claude 官方 | `https://api.anthropic.com/v1` | Anthropic Messages | 填写账户可用的 Claude 模型名称 |
-| DeepSeek | `https://api.deepseek.com` | OpenAI 兼容 Chat Completions | 预填 `deepseek-flash`，可修改 |
-
-中转站也可以改用 Responses 或 Claude 原生 Messages，具体取决于服务商支持的格式。基础地址不需要补上 `/chat/completions`、`/responses` 或 `/messages`。远程接口要求 HTTPS，本机接口可以使用 HTTP。
-
-点击「保存并使用」后，此连接会出现在输入框左下角的选择菜单中；下次主聊天或批注提问使用当前选择的模型。可以保存多个服务商，或为同一服务商保存多个模型。管理页支持编辑、删除配置，以及切回本地演示。删除连接不会删除聊天或批注。模板会新建另一项连接，不沿用原配置的密钥；修改接口地址或格式时也需重新填写密钥，防止误发给其他服务。切换连接不会改写已有回答。
-
-桌面版将连接配置和经 Windows 本机系统加密的密钥保存在 `%APPDATA%\MarginChat\model-profiles.json`。它与聊天记录分开保存，不随聊天 JSON 备份导出；请勿将此文件作为启动诊断材料发送。若系统加密不可用，设置页会提示密钥只能在本次运行中使用，不会回退为明文落盘。
-
-普通网页版会保存连接名称、地址、模型和回答偏好，密钥仅保留在本地服务内存中，重启服务后需要重新填写。设置页会显示当前保存能力；退出网页而未停止服务时，内存中的密钥仍可继续使用。开发者可以参考 `.env.example` 配置本机环境；其中的密钥也不属于聊天备份。
-
-保存和切换配置不会请求付费 API。发送聊天、批注问题或手动重试时，才会向所选服务发送请求。
-
-已经使用模拟服务验证 API 请求、完整上下文传递、流式响应和错误处理。尚未使用你的真实密钥连接真实服务商，实际连通性仍取决于所填服务地址、模型、权限和网络。
-
-## 对话删除与恢复（0.1.4）
-
-对话列表中，每条对话旁的删除图标可以将它移入「已删除的对话」。需要找回时，展开这个列表，点击对应对话的「恢复」，对话、附件和批注会一起恢复。删除当前唯一一条对话后，会自动打开新对话，仍可恢复原记录。
-
-删除用于整理列表，不会立即清除本机的附件原文件或批注；完整备份也保留这些可恢复记录。正在生成回答或处理文件时，相关删除操作会暂时不可用。
-
-## 上传文件与阅读论文（0.1.4）
-
-点击输入框左下角的「上传」，可导入 PDF、TXT 或 Markdown（`.md` / `.markdown`）。这里的上传只是把文件存入本机，不会立即发送给模型。每个对话最多保存 10 份文件；单个文件最多 25 MiB，PDF 最多 300 页，每份文件提取后的文字最多 100 万字符。TXT 和 Markdown 需要使用 UTF-8 编码；有密码的 PDF 需先解锁。
-
-点击对话上方的文件名即可在客户端阅读。PDF 默认使用「PDF 原排版」，支持翻页、输入页码和缩放；在有文字层的页面上直接划选，就能添加高亮批注。也可以切到「可批注文本」，阅读并批注提取出的文字。TXT 和 Markdown 使用文字视图阅读。切换视图后，无法可靠对应原文的批注仍保留在「暂未定位原文」入口，避免标到不相关的文字。
-
-扫描 PDF 可以查看原页面，当前没有 OCR；没有可提取文字的扫描页暂时不能划选文字批注，也不能询问其中的图片内容。
-
-发送主聊天或 AI 批注问题时，会把当前对话所有附件的全部提取文字加入上下文，再发送给所选模型服务。不会把 PDF 原文件或页面图片上传给模型。「只写批注」、阅读文件和保存草稿均不调用 API。若服务商提示上下文过长，可将资料拆分到不同对话中使用。
-
-## 批注与版本
-
-1. 在一条已经完成的 AI 回答或文档文字中，用鼠标选中文字，点击「添加批注」。
-2. 草稿中选择「询问 AI」或「只写批注」。询问模式输入问题后点击「提问」，会带入当时完整的主对话、全部附件提取文字、选中原文及批注问题，不混入其他批注内容。只写批注时，输入自己的笔记，点击「保存批注」，无需 API 或网络。
-3. 每处高亮保留一组当前问答。完成后可点击「编辑」修改文字，或「重新提问」并在成功后替换；编辑文字不会请求 AI。普通批注可编辑笔记正文；已经发起询问或保存的批注不再切换类型。
-4. 右上角 **×** 关闭批注框，高亮和内容继续保存。再次点击高亮重新打开。批注框里的内容不能继续创建嵌套批注。
-5. 回答失败或中断时，可以重试原批注问题，沿用第一次请求的问题与上下文。
-6. 「重新生成」会新增一个回答版本，新版本没有旧批注。使用回答下方的版本切换按钮，可以找回原版本及其批注。
-
-不同批注使用不同颜色区分。目前仅最后一条主回答支持重新生成；旧回答可以切换已有版本和查看批注。
-
-点击批注框外的任意位置可收起窗口，高亮与内容继续保留；点击另一处高亮会切换到对应批注。框内点击、输入和操作不会把窗口关闭。编辑时通过框外点击、× 或 Esc 关闭，会自动保存当前修改；点击「取消」则放弃本次编辑。
-
-## 右键操作与取消批注
-
-在高亮文字上右键，可打开批注、复制原文、复制批注问答或普通批注正文，或选择「删除批注与高亮」。如果有重叠高亮，先选择具体哪一条批注。批注框右上角也有删除图标；× 仍只关闭窗口。
-
-删除后可点击提示条的「撤销」，或左下角的「撤销删除」恢复最近删除的批注。刷新后仍能恢复，可连续操作找回多条；原问答、颜色与回答版本保持关联，恢复不会增加再次问答的次数。为支持恢复，删除记录保留在本机及完整备份里。批注生成中需等回答结束后再删除。
-
-选中普通文字后右键，可复制选中文字或为其新建批注。回答正文保持只读；在主输入框或批注编辑框里使用浏览器原生的剪切、复制、粘贴菜单，也可以使用 Ctrl + C / Ctrl + V。
-
-## LaTeX 公式（0.1.1）
-
-正文和批注回答共用 KaTeX 渲染，支持 `\(...\)` / `$...$` 行内公式和 `\[...\]` / `$$...$$` 独立公式块，以及常见分数、上下标、希腊字母、矩阵与多行方程。代码块和行内代码保持原样。只转换渲染输入，存储、编辑、模型上下文和备份保留原始 Markdown / TeX；已有回答打开后即可排版。
-
-排版改变后，旧高亮会先核对引用原文，再按唯一精确引用恢复位置。无法可靠定位的批注不误标到其他文字，问答仍可从回答下方的折叠入口打开。包含公式本体的精细划选仍需更多验证。
-
-## 桌面启动排查（0.1.2）
-
-单文件版增加解包画面，并为每次启动分配独立临时目录。窗口会在页面加载前显示，20 秒超时或渲染进程失败时给出错误提示。单实例切换保留原数据目录与端口；启动日志只记录阶段、版本和错误代码，不记录密钥、请求或聊天内容。
-
-另提供完整 ZIP 解压版，选择「全部解压」后运行 `LearnSomething.exe`，保留旁边全部文件。无法打开时运行同目录「启动诊断.cmd」，约 20 秒后查看「启动诊断」目录。此工具只观察和记录启动，不清理数据、不关闭安全防护，也不要求管理员。用户本次“无反应”的具体原因仍需正常用户启动的诊断结果确认。
-
-0.1.4 已有用户环境正常打开页面的记录。0.1.5 的独立本机网络检查已通过：能识别现有系统代理，并完成三种格式的本机模拟流式请求；未使用真实密钥进行付费调用。若打开时出现问题，可继续使用启动诊断工具。
-
-## 保存与备份
-
-聊天、全部回答版本、批注、原文定位、附件提取文字及附件原文件自动保存在本机。网页版使用**当前浏览器、当前网站地址**的本地数据库，刷新可以恢复。请持续使用 `http://127.0.0.1:4317`：换浏览器、隐私窗口，或改用 `localhost`、其他端口，都会进入另一份浏览器存储。桌面版使用前述独立数据目录。
-
-左下角「备份」会导出完整聊天 JSON 文件，包括附件原文件字节（含 PDF）、提取文字、全部回答版本、批注和可恢复的删除记录；「导入」会追加为独立新对话，保留原有记录。备份不包含 API 密钥或预载模型配置。清理浏览器网站数据或卸载浏览器前，请先导出备份。看到「正在保存…」时，稍等显示「已保存在本机」再关闭页面。
-
-## 网络或 API 失败后继续聊天（0.1.4）
-
-服务停止、页面刷新或网络中断会结束正在生成的回答。未完成的请求不会自动重新调用 API；可以手动重试，也可以直接在输入框继续发送新问题，无需先重新生成。若连接失效，可补充密钥或切换到可用模型后继续当前对话。
-
-失败或中断时留下的残缺回答仍可查看，但后续主聊天和新的批注询问不会把它作为成功回答带入上下文。已发起的批注重试仍沿用首次保存的问题和上下文，保证同一次重试的问题不被改写；主动修改问题后才建立新的尝试。
-
-## 给后续开发者
-
-| 位置 | 职责 |
-| --- | --- |
-| `src/App.tsx` | 主聊天、回答版本、批注和界面的连接 |
-| `src/components/AnnotatedAnswer.tsx` | 文字选区、持久高亮、点击定位和浮动批注 |
-| `src/components/AnnotationCard.tsx` | 可覆盖的批注问答、普通笔记和编辑 |
-| `src/components/DocumentReader.tsx` | PDF 原排版、分页缩放及文字视图阅读批注 |
-| `src/domain/` | 对话、版本、批注规则及备份校验 |
-| `src/adapters/storage.ts` | Dexie / IndexedDB 本地保存 |
-| `src/adapters/documents.ts` | 本机文件校验与 PDF / 文本提取 |
-| `src/adapters/model.ts` | 浏览器端模型服务连接及流式读取 |
-| `src/hooks/useWorkspace.ts` | 自动保存队列和保存状态 |
-| `src/domain/model-presets.ts` | 四种连接模板和接口格式说明 |
-| `src/components/SettingsDialog.tsx` | 预载模型配置的新增、编辑、删除和切换 |
-| `server/` | 仅本机可访问的 API 网关、配置管理、三种流式协议和生产页面服务 |
-| `desktop/` | 桌面窗口、系统加密密钥保存和启动诊断 |
-| `scripts/` | 开发、启动和安全停止 |
-| `tests/` | 核心业务规则与 API 传输回归测试 |
-
-开发环境使用 Node.js 22+ 与 pnpm。安装依赖后，可用 `pnpm dev` 开发，`pnpm test` 检查业务和接口，`pnpm build` 构建。生产启动通过上述启动器，固定使用 4317 端口；开发模式的前端也使用 4317，后端单独使用 4318。两者不要同时占用前端端口。
-
-启动器写入 `runtime/server.json` 与 `runtime/server.log`，用于识别本次服务和排查启动问题。`server.json` 包含仅用于关闭当前本地服务的随机凭据，不是 AI API 密钥；请勿把运行目录作为项目材料分享。这些文件无需备份，也不包含浏览器中的聊天数据库。
-
-## 0.1.6 PDF 文字选取修复
-
-原排版中的鼠标拖选按页面文字块和字符边界定位，修正多行摘要选不全、起点偏移与短行末尾回跳。支持正向和反向划选、拖至边缘滚动；双击选词、Shift 扩选、右键复制与添加批注继续可用。缩放、翻页或切换布局后重新建立坐标，取消、离开窗口和重新渲染时释放事件及滚动任务。
-
-阅读区始终保留滚动条所需宽度，避免并排阅读时在临界页高附近反复触发适合宽度和重建文字层，从而打断选区。
-
-`src/domain/pdf-selection.ts` 负责文字块及字符边界的几何判断，`src/adapters/pdf-selection.ts` 连接鼠标、原生选区和阅读区滚动。文字节点、顺序及批注锚点保持兼容；只影响 PDF 原排版的鼠标拖选，不改变正文或文本视图的选取方式。
-
-本构建另通过 551 项交付包核对，打包目录和原交付目录均实际启动、保存、生成完整备份并正常退出；原 0.1.11 文件夹与完整 ZIP 已同步更新，仅保留当前可用程序。
-
-本构建另通过 551 项交付包核对，打包目录和原交付目录均实际启动、保存、生成完整备份并正常退出；原 0.1.11 文件夹和完整 ZIP 已同步更新，仅保留当前可用版。
+All original application code was implemented by GPT through Codex; the human initiator proposed ideas, defined requirements and selected features. Anyone may download and adapt it with AI agents / vibe coding. Please link to [upstream](https://github.com/Eatastar/Learn-Something) when publishing a derivative. Original code uses MIT; third-party attribution and licenses remain applicable. See [Attribution](../../docs/ATTRIBUTION.md).

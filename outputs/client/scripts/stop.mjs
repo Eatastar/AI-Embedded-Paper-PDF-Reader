@@ -24,7 +24,7 @@ async function main() {
     throw new Error('运行记录无效，本次没有停止任何服务。');
   }
   const live = await health();
-  if (!live) throw new Error('learn something可能已经停止，或无法连接。本次没有关闭其他程序。');
+  if (!live) throw new Error('AI-Embedded Paper PDF Reader可能已经停止，或无法连接。本次没有关闭其他程序。');
   if (live.instanceId !== record.instanceId) throw new Error('当前服务不是此启动器记录的那一次运行。本次没有停止它。');
   let response;
   try {
@@ -43,7 +43,7 @@ async function main() {
         const latest = JSON.parse(await readFile(recordPath, 'utf8'));
         if (latest.instanceId === record.instanceId) await unlink(recordPath);
       } catch { /* No stale record needs removing. */ }
-      console.log('learn something本地服务已停止。聊天记录仍保存在浏览器中。');
+      console.log('AI-Embedded Paper PDF Reader本地服务已停止。聊天记录仍保存在浏览器中。');
       return;
     }
     await delay(120);

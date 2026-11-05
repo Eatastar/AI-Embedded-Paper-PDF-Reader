@@ -30,7 +30,7 @@ for (const name of ['preload.cjs', 'desktop-bridge.cjs', 'backup-store.cjs']) aw
 await copyFile(resolve(root, 'desktop/icon.png'), resolve(stage, 'icon.png'));
 // Include actual installed license texts, while keeping source, credentials,
 // package-manager links and personal runtime data out of the desktop payload.
-const notices = ['Third-party dependency notices for learn something.\nElectron/Chromium notices are also supplied alongside the packaged runtime.'];
+const notices = ['Third-party dependency notices for AI-Embedded Paper PDF Reader.\nElectron/Chromium notices are also supplied alongside the packaged runtime.'];
 for (const entry of await readdir(resolve(root, 'node_modules/.pnpm'))) {
   const boundary = entry.indexOf('@', entry.startsWith('@') ? 1 : 0);
   if (boundary < 0) continue;
@@ -48,18 +48,23 @@ for (const entry of await readdir(resolve(root, 'node_modules/.pnpm'))) {
   } catch { /* Not every pnpm entry is a package root. */ }
 }
 await writeFile(resolve(stage, 'THIRD-PARTY-NOTICES.txt'), notices.join('\n\n'));
-await writeFile(resolve(stage, 'package.json'), JSON.stringify({ name: 'learn-something-desktop', productName: 'learn something', version: metadata.version, buildId: metadata.buildId, buildTime: metadata.buildTime, description: '支持原文高亮、批注问答与 PDF 阅读的 AI 客户端', author: 'learn something', main: 'main.cjs', private: true, packageManager: 'pnpm@11.25.0', dependencies: {} }, null, 2));
+// The packager's default filters omit root LICENSE/NOTICE files from ASAR.
+// Keep explicit copies under neutral filenames inside the app as well as next to it.
+await mkdir(resolve(stage, 'licenses'), { recursive: true });
+await copyFile(resolve(stage, 'LICENSE'), resolve(stage, 'licenses/project-MIT.txt'));
+await copyFile(resolve(stage, 'THIRD-PARTY-NOTICES.txt'), resolve(stage, 'licenses/dependencies.txt'));
+await writeFile(resolve(stage, 'package.json'), JSON.stringify({ name: 'ai-embedded-paper-pdf-reader-desktop', productName: 'AI-Embedded Paper PDF Reader', version: metadata.version, buildId: metadata.buildId, buildTime: metadata.buildTime, description: 'AI 嵌入式论文 PDF 阅读器 / Local PDF reader with AI questions and annotations', author: 'Eatastar', main: 'main.cjs', private: true, packageManager: 'pnpm@11.25.0', dependencies: {} }, null, 2));
 await writeFile(resolve(stage, 'pnpm-lock.yaml'), "lockfileVersion: '9.0'\nimporters:\n  .: {}\n");
 await mkdir(resolve(stage, 'node_modules'), { recursive: true });
 const paths = await packageApp({
   projectDir: stage,
   targets: Platform.WINDOWS.createTarget(process.argv.includes('--zip-only') ? ['zip'] : ['portable', 'zip'], Arch.x64),
   config: {
-    appId: 'com.marginchat.desktop', productName: 'learn something',
+    appId: 'com.marginchat.desktop', productName: 'AI-Embedded Paper PDF Reader',
     directories: { app: stage, output },
     electronVersion: JSON.parse(await readFile(require.resolve('electron/package.json'), 'utf8')).version,
     electronDist: dirname(require('electron')),
-    files: ['main.cjs', 'startup.cjs', 'profile-store.cjs', 'model-network.cjs', 'request-log.cjs', 'preload.cjs', 'desktop-bridge.cjs', 'backup-store.cjs', 'server.cjs', 'icon.png', 'LICENSE', 'THIRD-PARTY-NOTICES.txt', 'dist/**/*', 'package.json'],
+    files: ['main.cjs', 'startup.cjs', 'profile-store.cjs', 'model-network.cjs', 'request-log.cjs', 'preload.cjs', 'desktop-bridge.cjs', 'backup-store.cjs', 'server.cjs', 'icon.png', 'licenses/**/*', 'dist/**/*', 'package.json'],
     extraFiles: [
       { from: resolve(root, '../../LICENSE'), to: 'LICENSE' },
       { from: resolve(stage, 'THIRD-PARTY-NOTICES.txt'), to: 'THIRD-PARTY-NOTICES.txt' },
@@ -71,16 +76,16 @@ const paths = await packageApp({
     // The pinned builder writes an ASAR resource even when resource editing is
     // disabled. Restore the vendor runtime after packing and verify below.
     afterPack: async context => {
-      await copyFile(require('electron'), resolve(context.appOutDir, 'LearnSomething.exe'));
+      await copyFile(require('electron'), resolve(context.appOutDir, 'AI-Embedded-Paper-PDF-Reader.exe'));
     },
-    artifactName: 'LearnSomething-${version}-Windows-${arch}.${ext}',
+    artifactName: 'AI-Embedded-Paper-PDF-Reader-${version}-Windows-${arch}.${ext}',
     // Keep the official runtime byte-for-byte. Editing its unsigned resources
     // produces a new executable that Windows application control may reject.
     // The application name, icon and version still come from the app/renderer.
-    win: { target: ['portable', 'zip'], executableName: 'LearnSomething', icon: resolve(root, 'desktop/icon.ico'), signAndEditExecutable: false, signExecutable: false, electronLanguages: ['en-US', 'zh-CN', 'zh-TW'] },
+    win: { target: ['portable', 'zip'], executableName: 'AI-Embedded-Paper-PDF-Reader', icon: resolve(root, 'desktop/icon.ico'), signAndEditExecutable: false, signExecutable: false, electronLanguages: ['en-US', 'zh-CN', 'zh-TW'] },
     // In the pinned builder version, true leaves UNPACK_DIR_NAME undefined and
     // uses a unique NSIS plugin directory for each launch, avoiding collisions.
-    portable: { requestExecutionLevel: 'user', unicode: true, unpackDirName: true, splashImage: resolve(root, 'desktop/splash.bmp') },
+    portable: { requestExecutionLevel: 'user', unicode: true, unpackDirName: true },
     publish: null,
   },
 });
@@ -89,7 +94,7 @@ async function runtimeHash(path) {
   for await (const chunk of createReadStream(path)) hash.update(chunk);
   return hash.digest('hex');
 }
-if (await runtimeHash(resolve(output, 'win-unpacked/LearnSomething.exe')) !== await runtimeHash(require('electron'))) throw new Error('Packaged runtime differs from official Electron; delivery was not updated');
+if (await runtimeHash(resolve(output, 'win-unpacked/AI-Embedded-Paper-PDF-Reader.exe')) !== await runtimeHash(require('electron'))) throw new Error('Packaged runtime differs from official Electron; delivery was not updated');
 for (const source of paths.filter(path => /\.(exe|zip)$/.test(path))) {
   const target = resolve(delivery, basename(source));
   await copyFile(source, target);

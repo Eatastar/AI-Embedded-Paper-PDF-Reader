@@ -1,3 +1,5 @@
+import { t } from '../i18n/locale';
+import { useLocale } from '../i18n/react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
@@ -76,6 +78,7 @@ function popupPosition(rect: DOMRect | null, height = 440, preferredWidth = 390)
 }
 
 export function AnnotatedAnswer({ conversationId, messageId, version, annotations, reservedColors = [], openAnnotationId, onOpen, onCreate, onUpdate, onAsk, onStop, onReask, onDelete, onNotify, disabled, plainText = false, content, contentReadyKey, contentClassName = '' }: AnnotatedAnswerProps) {
+  useLocale();
   const proseRef = useRef<HTMLDivElement>(null);
   const annotatorRef = useRef<TextAnnotator<TextAnnotation, TextAnnotation> | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
@@ -263,7 +266,7 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
     while (usedColors.has(annotationColor(colorIndex).toLowerCase())) colorIndex += 1;
     const nextColor = annotationColor(colorIndex);
     try { onCreate({ id, conversationId, messageId, versionId: version.id, quote: draft.selector.quote, anchor: { selectors: [draft.selector] } satisfies SavedAnchor, color: nextColor, mode: 'ask', question: '', answer: '', edited: false, status: 'draft', createdAt: now, updatedAt: now }); }
-    catch (error) { onNotify(error instanceof Error ? error.message : '无法创建批注，请先导出备份。'); return; }
+    catch (error) { onNotify(error instanceof Error ? error.message : t("无法创建批注，请先导出备份。")); return; }
     onOpen(id);
     setAnnotationChoice(null);
     setSelectionDraft(null);
@@ -310,7 +313,7 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
     try {
       if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
       await navigator.clipboard.writeText(text);
-      onNotify('已复制到剪贴板。');
+      onNotify(t("已复制到剪贴板。"));
     } catch {
       setManualCopy(text);
     }
@@ -334,15 +337,15 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
         {content ?? (plainText ? <div className="annotation-plain-text">{version.content}</div> : <MathMarkdown streaming={version.status === 'streaming'}>{version.content}</MathMarkdown>)}
       </div>
       {unlocatedAnnotations.length > 0 && <details className="annotation-footnote" data-testid="unlocated-annotations">
-        <summary>有 {unlocatedAnnotations.length} 条批注暂未定位原文</summary>
-        <p>排版更新后，部分原文位置可能变化。批注已保留，可在这里打开。</p>
+        <summary>{t("有")}{unlocatedAnnotations.length}{t("条批注暂未定位原文")}</summary>
+        <p>{t("排版更新后，部分原文位置可能变化。批注已保留，可在这里打开。")}</p>
         {unlocatedAnnotations.map((annotation) => <button
           type="button"
           key={annotation.id}
           className="annotation-choice-button"
           title={annotation.quote}
           onClick={(event) => { lastRectRef.current = event.currentTarget.getBoundingClientRect(); onOpen(annotation.id); }}
-        ><span className="annotation-color-dot" style={{ background: annotation.color }} /><span className="annotation-choice-copy"><span className="annotation-choice-ordinal">批注 {visibleAnnotations.findIndex((entry) => entry.id === annotation.id) + 1}</span><span className="annotation-choice-preview">{(annotation.mode === 'note' ? annotation.note?.trim() : annotation.question.trim()) || annotation.quote}</span></span></button>)}
+        ><span className="annotation-color-dot" style={{ background: annotation.color }} /><span className="annotation-choice-copy"><span className="annotation-choice-ordinal">{t("批注")}{visibleAnnotations.findIndex((entry) => entry.id === annotation.id) + 1}</span><span className="annotation-choice-preview">{(annotation.mode === 'note' ? annotation.note?.trim() : annotation.question.trim()) || annotation.quote}</span></span></button>)}
       </details>}
       {selectionDraft && isComplete && createPortal(
         <button
@@ -352,21 +355,21 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
           style={{ left: Math.max(12, Math.min(window.innerWidth - 146, selectionDraft.rect.left + selectionDraft.rect.width / 2 - 67)), top: Math.max(12, selectionDraft.rect.top - 45) }}
           onPointerDown={(event) => event.preventDefault()}
           onClick={() => createAnnotation()}
-        ><MessageSquarePlus size={15} />添加批注</button>, document.body,
+        ><MessageSquarePlus size={15} />{t("添加批注")}</button>, document.body,
       )}
       {annotationChoice && choices.length > 1 && createPortal(
         <div
           ref={chooserRef}
           className="annotation-choice-popup"
           role="dialog"
-          aria-label="选择批注"
+          aria-label={t("选择批注")}
           data-testid="annotation-chooser"
           style={{ ...popupPosition(annotationChoice.rect, Math.min(360, choices.length * 58 + 50), 310), maxHeight: Math.min(360, window.innerHeight - 32) }}
           onKeyDown={(event) => {
             if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); setAnnotationChoice(null); }
           }}
         >
-          <div className="annotation-choice-header"><strong>这里有 {choices.length} 条批注</strong><button type="button" className="annotation-icon-button" aria-label="关闭批注选择" onClick={() => setAnnotationChoice(null)}><X size={15} /></button></div>
+          <div className="annotation-choice-header"><strong>{t("这里有")}{choices.length}{t("条批注")}</strong><button type="button" className="annotation-icon-button" aria-label={t("关闭批注选择")} onClick={() => setAnnotationChoice(null)}><X size={15} /></button></div>
           <div className="annotation-choice-list">
             {choices.map((annotation) => {
               const ordinal = visibleAnnotations.findIndex((entry) => entry.id === annotation.id) + 1;
@@ -375,10 +378,10 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
                 type="button"
                 key={annotation.id}
                 className="annotation-choice-button"
-                aria-label={`打开批注 ${ordinal}：${label}`}
+                aria-label={t("打开批注 {0}：{1}", [ordinal, label])}
                 title={label}
                 onClick={() => { setAnnotationChoice(null); onOpen(annotation.id); }}
-              ><span className="annotation-color-dot" style={{ background: annotation.color }} /><span className="annotation-choice-copy"><span className="annotation-choice-ordinal">批注 {ordinal}{annotation.status === 'draft' ? ' · 草稿' : ''}</span><span className="annotation-choice-preview">{label}</span></span></button>;
+              ><span className="annotation-color-dot" style={{ background: annotation.color }} /><span className="annotation-choice-copy"><span className="annotation-choice-ordinal">{t("批注")}{ordinal}{annotation.status === 'draft' ? t(" · 草稿") : ''}</span><span className="annotation-choice-preview">{label}</span></span></button>;
             })}
           </div>
         </div>, document.body,
@@ -388,7 +391,7 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
           ref={menuRef}
           className="annotation-context-menu"
           role="menu"
-          aria-label="回答与批注操作"
+          aria-label={t("回答与批注操作")}
           data-testid="annotation-context-menu"
           style={menuStyle}
           onKeyDown={handleMenuKeyDown}
@@ -397,32 +400,32 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
           onClick={(event) => event.stopPropagation()}
         >
           {answerMenu.selection && <>
-            <button type="button" role="menuitem" onClick={() => void copyText(answerMenu.selection!.selector.quote)}><Copy size={15} /><span>复制选中文字</span></button>
-            <button type="button" role="menuitem" onClick={() => createAnnotation(answerMenu.selection)}><MessageSquarePlus size={15} /><span>为选中文字添加批注</span></button>
+            <button type="button" role="menuitem" onClick={() => void copyText(answerMenu.selection!.selector.quote)}><Copy size={15} /><span>{t("复制选中文字")}</span></button>
+            <button type="button" role="menuitem" onClick={() => createAnnotation(answerMenu.selection)}><MessageSquarePlus size={15} /><span>{t("为选中文字添加批注")}</span></button>
             {menuAnnotations.length > 0 && <div role="separator" className="annotation-menu-separator" />}
           </>}
           {menuAnnotations.length > 1 && !menuAnnotation ? <>
-            <div className="annotation-menu-heading">此处有 {menuAnnotations.length} 条批注，请选择</div>
+            <div className="annotation-menu-heading">{t("此处有")}{menuAnnotations.length}{t("条批注，请选择")}</div>
             {menuAnnotations.map((annotation) => {
               const ordinal = visibleAnnotations.findIndex((entry) => entry.id === annotation.id) + 1;
               const label = (annotation.mode === 'note' ? annotation.note?.trim() : annotation.question.trim()) || annotation.quote;
-              return <button key={annotation.id} type="button" role="menuitem" data-annotation-id={annotation.id} aria-label={`选择批注 ${ordinal}：${label}`} title={label} onClick={() => setAnswerMenu({ ...answerMenu, targetId: annotation.id })}><span className="annotation-color-dot" style={{ background: annotation.color }} /><span className="annotation-menu-note-label"><small>批注 {ordinal}</small><span>{label}</span></span><span className="annotation-menu-chevron">›</span></button>;
+              return <button key={annotation.id} type="button" role="menuitem" data-annotation-id={annotation.id} aria-label={t("选择批注 {0}：{1}", [ordinal, label])} title={label} onClick={() => setAnswerMenu({ ...answerMenu, targetId: annotation.id })}><span className="annotation-color-dot" style={{ background: annotation.color }} /><span className="annotation-menu-note-label"><small>{t("批注")}{ordinal}</small><span>{label}</span></span><span className="annotation-menu-chevron">›</span></button>;
             })}
           </> : menuAnnotation ? <>
-            {menuAnnotations.length > 1 && <button type="button" role="menuitem" className="annotation-menu-back" onClick={() => setAnswerMenu({ ...answerMenu, targetId: null })}><ArrowLeft size={14} /><span>选择其他批注</span></button>}
-            <div className="annotation-menu-heading annotation-menu-current" title={menuAnnotation.quote}><span className="annotation-color-dot" style={{ background: menuAnnotation.color }} /><span>批注 {visibleAnnotations.findIndex((entry) => entry.id === menuAnnotation.id) + 1} · {menuAnnotation.quote}</span></div>
-            <button type="button" role="menuitem" onClick={() => { closeMenu(); onOpen(menuAnnotation.id); }}><MessageSquare size={15} /><span>打开批注</span></button>
-            <button type="button" role="menuitem" onClick={() => void copyText(menuAnnotation.quote)}><Copy size={15} /><span>复制原文</span></button>
-            <button type="button" role="menuitem" disabled={menuAnnotation.mode === 'note' ? !menuAnnotation.note : !menuAnnotation.question && !menuAnnotation.answer} onClick={() => void copyText(menuAnnotation.mode === 'note' ? menuAnnotation.note || '' : `问题：${menuAnnotation.question}\n\n回答：${menuAnnotation.answer}`)}><Clipboard size={15} /><span>{menuAnnotation.mode === 'note' ? '复制批注' : '复制批注问答'}</span></button>
+            {menuAnnotations.length > 1 && <button type="button" role="menuitem" className="annotation-menu-back" onClick={() => setAnswerMenu({ ...answerMenu, targetId: null })}><ArrowLeft size={14} /><span>{t("选择其他批注")}</span></button>}
+            <div className="annotation-menu-heading annotation-menu-current" title={menuAnnotation.quote}><span className="annotation-color-dot" style={{ background: menuAnnotation.color }} /><span>{t("批注")}{visibleAnnotations.findIndex((entry) => entry.id === menuAnnotation.id) + 1} · {menuAnnotation.quote}</span></div>
+            <button type="button" role="menuitem" onClick={() => { closeMenu(); onOpen(menuAnnotation.id); }}><MessageSquare size={15} /><span>{t("打开批注")}</span></button>
+            <button type="button" role="menuitem" onClick={() => void copyText(menuAnnotation.quote)}><Copy size={15} /><span>{t("复制原文")}</span></button>
+            <button type="button" role="menuitem" disabled={menuAnnotation.mode === 'note' ? !menuAnnotation.note : !menuAnnotation.question && !menuAnnotation.answer} onClick={() => void copyText(menuAnnotation.mode === 'note' ? menuAnnotation.note || '' : t("问题：{0}\n\n回答：{1}", [menuAnnotation.question, menuAnnotation.answer]))}><Clipboard size={15} /><span>{menuAnnotation.mode === 'note' ? t("复制批注") : t("复制批注问答")}</span></button>
             <div role="separator" className="annotation-menu-separator" />
-            <button type="button" role="menuitem" className="annotation-menu-danger" disabled={menuAnnotation.status === 'generating'} title={menuAnnotation.status === 'generating' ? '请等回答完成后再删除' : '删除这条批注及其高亮，可撤销'} onClick={() => { closeMenu(); onDelete(menuAnnotation.id); }}><Trash2 size={15} /><span>删除批注与高亮</span></button>
-          </> : menuAnnotations.length === 0 && !answerMenu.selection ? <button type="button" role="menuitem" onClick={() => void copyText(proseRef.current?.innerText || version.content)}><Copy size={15} /><span>复制回答</span></button> : null}
-          <div className="annotation-menu-footnote">粘贴请在输入框内右键操作</div>
+            <button type="button" role="menuitem" className="annotation-menu-danger" disabled={menuAnnotation.status === 'generating'} title={menuAnnotation.status === 'generating' ? t("请等回答完成后再删除") : t("删除这条批注及其高亮，可撤销")} onClick={() => { closeMenu(); onDelete(menuAnnotation.id); }}><Trash2 size={15} /><span>{t("删除批注与高亮")}</span></button>
+          </> : menuAnnotations.length === 0 && !answerMenu.selection ? <button type="button" role="menuitem" onClick={() => void copyText(proseRef.current?.innerText || version.content)}><Copy size={15} /><span>{t("复制回答")}</span></button> : null}
+          <div className="annotation-menu-footnote">{t("粘贴请在输入框内右键操作")}</div>
         </div>, document.body,
       )}
       {manualCopy !== null && createPortal(
         <div className="annotation-copy-backdrop" onClick={(event) => { if (event.target === event.currentTarget) setManualCopy(null); }}>
-          <section className="annotation-copy-dialog" role="dialog" aria-modal="true" aria-label="手动复制" onKeyDown={(event) => {
+          <section className="annotation-copy-dialog" role="dialog" aria-modal="true" aria-label={t("手动复制")} onKeyDown={(event) => {
             if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); setManualCopy(null); }
             if (event.key === 'Tab') {
               const items = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('textarea, button'));
@@ -431,9 +434,9 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
               else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
             }
           }}>
-            <header><strong>手动复制</strong><button type="button" className="annotation-icon-button" aria-label="关闭手动复制" onClick={() => setManualCopy(null)}><X size={17} /></button></header>
-            <p>浏览器未允许自动复制。内容已选中，请按 Ctrl + C（Mac 按 ⌘ + C）。</p>
-            <textarea aria-label="待复制内容" readOnly value={manualCopy} ref={(element) => { if (element) { element.focus({ preventScroll: true }); element.select(); } }} />
+            <header><strong>{t("手动复制")}</strong><button type="button" className="annotation-icon-button" aria-label={t("关闭手动复制")} onClick={() => setManualCopy(null)}><X size={17} /></button></header>
+            <p>{t("浏览器未允许自动复制。内容已选中，请按 Ctrl + C（Mac 按 ⌘ + C）。")}</p>
+            <textarea aria-label={t("待复制内容")} readOnly value={manualCopy} ref={(element) => { if (element) { element.focus({ preventScroll: true }); element.select(); } }} />
           </section>
         </div>, document.body,
       )}

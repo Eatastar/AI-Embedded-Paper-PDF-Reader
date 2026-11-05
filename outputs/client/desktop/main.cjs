@@ -15,7 +15,7 @@ const profile = smoke
   ? process.env.MARGIN_TEST_USER_DATA ? resolve(process.env.MARGIN_TEST_USER_DATA) : join(app.getPath('temp'), `LearnSomethingSmoke-${process.pid}`)
   : join(app.getPath('appData'), 'MarginChat');
 // Keep the original profile and app identity so upgrades retain chats and keys.
-app.setName('learn something');
+app.setName('AI-Embedded Paper PDF Reader');
 app.setPath('userData', profile);
 app.setPath('sessionData', join(profile, 'Session'));
 const startupLog = createStartupLog(profile);
@@ -30,6 +30,16 @@ let focusRequested = false;
 let failureReported = false;
 let desktopBridge;
 let closeGuard;
+let interfaceLocale = 'zh-CN';
+const local = (zh, en) => interfaceLocale === 'en' ? en : zh;
+function refreshMenu() {
+  Menu.setApplicationMenu(Menu.buildFromTemplate([
+    { label: 'AI-Embedded Paper PDF Reader', submenu: [{ label: local('退出', 'Quit'), role: 'quit' }] },
+    { label: local('编辑', 'Edit'), submenu: editMenu() },
+    { label: local('视图', 'View'), submenu: [{ label: local('重新加载', 'Reload'), role: 'reload' }, { label: local('放大', 'Zoom in'), role: 'zoomIn' }, { label: local('缩小', 'Zoom out'), role: 'zoomOut' }, { label: local('实际大小', 'Actual size'), role: 'resetZoom' }, { label: local('全屏', 'Full screen'), role: 'togglefullscreen' }] },
+  ]));
+}
+function editMenu() { return [{ label: local('撤销', 'Undo'), role: 'undo' }, { label: local('重做', 'Redo'), role: 'redo' }, { type: 'separator' }, { label: local('剪切', 'Cut'), role: 'cut' }, { label: local('复制', 'Copy'), role: 'copy' }, { label: local('粘贴', 'Paste'), role: 'paste' }, { label: local('全选', 'Select all'), role: 'selectAll' }]; }
 const report = { app: 'MarginChat', packaged: app.isPackaged, started: false, rendererLoaded: false, rendererErrors: 0 };
 
 function isLocalPage(url) {
@@ -61,7 +71,7 @@ async function failStartup(error) {
   const code = errorCode(error);
   startupLog.write('startup-failed', { code });
   await saveSmokeReport(error).catch(() => {});
-  if (!smoke) dialog.showErrorBox('learn something 未能打开', code === 'EADDRINUSE'
+  if (!smoke) dialog.showErrorBox('AI-Embedded Paper PDF Reader · 启动失败 / Startup failed', code === 'EADDRINUSE'
     ? '程序使用的本机端口 4327 已被占用。请先关闭另一份客户端后重试。\n\n如果仍无法打开，请运行同目录的「启动诊断」。'
     : '程序启动未完成。请运行同目录的「启动诊断」，把生成的结果发给开发者。\n\n错误代码：' + code + '\n启动日志：' + startupLog.path);
   await shutdown().catch(() => {});
@@ -117,23 +127,19 @@ if (!ownsLock) {
     });
     desktopSession.setPermissionRequestHandler((contents, permission, callback) => callback(permission === 'clipboard-sanitized-write' && isLocalPage(contents.getURL())));
     desktopSession.setPermissionCheckHandler((contents, permission, requestingOrigin) => permission === 'clipboard-sanitized-write' && isLocalPage(requestingOrigin || contents?.getURL() || ''));
-    Menu.setApplicationMenu(Menu.buildFromTemplate([
-      { label: 'learn something', submenu: [{ label: '退出', role: 'quit' }] },
-      { label: '编辑', submenu: [{ label: '撤销', role: 'undo' }, { label: '重做', role: 'redo' }, { type: 'separator' }, { label: '剪切', role: 'cut' }, { label: '复制', role: 'copy' }, { label: '粘贴', role: 'paste' }, { label: '全选', role: 'selectAll' }] },
-      { label: '视图', submenu: [{ label: '重新加载', role: 'reload' }, { label: '放大', role: 'zoomIn' }, { label: '缩小', role: 'zoomOut' }, { label: '实际大小', role: 'resetZoom' }, { label: '全屏', role: 'togglefullscreen' }] },
-    ]));
+    refreshMenu();
     window = new BrowserWindow({
-      width: 1280, height: 860, minWidth: 760, minHeight: 600, title: 'learn something',
+      width: 1280, height: 860, minWidth: 760, minHeight: 600, title: 'AI-Embedded Paper PDF Reader',
       backgroundColor: '#fff8e7', show: !smoke || interactiveSmoke, autoHideMenuBar: true, icon: join(__dirname, 'icon.png'),
       webPreferences: { preload: join(__dirname, 'preload.cjs'), nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, allowRunningInsecureContent: false, spellcheck: false, devTools: !app.isPackaged },
     });
-    desktopBridge = installDesktopBridge({ ipcMain, window, isLocalPage, backupStore: createBackupStore({ directory: join(profile, 'Backups') }) });
+    desktopBridge = installDesktopBridge({ ipcMain, window, isLocalPage, backupStore: createBackupStore({ directory: join(profile, 'Backups') }), onLocale: locale => { interfaceLocale = locale; refreshMenu(); } });
     closeGuard = createCloseGuard({
       save: async () => { const saved = await desktopBridge.waitForSave(); report.exitSaveAcknowledged = saved; if (smoke && !saved) report.passed = false; return saved; }, shutdown,
       quit: () => { quitting = true; if (smoke) void saveSmokeReport().finally(() => app.quit()); else app.quit(); },
       choose: async () => {
         if (smoke && !interactiveSmoke) return 'leave';
-        const { response } = await dialog.showMessageBox(window, { type: 'warning', title: '保存尚未完成', message: '本次保存或自动备份尚未完成，是否重试？', detail: '选择取消会留在当前窗口。直接退出可能丢失最近的修改，已有记录和自动备份会保留。', buttons: ['重试保存', '取消退出', '直接退出'], defaultId: 1, cancelId: 1, noLink: true });
+        const { response } = await dialog.showMessageBox(window, { type: 'warning', title: local('保存尚未完成', 'Saving is incomplete'), message: local('本次保存或自动备份尚未完成，是否重试？', 'Saving or automatic backup has not finished. Retry?'), detail: local('选择取消会留在当前窗口。直接退出可能丢失最近的修改，已有记录和自动备份会保留。', 'Cancel keeps this window open. Quitting now may lose recent edits. Existing records and backups are kept.'), buttons: [local('重试保存', 'Retry saving'), local('取消退出', 'Cancel exit'), local('直接退出', 'Quit anyway')], defaultId: 1, cancelId: 1, noLink: true });
         if (response === 1) window.webContents.send('learn:cancel-close');
         return ['retry', 'cancel', 'leave'][response];
       },
@@ -147,7 +153,7 @@ if (!ownsLock) {
     window.webContents.on('will-attach-webview', event => event.preventDefault());
     window.webContents.on('context-menu', (_event, params) => {
       if (!params.isEditable) return;
-      Menu.buildFromTemplate([{ label: '撤销', role: 'undo' }, { label: '重做', role: 'redo' }, { type: 'separator' }, { label: '剪切', role: 'cut' }, { label: '复制', role: 'copy' }, { label: '粘贴', role: 'paste' }, { label: '全选', role: 'selectAll' }]).popup({ window });
+      Menu.buildFromTemplate(editMenu()).popup({ window });
     });
     window.webContents.on('console-message', event => { if (event.level === 'error') report.rendererErrors += 1; });
     window.webContents.on('render-process-gone', (_event, details) => {

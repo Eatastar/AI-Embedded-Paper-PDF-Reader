@@ -15,6 +15,7 @@
 !/docs/PRIVACY.md
 !/docs/THIRD_PARTY.md
 !/docs/OPEN_SOURCE_RELEASE.md
+!/docs/ATTRIBUTION.md
 /tools/*
 !/tools/source-audit.mjs
 /outputs/*

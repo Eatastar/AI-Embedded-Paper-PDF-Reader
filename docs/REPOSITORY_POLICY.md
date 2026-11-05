@@ -33,3 +33,7 @@
 5. 发布时对照允许清单检查整个远端文件树及文件哈希，确认无额外文件。
 
 忽略规则只控制文件范围，不能代替内容检查。后续新增源码文件也需执行同样的检查。
+
+## English summary
+
+Publish only reviewed source, tests, manifests, generic branding and documentation. Exclude personal conversations, API keys/configuration, runtime databases, logs, backups, PDFs and screenshots. Use the explicit source-audit manifest and review changes before publication. Never package an existing personal profile. The public source URL stays stable after the product rename. Preserve MIT and third-party notices, document GPT implementation credits accurately, and request upstream links from derivatives without adding license restrictions.

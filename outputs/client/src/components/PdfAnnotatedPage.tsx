@@ -1,3 +1,5 @@
+import { t } from '../i18n/locale';
+import { useLocale } from '../i18n/react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { loadPdfJs } from '../adapters/documents';
@@ -26,6 +28,7 @@ interface PdfAnnotatedPageProps extends AnnotatedAnswerProps {
 }
 
 export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appearance, compareOriginal, onPageReady, queue, maxPixels = 16_000_000, search, onSearchLocated, ...annotationProps }: PdfAnnotatedPageProps) {
+  useLocale();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -116,12 +119,12 @@ export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appear
   }, [readyKey, search?.request, search?.query, search?.ordinal]);
 
   return <div className="document-pdf-wrap">
-    {!readyKey && !renderError && <div className="document-render-status" role="status">正在显示原页面…</div>}
+    {!readyKey && !renderError && <div className="document-render-status" role="status">{t("正在显示原页面…")}</div>}
     {renderError && <div className="document-reader-warning" role="alert">{renderError}</div>}
-    {colorError && <div className="document-reader-warning" role="status">这一页暂时无法换色，可切换“可批注文本”，或主动选择“原色对照”查看。</div>}
+    {colorError && <div className="document-reader-warning" role="status">{t("这一页暂时无法换色，可切换“可批注文本”，或主动选择“原色对照”查看。")}</div>}
     <div ref={presentationRef} className="document-page-presentation"><AnnotatedAnswer {...annotationProps} contentReadyKey={readyKey} contentClassName="document-page-annotator" content={
       <div ref={stageRef} className="document-page-stage">
-        <canvas ref={canvasRef} className="document-page-canvas" aria-label={`PDF 第 ${pageNumber} 页原页面`} role="img" />
+        <canvas ref={canvasRef} className="document-page-canvas" aria-label={t("PDF 第 {0} 页原页面", [pageNumber])} role="img" />
         <div ref={textRef} />
       </div>
     } /></div>

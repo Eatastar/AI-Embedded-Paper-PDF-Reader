@@ -20,3 +20,7 @@
 - 应用构建已通过 215 项现有检查、551 项交付核对和隔离的实际启动、保存、完整备份及正常退出验证。新增许可文件与 ZIP 结构另行校验。
 
 完整机器检查结果保留在本机，不把本机环境、代理节点或测试资料发布为附件。公开检查针对已核对的提交和发行文件；以后新增代码、日志或附件需重新检查。
+
+## English scope note
+
+This document records the historical privacy review and packaging scope of the first public release, v0.1.11. It is not a claim that subsequent source changes were part of those immutable assets. The product is now named AI-Embedded Paper PDF Reader; original app code was implemented by GPT through Codex, while the human initiator supplied ideas, requirements and feature decisions. Current changes and validation belong in CHANGELOG.md. See ATTRIBUTION.md for reuse and credit guidance.

@@ -44,11 +44,12 @@ function Get-ExecutableArchitecture([string]$Path) {
 function Get-ClientProcesses {
     # Read only this client's process names. Do not inspect command lines or kill processes.
     @(Get-Process -ErrorAction SilentlyContinue | Where-Object {
+        $_.ProcessName -eq 'AI-Embedded-Paper-PDF-Reader' -or
         $_.ProcessName -eq 'LearnSomething' -or
         $_.ProcessName -eq 'learn something' -or
         $_.ProcessName -eq 'MarginChat' -or
         $_.ProcessName -eq '页边 Margin' -or
-        $_.ProcessName -match '^(?:LearnSomething|MarginChat)-\d+(?:\.\d+){1,3}-Windows-(?:x64|arm64|ia32)$'
+        $_.ProcessName -match '^(?:AI-Embedded-Paper-PDF-Reader|LearnSomething|MarginChat)-\d+(?:\.\d+){1,3}-Windows-(?:x64|arm64|ia32)$'
     } | ForEach-Object {
         [PSCustomObject]@{ Id = $_.Id; Name = $_.ProcessName }
     })
@@ -140,7 +141,7 @@ try {
     $diagnosticRoot = Join-Path $root '启动诊断'
     $runDirectory = Join-Path $diagnosticRoot ((Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + $PID)
     New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
-    Add-Report 'learn something 启动诊断'
+    Add-Report 'AI-Embedded Paper PDF Reader 启动诊断 / Startup diagnostics'
     Add-Report ('开始时间：' + (Get-Date -Format 'yyyy-MM-dd HH:mm:ss zzz'))
     Add-Report ('工具目录：' + $root)
     Add-Report ('系统版本：' + [Environment]::OSVersion.VersionString)
@@ -154,10 +155,10 @@ try {
 
     $candidates = @(Get-ChildItem -LiteralPath $root -File | ForEach-Object {
         $version = $null
-        if ($_.Name -match '^(?:LearnSomething|MarginChat)-(\d+(?:\.\d+){1,3})-Windows-(?:x64|arm64|ia32)\.exe$') {
+        if ($_.Name -match '^(?:AI-Embedded-Paper-PDF-Reader|LearnSomething|MarginChat)-(\d+(?:\.\d+){1,3})-Windows-(?:x64|arm64|ia32)\.exe$') {
             try { $version = [version]$Matches[1] } catch { return }
         }
-        elseif ($_.Name -in @('LearnSomething.exe', 'learn something.exe', 'MarginChat.exe', '页边 Margin.exe')) {
+        elseif ($_.Name -in @('AI-Embedded-Paper-PDF-Reader.exe', 'LearnSomething.exe', 'learn something.exe', 'MarginChat.exe', '页边 Margin.exe')) {
             $version = [version]'0.0'
         }
         else { return }
@@ -165,7 +166,7 @@ try {
     } | Sort-Object -Property @{ Expression = { $_.Version }; Descending = $true }, @{ Expression = { $_.File.LastWriteTimeUtc }; Descending = $true })
 
     if ($candidates.Count -eq 0) {
-        throw '同目录没有找到 learn something 的 EXE。请把诊断工具与 EXE 放在同一个文件夹，解压版请先完整解压。'
+        throw '同目录没有找到 AI-Embedded Paper PDF Reader 的 EXE。请把诊断工具与 EXE 放在同一个文件夹，解压版请先完整解压。'
     }
     $executable = $candidates[0].File
     Add-Report ('选择文件：' + $executable.FullName)

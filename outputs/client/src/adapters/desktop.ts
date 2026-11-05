@@ -1,5 +1,6 @@
 export interface LocalBackup { id: string; createdAt: number; size: number; baseline?: boolean }
 export interface DesktopBridge {
+  setLocale?: (locale: 'zh-CN' | 'en') => void;
   onPrepareClose: (handler: () => Promise<void>, onCancel: () => void) => () => void;
   backups: {
     list: () => Promise<LocalBackup[]>;

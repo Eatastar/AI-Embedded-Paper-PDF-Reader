@@ -345,3 +345,21 @@ button svg { flex-shrink: 0; }
 .trash-confirm-actions { justify-content: flex-end; margin-top: 24px; }
 .backup-scope { display: flex; align-items: center; gap: 12px; font-size: 12px; margin-top: 20px; }
 .backup-scope select { border: 1px solid var(--ls-border); border-radius: 7px; color: var(--ls-ink); background: var(--ls-panel); font: inherit; padding: 8px 10px; }
+.language-preference { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; max-width: 100%; }
+.language-selector { display: inline-flex; align-items: center; gap: 6px; padding: 4px 7px; border: 1px solid #e7d2a2; border-radius: 7px; background: #fffaf0; color: #75572e; font-size: 12px; }
+.language-selector select { min-width: 90px; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; padding: 3px 2px; }
+.language-selector select:focus-visible { outline: 2px solid #bc8b3d; outline-offset: 3px; }
+.app-preferences { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 0 0 18px; font-size: 13px; color: #75572e; }
+.project-about { border-top: 1px solid #ead8b0; padding: 18px 0 4px; font-size: 12px; line-height: 1.75; color: #80633b; }
+.project-about summary { cursor: pointer; margin-bottom: 8px; }
+.project-about a { color: #886023; text-underline-offset: 3px; }
+.reader-home-toolbar > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reader-home-toolbar > span svg { flex: 0 0 auto; }
+.reader-home-toolbar > div { flex: 0 0 auto; }
+.brand-name { min-width: 0; overflow-wrap: anywhere; font-size: 14px; line-height: 1.45; }
+.reader-settings footer { flex-wrap: wrap; gap: 4px 10px; }
+:lang(en) .reader-setting-row { gap: 10px; }
+:lang(en) .reader-setting-row > span { flex: 0 0 55px; }
+:lang(en) .document-view-switch button { white-space: normal; line-height: 1.4; }
+:lang(en) .reader-note-filters { grid-template-columns: 1fr; }
+:lang(en) .connection-templates { grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); }

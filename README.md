@@ -1,83 +1,89 @@
-# learn something
+# AI-Embedded Paper PDF Reader
 
-以本地 PDF 阅读为主、AI 对话为辅助的学习工具。在 AI 回答或 PDF 文字中划选一段，就地询问 AI 或添加普通批注；收起后保留高亮，再次点击即可打开。
+**AI 嵌入式论文 PDF 阅读器** · 原名 learn something
 
-首个公开正式版为 **v0.1.11**，应用构建 **20261105.10**，项目代码使用 **MIT** 许可证。
+以本地论文阅读为主、AI 对话为辅助。在 PDF 原文或 AI 回答中划选文字，就地询问或写笔记。收起后保留自选颜色的高亮，点击即可重新打开。支持中文和 English 界面，语言选择保存在本机。
 
-[下载 Windows x64 完整包](https://github.com/Eatastar/Learn-Something/releases/tag/v0.1.11) · [隐私与联网说明](docs/PRIVACY.md) · [版本记录](docs/CHANGELOG.md) · [开源前检查范围](docs/OPEN_SOURCE_RELEASE.md)
+A local paper reader with optional AI conversations. Select text in a PDF or an AI answer to ask a question or write a note in place. Highlights keep your chosen colors; click one to reopen it. Choose a Chinese or English interface, remembered locally.
 
-## 开始使用
+[下载 / Downloads](https://github.com/Eatastar/Learn-Something/releases) · [隐私 / Privacy](docs/PRIVACY.md) · [版本记录 / Changelog](docs/CHANGELOG.md) · [项目总纲 / Project outline](docs/PROJECT.md)
 
-1. 下载 Release 中的完整 ZIP，全部解压后运行 `LearnSomething.exe`，不要只复制一个 EXE。
-2. 在默认阅读首页选择本地 PDF。可调整纸张和文字颜色，连续阅读、搜索并添加普通笔记。
-3. 需要 AI 时，从“模型与设置”添加自己的服务地址、模型名和密钥。支持 Kimi、千问、Gemini 兼容入口、Grok、Ollama、LM Studio 及自定义兼容服务。
+当前源码版本为 **0.1.12**，首个公开正式版为 **v0.1.11**。请以 Releases 中实际发布的附件为准。项目采用 [MIT 许可证](LICENSE)。仓库地址沿用原地址，已有下载链接和衍生项目引用继续有效。
 
-普通阅读和笔记不调用 AI。发送问题时会向所选服务发送完整有效对话及该对话所有附件的提取文字，详见隐私说明。Windows 桌面版沿用系统代理；程序不附带代理节点或模型密钥。
+The current source version is **0.1.12**; **v0.1.11** was the first public release. Download the assets actually available on the Releases page. The project uses the [MIT license](LICENSE). The repository URL remains unchanged so existing links keep working.
 
-## 当前能力
+## 开始使用 / Getting started
 
-- 主聊天与回答版本切换；旧批注保留在原回答版本。
-- 原文高亮、可拖动批注框、一处高亮一组可替换的当前问答与普通笔记。
-- PDF、TXT、Markdown 本机导入；PDF 原排版划选、分页或连续阅读、手势缩放。
-- 按需打开文档导航：目录跳转、全文搜索、按页码/类型/内容筛选批注并返回原句。
-- 原色、暖黄、浅灰、深色及自定义纸张和文字颜色，不改写原文件。
-- 阅读位置记忆、对话删除恢复、完整聊天备份与追加导入。
-- 多模型预载，支持 Chat Completions、Responses 和 Claude Messages。
-- Windows x64 免安装桌面包及系统代理接入。
-- 完整上下文去重、变化记录事务保存、升级前兼容备份与可选范围导出。
+1. 完整解压 Windows x64 ZIP，运行 `AI-Embedded-Paper-PDF-Reader.exe`，保留同目录所有文件。v0.1.11 的入口是 `LearnSomething.exe`。
+   Fully extract the Windows x64 ZIP and run `AI-Embedded-Paper-PDF-Reader.exe`, keeping all accompanying files. The v0.1.11 entry point is `LearnSomething.exe`.
+2. 在首页打开本地 PDF；在首页、阅读设置或模型设置中选择中文 / English。阅读设置可自定义纸张和文字颜色。
+   Open a local PDF from the home screen. Choose Chinese / English on the home screen or in reading/model settings. Customize paper and text colors in Reading settings.
+3. 划选原文，选择询问 AI 或只写批注。在批注框的“高亮颜色”中选择预设色、自定义颜色或十六进制颜色。
+   Select text to ask AI or write a note. Highlight color in the annotation panel offers presets, custom colors and hexadecimal input.
+4. 需要 AI 时，在“模型与设置”填写自己的 API 地址、模型名和密钥，从聊天输入框左下角切换已保存连接。
+   To use AI, add your API address, model name and key in Models & settings. Switch saved connections from the lower left of the chat input.
 
-扫描页当前只提供查看和换色，不含 OCR；搜索依据本机提取文字，PDF 目录取决于文件是否内嵌。后续工作见 [改进清单](docs/ROADMAP.md)。
+普通阅读、搜索和笔记不调用 AI。发送问题会将完整有效主对话及该对话所有附件的提取文字发给所选服务，原文件留在本机。桌面版沿用系统代理，不附带代理节点或 API 密钥。详见[隐私说明](docs/PRIVACY.md)。
 
-## 目录
+Reading, search and personal notes make no AI requests. Asking sends the full valid main conversation and extracted text from all attachments in that conversation to your selected service. Original files remain local. The desktop app follows your system proxy and includes no proxy nodes or API keys. See [Privacy](docs/PRIVACY.md).
 
-| 路径 | 用途 |
+## 功能 / Features
+
+| 功能 | Feature |
 | --- | --- |
-| `outputs/client/` | 客户端源码、服务、桌面入口和测试 |
-| `outputs/windows/开始使用.txt` | 随桌面包分发的使用说明 |
-| `docs/PROJECT.md` | 项目总纲与模块职责 |
-| `docs/ROADMAP.md` | 按优先级整理的改进清单 |
-| `docs/CHANGELOG.md` | 当前基准版及验证范围 |
-| `docs/PRIVACY.md` | 本地数据、模型请求和代理边界 |
-| `docs/THIRD_PARTY.md` | 第三方组件及其许可 |
-| `LICENSE` | 项目自身代码的 MIT 许可证 |
-| `docs/REPOSITORY_POLICY.md` | 源码提交范围和个人数据排除规则 |
-| `tools/source-audit.mjs` | 生成并检查允许提交的文件清单 |
+| 本地阅读优先，重复内容只显示一次，聊天按需打开 | Local reading first, duplicate content displayed once, optional chat |
+| PDF 原排版、单页/连续阅读、手势缩放与续读 | Original PDF layout, single/continuous pages, pinch zoom and reading position memory |
+| 纸张/文字配色、保留彩图、原色对照 | Custom paper/text colors, preserved colored areas and original-color comparison |
+| 自选高亮颜色、可拖动批注框、框外点击收起 | Custom highlight colors, movable panels and outside-click dismissal |
+| 原文提问、普通笔记、成功后才覆盖的重新提问 | Questions about text, personal notes and replace-on-success questions |
+| 回答版本独立，旧批注跟随原回答 | Separate answer versions; annotations stay with the original answer |
+| PDF 目录、全文搜索、批注筛选定位 | PDF contents, full-text search and filtered annotation navigation |
+| 中英文界面切换并记忆，不改写原文和聊天 | Remembered Chinese/English interface, without rewriting documents or chats |
+| 多模型预载、三种接口格式及本地模型 | Saved connections, three API formats and local models |
+| 回收站恢复/永久删除、完整备份与追加导入 | Trash restore/permanent deletion, full backups and additive import |
 
-保留现有目录结构，确保桌面构建脚本的资源和输出路径一致。`work/`、程序包、安装依赖和运行数据均在本机生成。
+支持 Chat Completions、Responses、Anthropic Messages。模板包括 GPT、Claude、DeepSeek、中转站、Kimi、千问、Gemini 兼容入口、Grok、Ollama、LM Studio 及自定义服务。可用模型由服务商决定。扫描页支持查看和换色，目前不含 OCR 或图片理解。
 
-## 开发与验证
+Supports Chat Completions, Responses and Anthropic Messages. Templates include GPT, Claude, DeepSeek, relays, Kimi, Qwen, Gemini's compatible endpoint, Grok, Ollama, LM Studio and custom services. Model availability depends on the provider. Scanned pages support viewing and recoloring, without OCR or image understanding.
 
-需要 Node.js 22.12 或更新版本，以及 pnpm。
+## 自由修改与署名 / Adaptation and credits
+
+欢迎任何人下载、使用、fork 本项目，并用 **AI agent / vibe coding** 修改成适合自己的版本。发布衍生版时，请在 README 或发布说明中链接[本项目](https://github.com/Eatastar/Learn-Something)，例如“基于 AI-Embedded Paper PDF Reader 修改”。这是友好的来源标注请求，不增加 MIT 许可证之外的限制。
+
+Everyone is welcome to download, use and fork this project, and adapt it with **AI agents / vibe coding**. Please link to [this project](https://github.com/Eatastar/Learn-Something) when publishing a derivative, for example “Based on AI-Embedded Paper PDF Reader.” This is a courtesy request and adds no restrictions to the MIT license.
+
+**本项目的原创应用代码全部由 GPT 通过 Codex 实现。人类发起者负责提出想法、确定需求，并对功能进行选择和取舍。** 第三方代码保留各自作者的版权、署名和许可证，不属于上述 GPT 原创声明。见[贡献说明](docs/ATTRIBUTION.md)和[第三方组件](docs/THIRD_PARTY.md)。
+
+**All original application code was implemented by GPT through Codex. The human initiator proposed ideas, defined requirements and selected features and trade-offs.** Third-party code retains its own authorship, copyright and licenses and is not claimed as original GPT work. See [Attribution](docs/ATTRIBUTION.md) and [Third-party components](docs/THIRD_PARTY.md).
+
+GitHub 项目来源请使用仓库链接；需要通知维护者时，可在相关 Issue、PR 或 Discussion 中 `@Eatastar`。仓库本身不是可用 `@项目名` 通知的用户账户。
+
+Use a repository link to credit the project. To notify the maintainer, mention `@Eatastar` in a relevant issue, pull request or discussion. A repository is not a user account that can be notified with `@project-name`.
+
+## 开发 / Development
+
+需要 Node.js 22.12+ 与 pnpm。依赖版本由锁文件固定。
+
+Requires Node.js 22.12+ and pnpm. Dependencies are pinned in the lockfile.
 
 ```sh
 pnpm --dir outputs/client install --frozen-lockfile
 pnpm --dir outputs/client test
 pnpm --dir outputs/client build
 pnpm --dir outputs/client dev
-```
-
-构建 Windows 桌面版：
-
-```sh
 pnpm --dir outputs/client build:desktop
 ```
 
-输出到 `outputs/windows/`。PDF.js 的离线字体和解码资源由构建前步骤从锁定依赖复制，无需将生成资源提交到仓库。
+源码在 `outputs/client/`，桌面包在本机生成到 `outputs/windows/`。构建时复制 PDF.js 离线资源。详见[客户端说明](outputs/client/README.md)、[后续计划](docs/ROADMAP.md)。
 
-## 许可证
+Source lives in `outputs/client/`; desktop packages are generated locally in `outputs/windows/`. The build copies PDF.js offline assets. See the [client guide](outputs/client/README.md) and [roadmap](docs/ROADMAP.md).
 
-项目自身代码见 [MIT 许可证](LICENSE)，第三方组件的版权与许可证继续保留，见[第三方组件说明](docs/THIRD_PARTY.md)。Windows 包同时保留 Electron、Chromium 和依赖组件的许可文件。
+## 提交范围与许可 / Repository scope and license
 
-首次运行是本地演示模式。通过“模型与设置”填写自己的连接后使用；仓库中的 `.env.example` 只有公开接口示例和空白密钥字段。
+这里只保存源码、测试、依赖清单、通用品牌资源和文档。个人聊天、API 配置与密钥、日志、备份、论文和阅读截图不属于源码。发布前运行 `node tools/source-audit.mjs`，报告写到忽略的 `work/` 目录，不读取个人数据目录。
 
-## 提交范围
+Only source, tests, dependency manifests, generic branding assets and documentation belong here. Personal conversations, API settings/keys, logs, backups, papers and reading screenshots do not. Run `node tools/source-audit.mjs` before publishing. Reports go to ignored `work/` and do not read the personal data directory.
 
-这里只保存源码、依赖清单、测试、通用品牌资源和项目文档。聊天数据库、个人模型配置、真实 API 密钥、日志、聊天备份、个人论文及阅读截图均留在本机。
+项目自身代码采用 [MIT](LICENSE)，第三方许可继续保留。首次公开前检查范围见 [OPEN_SOURCE_RELEASE](docs/OPEN_SOURCE_RELEASE.md)，提交规则见 [REPOSITORY_POLICY](docs/REPOSITORY_POLICY.md)。Windows 包保留 Electron、Chromium 及依赖许可文件。
 
-提交前运行：
-
-```sh
-node tools/source-audit.mjs
-```
-
-运行结果写入被忽略的 `work/`，不会写入个人数据目录。
+Original project code uses [MIT](LICENSE), with third-party licenses retained. See [OPEN_SOURCE_RELEASE](docs/OPEN_SOURCE_RELEASE.md) for the first public release audit and [REPOSITORY_POLICY](docs/REPOSITORY_POLICY.md) for commit rules. Windows packages keep Electron, Chromium and dependency license files.

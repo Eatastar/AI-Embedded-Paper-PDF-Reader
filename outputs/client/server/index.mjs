@@ -15,7 +15,7 @@ server.on('error', error => {
   console.error(error.code === 'EADDRINUSE' ? `端口 ${port} 已被占用，请先关闭之前启动的客户端。` : '本地服务无法启动。');
   process.exitCode = 1;
 });
-server.listen(port, '127.0.0.1', () => console.log(`learn something本地服务已就绪：http://127.0.0.1:${port}`));
+server.listen(port, '127.0.0.1', () => console.log(`AI-Embedded Paper PDF Reader 本地服务已就绪 / Local service ready：http://127.0.0.1:${port}`));
 let closing = false;
 function shutdown() {
   if (closing) return;

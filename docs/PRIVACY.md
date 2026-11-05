@@ -1,6 +1,6 @@
-# 本地数据与模型请求
+# 本地数据与模型请求 / Local data and model requests
 
-learn something 在本机保存阅读资料、聊天和批注。项目没有自建的云端文件库、账号服务或使用情况收集接口。
+AI-Embedded Paper PDF Reader 在本机保存阅读资料、聊天和批注。项目没有自建的云端文件库、账号服务或使用情况收集接口。
 
 ## 什么保存在本机
 
@@ -34,3 +34,13 @@ Windows 桌面版通过 Electron / Chromium 网络组件读取系统代理设置
 源码仓库不保存运行日志、用户数据库、实际模型配置、环境密钥、聊天备份、个人论文或阅读截图。公开发布包由程序和通用资源组成；使用后生成的个人数据不在发行包内。
 
 反馈问题时请先去除密钥、聊天正文、私人文档、个人路径及代理订阅地址，勿直接提交整个用户数据目录。
+
+## English
+
+The app stores original document bytes, extracted text, conversations, annotations and reading position locally. Model connections and credentials are separate from the conversation database. Windows encrypts desktop API keys with the operating system; when encryption is unavailable, keys last only for the session. Conversation backups include original attachments and notes, but no model keys. Interface language is an independent local preference and is not included in these backups.
+
+Reading, turning pages, recoloring, searching, writing personal notes and saving/switching connections make no AI requests. Asking sends the full valid main conversation, extracted text from all its attachments and your question to the selected service; annotation questions also include the selected passage. Original PDFs and page images are not uploaded as files. The provider determines its own data-processing rules.
+
+The Windows desktop app uses Electron/Chromium to refresh and read system proxy settings before model requests. The app contains no proxy subscriptions, proxy credentials, fixed nodes or fixed public IP. Proxy rules may route a request through a node or directly. A provider normally sees the proxy exit IP for proxied requests and the network exit IP for direct requests. Local loopback model services usually connect directly. The browser version uses a different Node networking path and should not be assumed to inherit Windows system proxy settings.
+
+Diagnostic logs retain only allowed metadata such as time, request ID, type, format, destination host, model name, result, status and duration. They exclude request bodies, authorization headers and keys, but user-defined model names and API hosts may still be sensitive. Review them before sharing. The source repository and release packages contain no personal runtime databases, actual model settings, environment secrets, backups, papers or reading screenshots. Remove keys, private content, personal paths and proxy subscription URLs before reporting a problem; do not submit the whole user-data directory.

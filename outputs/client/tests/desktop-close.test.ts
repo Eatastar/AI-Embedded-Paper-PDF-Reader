@@ -6,15 +6,26 @@ import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 const { installDesktopBridge, createCloseGuard } = createRequire(import.meta.url)('../desktop/desktop-bridge.cjs');
 
-function harness(timeoutMs = 1000) {
+function harness(timeoutMs = 1000, onLocale = (_locale: string) => {}) {
   const handlers = new Map<string, Function>(), sent: unknown[][] = [];
   const ipc = Object.assign(new EventEmitter(), { handle: (name: string, handler: Function) => handlers.set(name, handler), removeHandler: (name: string) => handlers.delete(name) });
   const frame = { url: 'http://127.0.0.1:4327/' };
   const contents = { mainFrame: frame, send: (...args: unknown[]) => sent.push(args) };
   const event = { sender: contents, senderFrame: frame };
-  const bridge = installDesktopBridge({ ipcMain: ipc, window: { webContents: contents }, timeoutMs, isLocalPage: (url: string) => url.startsWith('http://127.0.0.1:4327/'), backupStore: { list: async () => ['local-backup'], read: async (id: string) => id, write: async (text: string) => text } });
+  const bridge = installDesktopBridge({ ipcMain: ipc, window: { webContents: contents }, timeoutMs, onLocale, isLocalPage: (url: string) => url.startsWith('http://127.0.0.1:4327/'), backupStore: { list: async () => ['local-backup'], read: async (id: string) => id, write: async (text: string) => text } });
   return { ipc, handlers, sent, event, bridge };
 }
+
+test('native menu language accepts only supported values from the trusted top-level page', () => {
+  const accepted: string[] = [], { ipc, event, bridge } = harness(1000, locale => accepted.push(locale));
+  ipc.emit('learn:locale', event, 'en');
+  ipc.emit('learn:locale', event, 'zh-CN');
+  ipc.emit('learn:locale', event, 'fr');
+  ipc.emit('learn:locale', { ...event, sender: {} }, 'en');
+  ipc.emit('learn:locale', { ...event, senderFrame: { url: event.senderFrame.url } }, 'en');
+  assert.deepEqual(accepted, ['en', 'zh-CN']);
+  bridge.dispose(); assert.equal(ipc.listenerCount('learn:locale'), 0);
+});
 
 test('保存握手只接受本地顶层窗口的正确请求 ID，重复关闭共用一次等待', async () => {
   const { ipc, sent, event, bridge } = harness();

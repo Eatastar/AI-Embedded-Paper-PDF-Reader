@@ -130,3 +130,14 @@
 .annotation-kept-answer { border-top: 1px solid #e4d6ae; margin-top: 20px; padding-top: 13px; font-size: 12px; line-height: 1.8; }
 .annotation-kept-answer > summary { color: #8b7957; cursor: pointer; }
 .annotation-kept-answer[open] > summary { margin-bottom: 12px; }
+.highlight-color-picker { margin: 0 0 14px; padding: 9px 10px; border: 1px solid var(--line, #e6d3a3); border-radius: 9px; font-size: 12px; }
+.highlight-color-picker summary { display: flex; align-items: center; gap: 7px; cursor: pointer; width: fit-content; }
+.highlight-current-color { width: 17px; height: 17px; border: 1px solid #99774766; border-radius: 50%; }
+.highlight-color-options { display: flex; flex-wrap: wrap; gap: 9px; margin: 12px 0; }
+.highlight-color-options button { width: 25px; height: 25px; padding: 0; border: 1px solid #99774766; border-radius: 50%; cursor: pointer; }
+.highlight-color-options button[aria-pressed="true"] { outline: 2px solid #74522a; outline-offset: 2px; }
+.highlight-custom-color { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.highlight-custom-color label { display: flex; gap: 7px; align-items: center; }
+.highlight-custom-color input[type="color"] { width: 29px; height: 28px; padding: 1px; border: 1px solid #ddc994; background: transparent; border-radius: 4px; cursor: pointer; }
+.highlight-custom-color input:not([type="color"]) { min-width: 0; width: 96px; padding: 5px 6px; background: #fffdf5; border: 1px solid #ddc994; border-radius: 5px; font-family: monospace; color: inherit; }
+.highlight-color-picker .annotation-footnote { margin-bottom: 0; }

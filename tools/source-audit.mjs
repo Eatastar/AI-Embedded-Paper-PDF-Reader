@@ -9,7 +9,7 @@ const app = 'outputs/client/';
 const staticFiles = [
   '.gitignore', '.gitattributes', 'README.md', 'LICENSE', 'tools/source-audit.mjs',
   'docs/PROJECT.md', 'docs/ROADMAP.md', 'docs/REPOSITORY_POLICY.md', 'docs/CHANGELOG.md',
-  'docs/PRIVACY.md', 'docs/THIRD_PARTY.md', 'docs/OPEN_SOURCE_RELEASE.md',
+  'docs/PRIVACY.md', 'docs/THIRD_PARTY.md', 'docs/OPEN_SOURCE_RELEASE.md', 'docs/ATTRIBUTION.md',
   'outputs/windows/开始使用.txt',
   ...['.gitignore', '.gitattributes', '.env.example', 'README.md', 'package.json', 'pnpm-lock.yaml',
     'pnpm-workspace.yaml', 'index.html', 'tsconfig.json', 'vite.config.ts', '启动客户端.cmd', '停止客户端.cmd',

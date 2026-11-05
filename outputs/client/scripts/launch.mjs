@@ -58,11 +58,11 @@ async function main() {
   if (process.argv.slice(2).some(argument => argument !== '--no-open')) throw new Error('不支持这个启动选项。正常双击启动文件即可。');
   if (Number(process.versions.node.split('.')[0]) < 22) throw new Error('需要 Node.js 22 或更新版本。可以使用 Codex 自带的 Node.js。');
   if (await health()) {
-    console.log('learn something已经在运行，已沿用当前客户端：' + base);
+    console.log('AI-Embedded Paper PDF Reader已经在运行，已沿用当前客户端：' + base);
     await openBrowser();
     return;
   }
-  if (!(await portAvailable())) throw new Error('端口 4317 被其他程序占用。请先关闭占用该端口的程序，再重新启动learn something。');
+  if (!(await portAvailable())) throw new Error('端口 4317 被其他程序占用。请先关闭占用该端口的程序，再重新启动AI-Embedded Paper PDF Reader。');
   try { await access(resolve(root, 'dist/index.html')); }
   catch { throw new Error('缺少客户端构建文件 dist。请保留完整客户端文件夹，或请开发者先完成构建。'); }
   try { require.resolve('ai'); require.resolve('@ai-sdk/openai-compatible'); }
@@ -84,7 +84,7 @@ async function main() {
       try {
         await writeFile(resolve(runtime, 'server.json'), JSON.stringify(launchedRecord, null, 2), { encoding: 'utf8', mode: 0o600 });
       } catch { throw new Error('无法保存经过验证的运行身份。为避免留下无法管理的后台服务，已取消本次启动。'); }
-      console.log('learn something已启动：' + base);
+      console.log('AI-Embedded Paper PDF Reader已启动：' + base);
       console.log('聊天记录保存在当前浏览器中。关闭网页不会停止本地服务。');
       await openBrowser();
       return;

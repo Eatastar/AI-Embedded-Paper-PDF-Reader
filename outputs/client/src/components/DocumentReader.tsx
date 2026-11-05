@@ -1,3 +1,5 @@
+import { t } from '../i18n/locale';
+import { useLocale } from '../i18n/react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
@@ -30,6 +32,7 @@ const sameSet = (a: Set<number>, b: Set<number>) => a.size === b.size && [...a].
 type PageGeometry = Record<number, { width: number; height: number }>;
 
 export function DocumentReader({ source, onClose, focused, onToggleFocus, modelLabel, onOpenModelSettings, onBackup, onOpenFile, ...annotationProps }: DocumentReaderProps) {
+  useLocale();
   const [initial] = useState(() => loadReaderPosition(source.id, source.pages.length, source.kind));
   const [pageIndex, setPageIndex] = useState(initial.pageIndex), [pageInput, setPageInput] = useState(String(initial.pageIndex + 1));
   const [view, setView] = useState(initial.view), [layout, setLayout] = useState<'paged' | 'continuous'>(initial.layout || 'continuous');
@@ -121,7 +124,7 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
     if (pendingSearch.current !== request) return;
     restore(); pendingSearch.current = null;
     if (marker) marker.scrollIntoView({ block: 'center', inline: 'nearest' });
-    else annotationProps.onNotify('已到对应页面，这处文字暂时无法精确定位，可切换“可批注文本”查看。');
+    else annotationProps.onNotify(t("已到对应页面，这处文字暂时无法精确定位，可切换“可批注文本”查看。"));
     scroll();
   };
   const jump = (value: number, keepAnnotation = false) => {
@@ -266,20 +269,20 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
     selectPage(index);
   };
   const original = compareOriginal || appearance.preset === 'original', paper = original ? '#ffffff' : appearance.paper, ink = original ? '#000000' : appearance.ink;
-  return <section ref={rootRef} className="document-reader" role="region" aria-label={`文档阅读：${source.name}`} data-testid="document-reader" data-reader-focused={focused} data-reader-dark={colorLuminance(paper) < .25 ? 'true' : 'false'} data-reader-narrow={narrow} data-reader-layout={continuous ? 'continuous' : 'paged'} style={{ '--reader-paper': paper, '--reader-ink': ink } as CSSProperties}>
+  return <section ref={rootRef} className="document-reader" role="region" aria-label={t("文档阅读：{0}", [source.name])} data-testid="document-reader" data-reader-focused={focused} data-reader-dark={colorLuminance(paper) < .25 ? 'true' : 'false'} data-reader-narrow={narrow} data-reader-layout={continuous ? 'continuous' : 'paged'} style={{ '--reader-paper': paper, '--reader-ink': ink } as CSSProperties}>
     <ReaderToolbar onOpenFile={onOpenFile} name={source.name} kind={source.kind} pageCount={source.pages.length} pageIndex={pageIndex} pageInput={pageInput} pageInputRef={pageInputRef} onPageInput={setPageInput} onCommitPage={commitPage} onPage={selectPage} zoom={zoom} onZoom={changeZoom} view={view} onView={switchView} layout={layout} onLayout={switchLayout} appearance={appearance} onAppearance={value => { setCompareOriginal(false); setAppearance(value); }} saved={appearanceSaved && positionSaved} compareOriginal={compareOriginal} onCompareOriginal={() => setCompareOriginal(value => !value)} navigationOpen={navigationOpen} onToggleNavigation={() => setNavigationOpen(value => !value)} focused={focused} onToggleFocus={() => { flush(); onToggleFocus(); }} onClose={() => { flush(); onClose(); }} modelLabel={modelLabel} onOpenModelSettings={onOpenModelSettings} onBackup={onBackup} />
     <div className="document-reader-body">
       <ReaderNavigation open={navigationOpen} source={source} annotations={annotationProps.annotations} pageIndex={pageIndex} outline={outline} outlineLoading={loading || outlineLoading} outlineError={outlineError || Boolean(fileError)} outlineTruncated={outlineTruncated} onClose={() => setNavigationOpen(false)} onPage={selectPage} onSearch={selectSearch} onClearSearch={clearSearch} onAnnotation={selectAnnotation} />
       <div ref={viewportRef} className={`document-reader-viewport ${view === 'text' ? 'document-reader-text-viewport' : ''}`} onScroll={scroll}>
-        {!hasText && !continuous && <p className="document-reader-warning">这一页没有可提取的文字，可能是扫描页。可查看原页面；暂不支持 OCR 识别和图片内容询问。</p>}
-        {view === 'original' && loading && <div className="document-reader-empty" role="status">正在打开 PDF…</div>}
-        {view === 'original' && fileError && <div className="document-reader-empty" role="alert"><p>{fileError}</p><button type="button" onClick={() => switchView('text')}>打开已保存文字</button></div>}
+        {!hasText && !continuous && <p className="document-reader-warning">{t("这一页没有可提取的文字，可能是扫描页。可查看原页面；暂不支持 OCR 识别和图片内容询问。")}</p>}
+        {view === 'original' && loading && <div className="document-reader-empty" role="status">{t("正在打开 PDF…")}</div>}
+        {view === 'original' && fileError && <div className="document-reader-empty" role="alert"><p>{t(fileError)}</p><button type="button" onClick={() => switchView('text')}>{t("打开已保存文字")}</button></div>}
         {view === 'original' && pdf && (continuous ? <div className="reader-continuous-pages">{source.pages.map((p, index) => {
           const size = pdfPageSize(geometry[index] || geometry[0] || { width: 612, height: 792 }, availableWidth, zoom);
           const active = nearPages.has(index) || forcedPage === index || openedPage === index;
-          return <div key={p.versionId} ref={element => { if (element) slots.current.set(index, element); else slots.current.delete(index); }} data-reader-page={index} className="reader-page-slot" style={{ width: size.width }}><p className="reader-page-label">第 {p.pageNumber} 页{!p.text.trim() ? ' · 无可提取文字，暂不支持 OCR' : ''}</p><div className="reader-page-body" style={{ width: size.width, height: size.height }}>{active ? renderPage(index) : <div className="reader-page-placeholder" aria-label={`第 ${p.pageNumber} 页，滚动到此处时显示`} />}</div></div>;
+          return <div key={p.versionId} ref={element => { if (element) slots.current.set(index, element); else slots.current.delete(index); }} data-reader-page={index} className="reader-page-slot" style={{ width: size.width }}><p className="reader-page-label">{t("第 {0} 页", [p.pageNumber])}{!p.text.trim() ? t(" · 无可提取文字，暂不支持 OCR") : ''}</p><div className="reader-page-body" style={{ width: size.width, height: size.height }}>{active ? renderPage(index) : <div className="reader-page-placeholder" aria-label={t("第 {0} 页，滚动到此处时显示", [p.pageNumber])} />}</div></div>;
         })}</div> : <div key={`${source.id}:${pageIndex}:pdf`}>{renderPage(pageIndex)}</div>)}
-        {page && view === 'text' && hasText && <article ref={textRef} className="document-page-text" key={`${source.id}:${pageIndex}:text`}><p className="document-text-page-label">第 {page.pageNumber} 页 · 提取文字</p><AnnotatedAnswer {...annotationProps} annotations={annotationsByPage.get(pageIndex) || []} messageId={page.messageId} version={version(pageIndex)} plainText /></article>}
+        {page && view === 'text' && hasText && <article ref={textRef} className="document-page-text" key={`${source.id}:${pageIndex}:text`}><p className="document-text-page-label">{t("第 {0} 页 · 提取文字", [page.pageNumber])}</p><AnnotatedAnswer {...annotationProps} annotations={annotationsByPage.get(pageIndex) || []} messageId={page.messageId} version={version(pageIndex)} plainText /></article>}
       </div>
     </div>
   </section>;
