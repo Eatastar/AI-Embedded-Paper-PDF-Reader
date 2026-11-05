@@ -1,8 +1,18 @@
 # learn something
 
-支持自定义 AI API 的学习与阅读工具。在 AI 回答或 PDF 文字中划选一段，就地询问 AI 或添加普通批注；收起后保留高亮，再次点击即可打开。
+以本地 PDF 阅读为主、AI 对话为辅助的学习工具。在 AI 回答或 PDF 文字中划选一段，就地询问 AI 或添加普通批注；收起后保留高亮，再次点击即可打开。
 
-当前客户端版本为 **0.1.11**。当前构建 20261105.10 统一模型设置下拉箭头的区域与间距，接口格式改用“通用兼容格式”等更清楚的名称；可快捷填写 Kimi、千问、Gemini、Grok、Ollama 和 LM Studio，或自定义地址与接口格式。默认仍为本地 PDF 阅读器，相同文件合并显示，聊天按需打开；沿用护眼配色、手势缩放、完整上下文、增量保存和备份恢复。
+首个公开正式版为 **v0.1.11**，应用构建 **20261105.10**，项目代码使用 **MIT** 许可证。
+
+[下载 Windows x64 完整包](https://github.com/Eatastar/Learn-Something/releases/tag/v0.1.11) · [隐私与联网说明](docs/PRIVACY.md) · [版本记录](docs/CHANGELOG.md) · [开源前检查范围](docs/OPEN_SOURCE_RELEASE.md)
+
+## 开始使用
+
+1. 下载 Release 中的完整 ZIP，全部解压后运行 `LearnSomething.exe`，不要只复制一个 EXE。
+2. 在默认阅读首页选择本地 PDF。可调整纸张和文字颜色，连续阅读、搜索并添加普通笔记。
+3. 需要 AI 时，从“模型与设置”添加自己的服务地址、模型名和密钥。支持 Kimi、千问、Gemini 兼容入口、Grok、Ollama、LM Studio 及自定义兼容服务。
+
+普通阅读和笔记不调用 AI。发送问题时会向所选服务发送完整有效对话及该对话所有附件的提取文字，详见隐私说明。Windows 桌面版沿用系统代理；程序不附带代理节点或模型密钥。
 
 ## 当前能力
 
@@ -27,6 +37,9 @@
 | `docs/PROJECT.md` | 项目总纲与模块职责 |
 | `docs/ROADMAP.md` | 按优先级整理的改进清单 |
 | `docs/CHANGELOG.md` | 当前基准版及验证范围 |
+| `docs/PRIVACY.md` | 本地数据、模型请求和代理边界 |
+| `docs/THIRD_PARTY.md` | 第三方组件及其许可 |
+| `LICENSE` | 项目自身代码的 MIT 许可证 |
 | `docs/REPOSITORY_POLICY.md` | 源码提交范围和个人数据排除规则 |
 | `tools/source-audit.mjs` | 生成并检查允许提交的文件清单 |
 
@@ -50,6 +63,10 @@ pnpm --dir outputs/client build:desktop
 ```
 
 输出到 `outputs/windows/`。PDF.js 的离线字体和解码资源由构建前步骤从锁定依赖复制，无需将生成资源提交到仓库。
+
+## 许可证
+
+项目自身代码见 [MIT 许可证](LICENSE)，第三方组件的版权与许可证继续保留，见[第三方组件说明](docs/THIRD_PARTY.md)。Windows 包同时保留 Electron、Chromium 和依赖组件的许可文件。
 
 首次运行是本地演示模式。通过“模型与设置”填写自己的连接后使用；仓库中的 `.env.example` 只有公开接口示例和空白密钥字段。
 

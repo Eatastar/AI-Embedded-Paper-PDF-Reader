@@ -3,6 +3,7 @@
 !/.gitignore
 !/.gitattributes
 !/README.md
+!/LICENSE
 !/docs/
 !/tools/
 !/outputs/
@@ -11,6 +12,9 @@
 !/docs/ROADMAP.md
 !/docs/REPOSITORY_POLICY.md
 !/docs/CHANGELOG.md
+!/docs/PRIVACY.md
+!/docs/THIRD_PARTY.md
+!/docs/OPEN_SOURCE_RELEASE.md
 /tools/*
 !/tools/source-audit.mjs
 /outputs/*

@@ -7,8 +7,9 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const app = 'outputs/client/';
 const staticFiles = [
-  '.gitignore', '.gitattributes', 'README.md', 'tools/source-audit.mjs',
+  '.gitignore', '.gitattributes', 'README.md', 'LICENSE', 'tools/source-audit.mjs',
   'docs/PROJECT.md', 'docs/ROADMAP.md', 'docs/REPOSITORY_POLICY.md', 'docs/CHANGELOG.md',
+  'docs/PRIVACY.md', 'docs/THIRD_PARTY.md', 'docs/OPEN_SOURCE_RELEASE.md',
   'outputs/windows/开始使用.txt',
   ...['.gitignore', '.gitattributes', '.env.example', 'README.md', 'package.json', 'pnpm-lock.yaml',
     'pnpm-workspace.yaml', 'index.html', 'tsconfig.json', 'vite.config.ts', '启动客户端.cmd', '停止客户端.cmd',
@@ -70,14 +71,14 @@ function contentFindings(path, text) {
 
 if (process.argv.includes('--self-test')) {
   for (const path of ['work/backup.json', app + 'runtime/server.json', app + '.env', app + '.env.local', app + 'src/credentials.json', 'outputs/windows/LearnSomething.exe', 'docs/paper.pdf', 'docs/readme-private.json', app + 'desktop/photo.png', app + 'desktop/Backups/1234567890000.json', app + 'src/Backups/notes.ts']) assert.equal(allowedPath(path), false, path);
-  for (const path of ['README.md', app + '.env.example', app + 'src/App.tsx', app + 'desktop/icon.png', app + 'tests/domain.test.ts']) assert.equal(allowedPath(path), true, path);
+  for (const path of ['README.md', 'LICENSE', 'docs/PRIVACY.md', 'docs/THIRD_PARTY.md', 'docs/OPEN_SOURCE_RELEASE.md', app + '.env.example', app + 'src/App.tsx', app + 'desktop/icon.png', app + 'tests/domain.test.ts']) assert.equal(allowedPath(path), true, path);
   const credential = ['api', 'Key'].join('') + ' = ' + JSON.stringify('a'.repeat(40));
   assert.ok(contentFindings(app + 'src/unsafe.ts', credential).failures.length);
   const key = ['sk', 'proj', 'a'.repeat(60)].join('-');
   assert.ok(contentFindings(app + 'src/unsafe.ts', JSON.stringify(key)).failures.some(item => item.kind === 'provider-key'));
   assert.ok(contentFindings(app + '.env.example', ['AI_API', 'KEY'].join('_') + '=value').failures.length);
   assert.equal(contentFindings(app + 'tests/demo.test.ts', ['api', 'Key'].join('') + " = 'fake-test-key'").failures.length, 0);
-  console.log(JSON.stringify({ passed: true, checks: 20 }));
+  console.log(JSON.stringify({ passed: true, checks: 24 }));
   process.exit(0);
 }
 

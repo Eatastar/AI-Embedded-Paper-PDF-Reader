@@ -3,6 +3,7 @@
   "version": "0.1.11",
   "buildId": "20261105.10",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "node scripts/copy-pdfjs-assets.mjs && node scripts/dev.mjs",
