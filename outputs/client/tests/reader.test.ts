@@ -50,8 +50,8 @@ test('appearance persists globally and independent document positions do not ove
   const b = { pageIndex: 1, zoom: .75, view: 'text' as const, scrollY: .3, scrollX: 0 };
   assert.equal(saveReaderPosition('paper-a', a, storage), true);
   assert.equal(saveReaderPosition('paper-b', b, storage), true);
-  assert.deepEqual(loadReaderPosition('paper-a', 20, 'pdf', storage), a);
-  assert.deepEqual(loadReaderPosition('paper-b', 20, 'pdf', storage), b);
+  assert.deepEqual(loadReaderPosition('paper-a', 20, 'pdf', storage), { ...a, layout: 'continuous', pageOffset: 0 });
+  assert.deepEqual(loadReaderPosition('paper-b', 20, 'pdf', storage), { ...b, layout: 'continuous', pageOffset: 0 });
   assert.equal(values.get('margin-chat-workspace'), 'untouched-chat-record');
 });
 
@@ -59,5 +59,30 @@ test('disabled or corrupted local storage does not block reading and reports uns
   const denied = { getItem() { throw new Error('Storage disabled'); }, setItem() { throw new Error('Storage full'); } };
   assert.deepEqual(loadReaderAppearance(denied), DEFAULT_READER_APPEARANCE);
   assert.equal(saveReaderAppearance(DEFAULT_READER_APPEARANCE, denied), false);
-  assert.deepEqual(loadReaderPosition('paper', 2, 'pdf', { ...denied, getItem: () => '{broken' }), readerPosition(null, 2, 'pdf'));
+  assert.deepEqual(loadReaderPosition('paper', 2, 'pdf', { ...denied, getItem: () => '{broken' }), { ...readerPosition(null, 2, 'pdf'), layout: 'continuous', pageOffset: 0 });
+});
+
+test('new PDFs and legacy paged preferences adopt scrolling without changing chat data or the old preference', () => {
+  const key = 'learn-something.reader.position.v1.legacy-paper';
+  const legacy = { pageIndex: 3, zoom: 1.25, view: 'original', scrollX: .2, scrollY: .4, layout: 'paged' };
+  const values = new Map([[key, JSON.stringify(legacy)], ['margin-chat-workspace', 'untouched']]);
+  const storage = { getItem: (name: string) => values.get(name) || null, setItem: (name: string, value: string) => { values.set(name, value); } };
+  assert.equal(loadReaderPosition('new-paper', 8, 'pdf', storage).layout, 'continuous');
+  const migrated = loadReaderPosition('legacy-paper', 8, 'pdf', storage);
+  assert.deepEqual(migrated, { ...legacy, layout: 'continuous', pageOffset: .4 });
+  assert.equal(values.get(key), JSON.stringify(legacy));
+  assert.equal(saveReaderPosition('legacy-paper', migrated, storage), true);
+  const choice = { ...migrated, layout: 'paged' as const };
+  assert.equal(saveReaderPosition('legacy-paper', choice, storage), true);
+  assert.equal(loadReaderPosition('legacy-paper', 8, 'pdf', storage).layout, 'paged');
+  assert.equal(values.get('margin-chat-workspace'), 'untouched');
+});
+
+test('legacy continuous progress and text files keep their existing reading positions', () => {
+  const continuous = { pageIndex: 4, zoom: .75, view: 'original', scrollX: 0, scrollY: .8, layout: 'continuous', pageOffset: .27 };
+  const text = { pageIndex: 0, zoom: 1, view: 'text', scrollX: 0, scrollY: .6 };
+  const values = new Map([['learn-something.reader.position.v1.pdf', JSON.stringify(continuous)], ['learn-something.reader.position.v1.text', JSON.stringify(text)]]);
+  const storage = { getItem: (name: string) => values.get(name) || null, setItem: () => {} };
+  assert.deepEqual(loadReaderPosition('pdf', 8, 'pdf', storage), continuous);
+  assert.deepEqual(loadReaderPosition('text', 1, 'text', storage), text);
 });

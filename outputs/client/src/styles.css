@@ -283,8 +283,8 @@ button svg { flex-shrink: 0; }
 .with-reader .empty-state h1 { font-size: 29px; }
 .with-reader .starter-question { min-width: 0; }
 .app-shell.reader-focused .sidebar, .app-shell.reader-focused .conversation-pane { display: none; }
-.app-shell.reader-focused .document-pane { flex: 1; width: 100%; padding: 14px 20px 20px; position: relative; inset: auto; }
-.app-shell.reader-focused .topbar { height: 61px; min-height: 61px; padding: 0 26px; }
+.app-shell.reader-focused .document-pane { flex: 1; width: 100%; padding: 0; position: relative; inset: auto; }
+.app-shell.reader-focused .topbar { display: none; }
 .app-shell.reader-focused .mobile-menu { display: none; }
 .document-attachments { display: flex; flex-wrap: wrap; gap: 7px; padding: 13px 25px 9px; border-bottom: 1px solid var(--ls-border); }
 .document-attachments > button { display: flex; align-items: center; gap: 7px; max-width: 100%; padding: 7px 9px; border: 1px solid var(--ls-border); border-radius: 6px; background: var(--ls-surface); color: var(--ls-text); font-size: 11px; text-align: left; }

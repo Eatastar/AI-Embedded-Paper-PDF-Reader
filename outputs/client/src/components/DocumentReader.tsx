@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
-import { ChevronLeft, ChevronRight, FileText, Minus, Plus, X, Palette, Columns2, Maximize2, Eye, PanelLeft } from 'lucide-react';
 import type { DocumentAttachment, MessageVersion } from '../domain/types';
 import { loadPdfDocument } from '../adapters/documents';
 import { bindPdfZoom } from '../adapters/pdf-zoom';
@@ -16,7 +15,7 @@ import type { PdfZoomAnchor } from '../domain/pdf-zoom';
 import type { ReaderPosition } from '../domain/reader';
 import { activeReaderPage } from '../domain/reader-navigation';
 import type { OutlineEntry, SearchFocus, SearchHit } from '../domain/reader-navigation';
-import { ReaderAppearancePanel } from './ReaderAppearancePanel';
+import { ReaderToolbar } from './ReaderToolbar';
 import { ReaderNavigation } from './ReaderNavigation';
 import { PdfAnnotatedPage } from './PdfAnnotatedPage';
 import { AnnotatedAnswer } from './AnnotatedAnswer';
@@ -25,16 +24,17 @@ import './documents.css';
 
 export interface DocumentReaderProps extends Omit<AnnotatedAnswerProps, 'messageId' | 'version' | 'plainText' | 'content' | 'contentReadyKey' | 'contentClassName'> {
   source: DocumentAttachment; onClose: () => void; focused: boolean; onToggleFocus: () => void;
+  modelLabel?: string; onOpenModelSettings?: () => void; onBackup?: () => void;
 }
 const sameSet = (a: Set<number>, b: Set<number>) => a.size === b.size && [...a].every(value => b.has(value));
 type PageGeometry = Record<number, { width: number; height: number }>;
 
-export function DocumentReader({ source, onClose, focused, onToggleFocus, ...annotationProps }: DocumentReaderProps) {
+export function DocumentReader({ source, onClose, focused, onToggleFocus, modelLabel, onOpenModelSettings, onBackup, ...annotationProps }: DocumentReaderProps) {
   const [initial] = useState(() => loadReaderPosition(source.id, source.pages.length, source.kind));
   const [pageIndex, setPageIndex] = useState(initial.pageIndex), [pageInput, setPageInput] = useState(String(initial.pageIndex + 1));
-  const [view, setView] = useState(initial.view), [layout, setLayout] = useState<'paged' | 'continuous'>(initial.layout || 'paged');
+  const [view, setView] = useState(initial.view), [layout, setLayout] = useState<'paged' | 'continuous'>(initial.layout || 'continuous');
   const [zoom, setZoom] = useState(initial.zoom), [appearance, setAppearance] = useState(loadReaderAppearance);
-  const [appearanceOpen, setAppearanceOpen] = useState(false), [compareOriginal, setCompareOriginal] = useState(false);
+  const [compareOriginal, setCompareOriginal] = useState(false);
   const [appearanceSaved, setAppearanceSaved] = useState(true), [positionSaved, setPositionSaved] = useState(true);
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null), [loading, setLoading] = useState(source.kind === 'pdf');
   const [fileError, setFileError] = useState(''), [availableWidth, setAvailableWidth] = useState(700);
@@ -259,20 +259,15 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, ...ann
   const version = (index: number): MessageVersion => ({ id: source.pages[index].versionId, content: source.pages[index].text, status: 'complete', createdAt: source.createdAt });
   const annotationsByPage = useMemo(() => new Map(source.pages.map((p, i) => [i, annotationProps.annotations.filter(a => a.messageId === p.messageId && a.versionId === p.versionId)])), [source.pages, annotationProps.annotations]);
   const renderPage = (index: number) => <PdfAnnotatedPage {...annotationProps} annotations={annotationsByPage.get(index) || []} messageId={source.pages[index].messageId} version={version(index)} pdf={pdf!} pageNumber={source.pages[index].pageNumber} availableWidth={availableWidth} zoom={zoom} appearance={appearance} compareOriginal={compareOriginal} onPageReady={() => ready(index)} queue={queue} maxPixels={continuous ? 8_000_000 : 16_000_000} search={search?.pageIndex === index ? search : null} onSearchLocated={locateSearch} />;
-  const commitPage = () => /^\d+$/u.test(pageInput) ? selectPage(Number(pageInput) - 1) : setPageInput(String(pageIndex + 1));
+  const commitPage = () => {
+    if (!/^\d+$/u.test(pageInput)) { setPageInput(String(position.current.pageIndex + 1)); return; }
+    const index = Math.max(0, Math.min(source.pages.length - 1, Number(pageInput) - 1));
+    if (index === position.current.pageIndex) { setPageInput(String(index + 1)); return; }
+    selectPage(index);
+  };
   const original = compareOriginal || appearance.preset === 'original', paper = original ? '#ffffff' : appearance.paper, ink = original ? '#000000' : appearance.ink;
-  return <section ref={rootRef} className="document-reader" role="region" aria-label={`文档阅读：${source.name}`} data-testid="document-reader" data-reader-dark={colorLuminance(paper) < .25 ? 'true' : 'false'} data-reader-narrow={narrow} data-reader-layout={continuous ? 'continuous' : 'paged'} style={{ '--reader-paper': paper, '--reader-ink': ink } as CSSProperties}>
-    <header className="document-reader-header"><FileText size={18} aria-hidden="true" /><div className="document-reader-heading"><strong title={source.name}>{source.name}</strong><span>保存在本机 · {source.pages.length} 页</span></div><button type="button" className="document-tool-button" aria-label={focused ? '显示聊天' : '专注阅读'} onClick={() => { flush(); onToggleFocus(); }}>{focused ? <Columns2 size={15} /> : <Maximize2 size={15} />}{focused ? '显示聊天' : '专注阅读'}</button><button type="button" className="document-icon-button" aria-label="关闭文档阅读" onClick={() => { flush(); onClose(); }}><X size={19} /></button></header>
-    <div className="document-reader-toolbar">
-      <button type="button" className="document-tool-button" aria-expanded={navigationOpen} onClick={() => setNavigationOpen(value => !value)}><PanelLeft size={14} />文档导航</button>
-      {source.kind === 'pdf' && <div className="document-view-switch" aria-label="文档显示方式"><button type="button" aria-pressed={view === 'original'} onClick={() => switchView('original')}>PDF 原排版</button><button type="button" aria-pressed={view === 'text'} onClick={() => switchView('text')}>可批注文本</button></div>}
-      {source.kind === 'pdf' && view === 'original' && <div className="document-view-switch" aria-label="翻页方式"><button type="button" aria-pressed={layout === 'paged'} onClick={() => switchLayout('paged')}>分页</button><button type="button" aria-pressed={layout === 'continuous'} onClick={() => switchLayout('continuous')}>连续</button></div>}
-      <div className="document-page-navigation"><button type="button" className="document-icon-button" aria-label="上一页" disabled={pageIndex <= 0} onClick={() => selectPage(pageIndex - 1)}><ChevronLeft size={17} /></button><label><span className="document-sr-only">页码</span><input ref={pageInputRef} aria-label="文档页码" type="text" inputMode="numeric" value={pageInput} onChange={event => setPageInput(event.target.value)} onBlur={commitPage} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); commitPage(); } }} /><span> / {source.pages.length}</span></label><button type="button" className="document-icon-button" aria-label="下一页" disabled={pageIndex >= source.pages.length - 1} onClick={() => selectPage(pageIndex + 1)}><ChevronRight size={17} /></button></div>
-      {source.kind === 'pdf' && view === 'original' && <div className="document-zoom-controls"><button type="button" className="document-icon-button" aria-label="缩小 PDF" disabled={zoom <= .5} onClick={() => changeZoom(zoom - .25)}><Minus size={15} /></button><button type="button" className="document-fit-button" title="恢复适合宽度" onClick={() => changeZoom(1)}>{zoom === 1 ? '适合宽度' : `${Math.round(zoom * 100)}%`}</button><button type="button" className="document-icon-button" aria-label="放大 PDF" disabled={zoom >= 2.5} onClick={() => changeZoom(zoom + .25)}><Plus size={15} /></button></div>}
-      <div className="document-color-actions"><button type="button" className="document-tool-button" aria-expanded={appearanceOpen} onClick={() => setAppearanceOpen(value => !value)}><Palette size={14} />阅读配色</button><button type="button" className="document-tool-button" aria-pressed={compareOriginal} disabled={appearance.preset === 'original'} onClick={() => setCompareOriginal(value => !value)}><Eye size={14} />原色对照</button></div>
-    </div>
-    {appearanceOpen && <ReaderAppearancePanel appearance={appearance} saved={appearanceSaved && positionSaved} onChange={value => { setCompareOriginal(false); setAppearance(value); }} />}
-    <p className="document-reader-hint">划选文字可询问 AI 或仅加批注。支持触控板捏合缩放；文档导航中可查目录、搜索全文和查看批注。询问会发送本对话和文档提取文字；原文件保存在本机。</p>
+  return <section ref={rootRef} className="document-reader" role="region" aria-label={`文档阅读：${source.name}`} data-testid="document-reader" data-reader-focused={focused} data-reader-dark={colorLuminance(paper) < .25 ? 'true' : 'false'} data-reader-narrow={narrow} data-reader-layout={continuous ? 'continuous' : 'paged'} style={{ '--reader-paper': paper, '--reader-ink': ink } as CSSProperties}>
+    <ReaderToolbar name={source.name} kind={source.kind} pageCount={source.pages.length} pageIndex={pageIndex} pageInput={pageInput} pageInputRef={pageInputRef} onPageInput={setPageInput} onCommitPage={commitPage} onPage={selectPage} zoom={zoom} onZoom={changeZoom} view={view} onView={switchView} layout={layout} onLayout={switchLayout} appearance={appearance} onAppearance={value => { setCompareOriginal(false); setAppearance(value); }} saved={appearanceSaved && positionSaved} compareOriginal={compareOriginal} onCompareOriginal={() => setCompareOriginal(value => !value)} navigationOpen={navigationOpen} onToggleNavigation={() => setNavigationOpen(value => !value)} focused={focused} onToggleFocus={() => { flush(); onToggleFocus(); }} onClose={() => { flush(); onClose(); }} modelLabel={modelLabel} onOpenModelSettings={onOpenModelSettings} onBackup={onBackup} />
     <div className="document-reader-body">
       <ReaderNavigation open={navigationOpen} source={source} annotations={annotationProps.annotations} pageIndex={pageIndex} outline={outline} outlineLoading={loading || outlineLoading} outlineError={outlineError || Boolean(fileError)} outlineTruncated={outlineTruncated} onClose={() => setNavigationOpen(false)} onPage={selectPage} onSearch={selectSearch} onClearSearch={clearSearch} onAnnotation={selectAnnotation} />
       <div ref={viewportRef} className={`document-reader-viewport ${view === 'text' ? 'document-reader-text-viewport' : ''}`} onScroll={scroll}>
