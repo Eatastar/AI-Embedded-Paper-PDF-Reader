@@ -8,7 +8,7 @@ export const clampPdfZoom = (zoom: number) => Number.isFinite(zoom) ? Math.max(M
 export function pdfWheelZoom(zoom: number, delta: number, mode: number, viewportHeight: number): number {
   if (!Number.isFinite(delta) || ![0, 1, 2].includes(mode)) return clampPdfZoom(zoom);
   const pixels = delta * (mode === 1 ? 16 : mode === 2 ? viewportHeight : 1);
-  return clampPdfZoom(zoom * Math.exp(-Math.max(-120, Math.min(120, pixels)) * .002));
+  return clampPdfZoom(zoom * Math.exp(-Math.max(-120, Math.min(120, pixels)) * .003));
 }
 export function pdfPageSize(page: { width: number; height: number }, availableWidth: number, zoom: number) {
   const scale = Math.min(Math.max(240, availableWidth - 40), 1000) / page.width * clampPdfZoom(zoom);

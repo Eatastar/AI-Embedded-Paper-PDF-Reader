@@ -98,7 +98,7 @@ test('同一帧合并 100 个微小手势，保留累积缩放和最新指针位
   const f = zoomFixture();
   for (let i = 0; i < 100; i++) f.wheel(-.01, true, 0, i, 200);
   assert.equal(f.frames.size, 1); f.flush(); assert.equal(f.changes.length, 1);
-  assert.ok(Math.abs(f.changes[0].zoom - Math.exp(.002)) < 1e-12);
+  assert.ok(Math.abs(f.changes[0].zoom - Math.exp(.003)) < 1e-12);
   assert.deepEqual(f.changes[0].point, { x: 99, y: 200 }); f.dispose();
 });
 
