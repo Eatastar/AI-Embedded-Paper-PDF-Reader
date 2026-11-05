@@ -1,0 +1,70 @@
+.document-reader { display: flex; flex-direction: column; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; border: 1px solid var(--ls-border); border-radius: 16px; background: var(--ls-panel); color: var(--ls-ink); }
+.document-reader button, .document-reader input { font: inherit; }
+.document-reader button { cursor: pointer; }
+.document-reader button:disabled { cursor: default; opacity: .35; }
+.document-reader button:focus-visible, .document-reader input:focus-visible { outline: 2px solid var(--ls-focus); outline-offset: 2px; }
+.document-reader-header { display: flex; align-items: center; gap: 11px; min-height: 63px; padding: 10px 16px; border-bottom: 1px solid var(--ls-border); flex-shrink: 0; }
+.document-reader-header > svg { color: var(--ls-muted); flex-shrink: 0; }
+.document-reader-heading { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.document-reader-heading strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; }
+.document-reader-heading span { font-size: 10px; color: var(--ls-muted); }
+.document-icon-button { display: inline-flex; align-items: center; justify-content: center; width: 29px; height: 29px; flex-shrink: 0; border: 0; border-radius: 7px; background: transparent; color: var(--ls-text); }
+.document-icon-button:hover:not(:disabled) { background: var(--ls-surface); color: var(--ls-ink); }
+.document-reader-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 10px; padding: 9px 12px; border-bottom: 1px solid var(--ls-border); flex-shrink: 0; font-size: 11px; }
+.document-view-switch { display: inline-flex; padding: 3px; gap: 3px; background: var(--ls-surface); border-radius: 8px; }
+.document-view-switch > button { padding: 5px 8px; border: 0; border-radius: 5px; background: transparent; color: var(--ls-muted); white-space: nowrap; }
+.document-view-switch > button[aria-pressed="true"] { background: var(--ls-panel); box-shadow: 0 1px 3px #62471612; color: var(--ls-text); }
+.document-page-navigation { display: flex; align-items: center; gap: 2px; color: var(--ls-muted); }
+.document-page-navigation label { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.document-page-navigation input { width: 35px; padding: 3px 1px; border: 1px solid var(--ls-border); border-radius: 5px; background: var(--ls-panel); color: var(--ls-text); text-align: center; }
+.document-zoom-controls { display: flex; align-items: center; gap: 1px; }
+.document-fit-button { min-width: 62px; border: 0; padding: 5px 2px; color: var(--ls-muted); background: transparent; border-radius: 5px; }
+.document-fit-button:hover { background: var(--ls-surface); }
+.document-reader-hint { margin: 0; padding: 8px 15px; color: var(--ls-muted); background: var(--ls-panel); font-size: 10px; line-height: 1.65; border-bottom: 1px solid var(--ls-border); flex-shrink: 0; }
+.document-reader-viewport { position: relative; min-height: 0; flex: 1; overflow: auto; scrollbar-gutter: stable; background: var(--ls-code); overscroll-behavior: contain; padding: 20px; }
+.document-reader-text-viewport { background: var(--ls-surface); }
+.document-reader-warning { margin: 0 auto 14px; max-width: 720px; padding: 11px 13px; border: 1px solid var(--ls-border); border-radius: 8px; background: var(--ls-surface); color: var(--ls-text); font-size: 11px; line-height: 1.7; }
+.document-reader-empty { padding: 65px 20px; font-size: 12px; text-align: center; color: var(--ls-muted); }
+.document-reader-empty button { margin-top: 12px; padding: 8px 14px; border: 1px solid var(--ls-border-strong); border-radius: 8px; background: var(--ls-panel); color: var(--ls-text); }
+.document-pdf-wrap { width: fit-content; max-width: none; min-width: min(100%, 250px); margin: 0 auto; position: relative; }
+.document-render-status { position: absolute; left: 0; right: 0; top: 18px; z-index: 4; text-align: center; color: var(--ls-muted); font-size: 12px; pointer-events: none; }
+.document-page-annotator { width: fit-content; position: relative; line-height: 1; box-shadow: 0 2px 12px #62471616; }
+.document-page-stage { position: relative; width: 250px; min-height: 300px; background: var(--reader-paper, #fff); --scale-round-x: 1px; --scale-round-y: 1px; --total-scale-factor: 1; }
+.document-page-canvas { position: absolute; display: block; top: 0; left: 0; z-index: 0; }
+.document-reader .document-page-annotator .r6o-span-highlight-layer { z-index: 2; }
+.document-page-text { max-width: 790px; min-height: 300px; margin: 0 auto; padding: 28px 30px 45px; border: 1px solid var(--ls-border); background: var(--reader-paper, var(--ls-panel)); color: var(--reader-ink, var(--ls-ink)); border-radius: 8px; box-shadow: 0 2px 8px #62471606; font-size: 14px; }
+.document-text-page-label { margin: 0 0 24px; color: var(--ls-muted); font-size: 10px; }
+.document-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+/* Text-layer layout adapted from Mozilla PDF.js 6.4 (Apache-2.0).
+   Preserve its span order so text anchors survive page zoom and reopening. */
+.document-text-layer { color-scheme: only light; position: absolute; text-align: initial; inset: 0; overflow: clip; opacity: 1; line-height: 1; letter-spacing: normal; word-spacing: normal; text-size-adjust: none; forced-color-adjust: none; transform-origin: 0 0; caret-color: CanvasText; z-index: 1; --min-font-size: 1; --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size)); --min-font-size-inv: calc(1 / var(--min-font-size)); }
+.document-text-layer :is(span, br) { color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0 0; user-select: text; }
+.document-text-layer > :not(.markedContent), .document-text-layer .markedContent span:not(.markedContent) { z-index: 1; --font-height: 0; font-size: calc(var(--text-scale-factor) * var(--font-height)); --scale-x: 1; --rotate: 0deg; transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv)); }
+.document-text-layer .markedContent { display: contents; }
+.document-text-layer ::selection { color: transparent; background: #ddbd586e; }
+.document-text-layer br::selection { background: transparent; }
+.document-text-layer[data-main-rotation="90"] { transform: rotate(90deg) translateY(-100%); }
+.document-text-layer[data-main-rotation="180"] { transform: rotate(180deg) translate(-100%, -100%); }
+.document-text-layer[data-main-rotation="270"] { transform: rotate(270deg) translateX(-100%); }
+.document-tool-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 9px; border: 1px solid var(--ls-border); border-radius: 7px; background: var(--ls-panel); color: var(--ls-text); font-size: 11px !important; white-space: nowrap; }
+.document-tool-button:hover, .document-tool-button[aria-pressed="true"], .document-tool-button[aria-expanded="true"] { background: var(--ls-hover); border-color: var(--ls-border-strong); }
+.document-color-actions { display: flex; gap: 6px; }
+.reader-appearance { padding: 14px 16px 10px; background: var(--ls-surface); border-bottom: 1px solid var(--ls-border); flex-shrink: 0; }
+.reader-theme-presets { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
+.reader-theme-presets button { display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px 6px 7px; border: 1px solid var(--ls-border); border-radius: 8px; background: var(--ls-panel); font-size: 11px; color: var(--ls-text); }
+.reader-theme-presets button[aria-pressed="true"] { border-color: var(--ls-accent); box-shadow: 0 0 0 1px var(--ls-accent); }
+.reader-theme-presets button > span { display: inline-flex; align-items: center; justify-content: center; width: 29px; height: 27px; border: 1px solid #88775035; border-radius: 4px; font-size: 12px; }
+.reader-color-fields { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; }
+.reader-color-field { display: inline-flex; align-items: center; gap: 7px; color: var(--ls-text); font-size: 11px; }
+.reader-color-field input[type="color"] { width: 31px; height: 29px; padding: 2px; border: 1px solid var(--ls-border-strong); border-radius: 5px; background: var(--ls-panel); cursor: pointer; }
+.reader-color-field input[type="text"] { width: 78px; min-width: 0; border: 1px solid var(--ls-border); border-radius: 5px; background: var(--ls-panel); color: var(--ls-text); padding: 6px; font: 11px Consolas, monospace; }
+.reader-preserve-colors { display: inline-flex; align-items: center; gap: 6px; color: var(--ls-text); font-size: 11px; }
+.reader-preserve-colors input { accent-color: var(--ls-accent); }
+.reader-color-help { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 10px 0 0; font-size: 10px; line-height: 1.7; color: var(--ls-muted); }
+.reader-color-help > span { margin-left: auto; }
+.reader-contrast-notice { margin: 7px 0 0; font-size: 11px; color: var(--ls-danger); }
+.document-reader[data-reader-dark="true"] .document-reader-viewport { background: #1c1d20; }
+.document-reader[data-reader-dark="true"] .r6o-span-highlight-layer { mix-blend-mode: screen; }
+.document-reader[data-reader-dark="true"] .document-text-page-label { color: var(--reader-ink); opacity: .7; }
+@media (max-width: 700px) { .document-reader { border-radius: 10px; } .document-reader-toolbar { padding: 7px 8px; } .document-reader-viewport { padding: 12px; } .document-page-text { padding: 20px 18px 35px; } .document-reader-hint { padding: 7px 11px; } .reader-appearance { padding: 12px; } .reader-color-fields { gap: 10px; } .document-reader-header { flex-wrap: wrap; } .document-reader-heading { min-width: 120px; } }

@@ -1,0 +1,128 @@
+.annotation-answer { min-width: 0; line-height: 1.85; }
+.annotation-answer-ready { cursor: text; }
+.annotation-answer.hovered, .annotation-answer.hovered * { cursor: text; }
+.annotation-answer :is(a, button, [role="button"]), .annotation-answer :is(a, button, [role="button"]) * { cursor: pointer; }
+.annotation-plain-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.annotation-answer .r6o-span-highlight-layer { z-index: 0; mix-blend-mode: multiply; }
+.annotation-markdown { overflow-wrap: anywhere; font-size: inherit; line-height: 1.85; }
+.annotation-markdown > :first-child { margin-top: 0; }
+.annotation-markdown > :last-child { margin-bottom: 0; }
+.annotation-markdown p { margin: 0 0 1em; }
+.annotation-markdown h1, .annotation-markdown h2, .annotation-markdown h3, .annotation-markdown h4 { font-weight: 650; line-height: 1.5; color: inherit; margin: 1.45em 0 .55em; }
+.annotation-markdown h1 { font-size: 1.5em; }
+.annotation-markdown h2 { font-size: 1.28em; }
+.annotation-markdown h3 { font-size: 1.1em; }
+.annotation-markdown ul, .annotation-markdown ol { padding-left: 1.55em; margin: .6em 0 1em; }
+.annotation-markdown ul { list-style: disc; }
+.annotation-markdown ol { list-style: decimal; }
+.annotation-markdown li { margin: .25em 0; }
+.annotation-markdown li > p { margin: .25em 0; }
+.annotation-markdown strong { font-weight: 650; }
+.annotation-markdown a { color: var(--ls-text); text-decoration: underline; text-underline-offset: 3px; }
+.annotation-markdown blockquote { border-left: 3px solid var(--ls-border); margin: 1em 0; padding: .3em 1em; color: var(--ls-text); }
+.annotation-markdown code { font-family: Consolas, 'SFMono-Regular', monospace; font-size: .86em; border-radius: 4px; background: var(--ls-code); padding: .15em .35em; }
+.annotation-markdown pre { overflow: auto; padding: 1em; border-radius: 10px; background: var(--ls-code); line-height: 1.6; margin: 1em 0; }
+.annotation-markdown pre code { padding: 0; background: none; }
+.annotation-markdown [data-streamdown="code-block-header"] { display: none; }
+.annotation-markdown table { border-collapse: collapse; width: 100%; font-size: .93em; margin: 1em 0; }
+.annotation-markdown [data-streamdown="table-wrapper"] { min-width: 0; max-width: 100%; margin: 1em 0; }
+.annotation-markdown [data-streamdown="table-wrapper"] > div { max-width: 100%; overflow-x: auto; }
+.annotation-markdown [data-streamdown="table-wrapper"] table { margin: 0; }
+.annotation-markdown th, .annotation-markdown td { padding: .5em .7em; border: 1px solid var(--ls-border); text-align: left; }
+.annotation-markdown th { background: var(--ls-surface); font-weight: 600; }
+.annotation-markdown hr { border: 0; border-top: 1px solid var(--ls-border); margin: 1.5em 0; }
+.annotation-markdown .katex-display { max-width: 100%; overflow-x: auto; overflow-y: hidden; padding: .35em 0; }
+.annotation-selection-button { position: fixed; z-index: 110; display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 35px; padding: 0 14px; border: 1px solid var(--ls-accent); border-radius: 9px; color: var(--ls-on-accent); background: var(--ls-accent-strong); box-shadow: 0 5px 20px #62471626; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1.2; cursor: pointer; animation: annotation-rise .13s ease-out; white-space: nowrap; }
+.annotation-selection-button:hover { background: var(--ls-accent-strong); }
+.annotation-popup { position: fixed; z-index: 105; animation: annotation-rise .16s ease-out; }
+.annotation-choice-popup { position: fixed; z-index: 108; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--ls-border); border-radius: 12px; background: var(--ls-panel); color: var(--ls-ink); box-shadow: 0 9px 32px #62471626; font-family: Inter, 'PingFang SC', 'Microsoft YaHei', sans-serif; animation: annotation-rise .13s ease-out; }
+.annotation-choice-header { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; padding: 8px 9px 7px 14px; border-bottom: 1px solid var(--ls-border); }
+.annotation-choice-header strong { font-size: 11px; font-weight: 550; color: var(--ls-text); }
+.annotation-choice-list { min-height: 0; overflow-y: auto; padding: 5px; overscroll-behavior: contain; }
+.annotation-choice-button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px; border: 0; border-radius: 7px; background: transparent; text-align: left; color: inherit; cursor: pointer; font: inherit; }
+.annotation-choice-button:hover, .annotation-choice-button:focus-visible { background: var(--ls-surface); outline: none; }
+.annotation-choice-button:focus-visible { box-shadow: inset 0 0 0 1px #62471626; }
+.annotation-choice-button .annotation-color-dot { flex-shrink: 0; }
+.annotation-choice-copy { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.annotation-choice-ordinal { color: var(--ls-muted); font-size: 10px; }
+.annotation-choice-preview { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 1.5; }
+.annotation-choice-popup .annotation-icon-button { cursor: pointer; }
+.annotation-choice-popup .annotation-icon-button:focus-visible { outline: 2px solid var(--ls-focus); outline-offset: 1px; }
+.annotation-card { width: 100%; display: flex; flex-direction: column; max-height: inherit; overflow: hidden; border: 1px solid var(--ls-border); border-radius: 15px; background: var(--ls-panel); color: var(--ls-ink); box-shadow: 0 12px 45px #62471626, 0 2px 8px #6247160d; font-family: Inter, 'PingFang SC', 'Microsoft YaHei', sans-serif; font-size: 13px; }
+.annotation-card button, .annotation-card textarea { font: inherit; }
+.annotation-card button { cursor: pointer; }
+.annotation-card button:disabled { cursor: not-allowed; opacity: .45; }
+.annotation-card button:focus-visible, .annotation-selection-button:focus-visible { outline: 2px solid var(--ls-focus); outline-offset: 3px; }
+.annotation-card-header { min-height: 53px; padding: 0 15px 0 18px; border-bottom: 1px solid var(--ls-border); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-shrink: 0; cursor: grab; touch-action: none; user-select: none; }
+.annotation-card-header:focus-visible { outline: 2px solid var(--ls-focus); outline-offset: -4px; }
+.annotation-popup-dragging .annotation-card-header { cursor: grabbing; }
+.annotation-drag-icon { color: var(--ls-muted); flex-shrink: 0; }
+.annotation-card-heading { display: flex; align-items: center; gap: 8px; }
+.annotation-card-header-actions { display: flex; align-items: center; gap: 2px; }
+.annotation-card .annotation-delete-button:hover:not(:disabled) { color: var(--ls-text); background: var(--ls-surface); }
+.annotation-card-heading strong { font-size: 13px; font-weight: 650; }
+.annotation-color-dot { width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 1px #62471608; }
+.annotation-card-badge { margin-left: 3px; font-size: 10px; color: var(--ls-muted); font-weight: 400; }
+.annotation-icon-button { display: inline-flex; align-items: center; justify-content: center; width: 29px; height: 29px; border: 0; border-radius: 7px; background: transparent; color: var(--ls-muted); }
+.annotation-icon-button:hover { background: var(--ls-surface); color: var(--ls-ink); }
+.annotation-card-scroll { padding: 18px; overflow-y: auto; min-height: 0; overscroll-behavior: contain; scrollbar-width: thin; }
+.annotation-quote { margin: 0 0 19px; padding: 5px 0 5px 11px; border-left: 3px solid; font-size: 12px; line-height: 1.7; color: var(--ls-muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.annotation-draft label, .annotation-edit-fields label { display: block; margin-bottom: 9px; font-size: 12px; font-weight: 550; color: var(--ls-text); }
+.annotation-mode-switch { display: flex; gap: 4px; padding: 4px; margin: 0 0 17px; border: 1px solid var(--ls-border); border-radius: 9px; background: var(--ls-surface); }
+.annotation-mode-switch > button { flex: 1; min-height: 31px; padding: 6px 10px; border: 0; border-radius: 6px; color: var(--ls-muted); background: transparent; font-size: 12px; }
+.annotation-mode-switch > button[aria-pressed="true"] { color: var(--ls-ink); background: var(--ls-panel); box-shadow: 0 1px 4px #62471612; }
+.annotation-mode-switch > button:hover { color: var(--ls-ink); }
+.annotation-note-editor { min-height: 130px; }
+.annotation-note-response > .annotation-section-label { margin-bottom: 10px; }
+.annotation-textarea { display: block; width: 100%; box-sizing: border-box; resize: vertical; min-height: 84px; padding: 11px 12px; border: 1px solid var(--ls-border); border-radius: 9px; outline: none; background: var(--ls-panel); color: var(--ls-ink); line-height: 1.7; }
+.annotation-textarea::placeholder { color: var(--ls-muted); }
+.annotation-textarea:focus { border-color: var(--ls-accent); box-shadow: 0 0 0 3px #62471617; }
+.annotation-draft-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; }
+.annotation-draft-footer > span { font-size: 10px; color: var(--ls-muted); }
+.annotation-primary-button { display: inline-flex; justify-content: center; align-items: center; gap: 6px; border: 1px solid var(--ls-accent); border-radius: 7px; padding: 7px 12px; min-height: 32px; background: var(--ls-accent); color: var(--ls-on-accent); font-size: 12px !important; }
+.annotation-primary-button:hover:not(:disabled) { background: var(--ls-accent); border-color: var(--ls-accent); }
+.annotation-shortcut { display: flex; align-items: center; gap: 4px; margin: 13px 0 0; font-size: 10px; color: var(--ls-muted); }
+.annotation-section-label { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--ls-muted); font-weight: 650; letter-spacing: .05em; }
+.annotation-question-text { margin: 7px 0 19px; font-size: 13px; line-height: 1.7; color: var(--ls-ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+.annotation-answer-label { margin-bottom: 9px; }
+.annotation-response .annotation-markdown { font-size: 12px; line-height: 1.85; color: var(--ls-text); }
+.annotation-response .annotation-markdown h2 { font-size: 1.15em; }
+.annotation-response-actions { display: flex; align-items: center; justify-content: space-between; padding-top: 15px; margin-top: 18px; border-top: 1px solid var(--ls-border); gap: 8px; }
+.annotation-response-actions > span { color: var(--ls-muted); font-size: 10px; }
+.annotation-text-button { border: 0; border-radius: 5px; padding: 5px 4px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; background: transparent; color: var(--ls-text); font-size: 11px !important; }
+.annotation-text-button:hover { color: var(--ls-ink); background: var(--ls-surface); }
+.annotation-edited-label { margin-left: 4px; color: var(--ls-muted); font-weight: 400; font-size: 9px; }
+.annotation-waiting { color: var(--ls-muted); font-size: 12px; margin: 9px 0; }
+.annotation-error { border-radius: 8px; padding: 9px 11px; margin-top: 12px; background: var(--ls-danger-bg); color: var(--ls-danger); font-size: 11px; line-height: 1.6; }
+.annotation-error p { margin: 0 0 3px; }
+.annotation-footnote { color: var(--ls-muted); font-size: 10px; margin: 13px 0 0; line-height: 1.6; }
+.annotation-edit-fields .annotation-textarea { margin-bottom: 14px; }
+.annotation-answer-editor { min-height: 155px; }
+.annotation-edit-actions { display: flex; justify-content: flex-end; gap: 9px; }
+.annotation-spin { animation: annotation-spin 1s linear infinite; }
+.annotation-context-menu { position: fixed; z-index: 125; width: min(278px, calc(100vw - 16px)); max-height: calc(100dvh - 16px); overflow-y: auto; padding: 5px; border: 1px solid var(--ls-border); border-radius: 11px; color: var(--ls-ink); background: var(--ls-panel); box-shadow: 0 9px 32px #6247162b; font: 12px/1.5 Inter, 'PingFang SC', 'Microsoft YaHei', sans-serif; overscroll-behavior: contain; animation: annotation-rise .1s ease-out; }
+.annotation-context-menu > button { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 35px; padding: 8px 10px; border: 0; border-radius: 6px; background: transparent; color: inherit; text-align: left; font: inherit; cursor: pointer; }
+.annotation-context-menu > button svg, .annotation-context-menu .annotation-color-dot { flex-shrink: 0; }
+.annotation-context-menu > button:hover:not(:disabled), .annotation-context-menu > button:focus-visible { background: var(--ls-surface); outline: none; }
+.annotation-context-menu > button:focus-visible { box-shadow: inset 0 0 0 1px #62471626; }
+.annotation-context-menu > button:disabled { opacity: .4; cursor: not-allowed; }
+.annotation-context-menu > .annotation-menu-danger { color: var(--ls-danger); }
+.annotation-context-menu > .annotation-menu-danger:hover:not(:disabled), .annotation-context-menu > .annotation-menu-danger:focus-visible { background: var(--ls-danger-bg); }
+.annotation-menu-separator { height: 1px; margin: 4px; background: var(--ls-hover); }
+.annotation-menu-heading { padding: 7px 10px 5px; color: var(--ls-muted); font-size: 10px; }
+.annotation-menu-current { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.annotation-menu-current > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.annotation-menu-note-label { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 2px; }
+.annotation-menu-note-label small { font-size: 10px; color: var(--ls-muted); }
+.annotation-menu-note-label > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.annotation-menu-chevron { color: var(--ls-muted); font-size: 17px; }
+.annotation-menu-footnote { padding: 8px 10px 5px; border-top: 1px solid var(--ls-border); margin-top: 4px; color: var(--ls-muted); font-size: 10px; }
+.annotation-copy-backdrop { position: fixed; z-index: 150; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px; background: #62471640; }
+.annotation-copy-dialog { width: min(480px, 100%); max-height: calc(100dvh - 32px); overflow: auto; border: 1px solid var(--ls-border); border-radius: 13px; padding: 17px; color: var(--ls-ink); background: var(--ls-panel); box-shadow: 0 12px 45px #62471626; font: 12px/1.7 Inter, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+.annotation-copy-dialog > header { display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
+.annotation-copy-dialog > p { margin: 12px 0; color: var(--ls-muted); }
+.annotation-copy-dialog > textarea { box-sizing: border-box; width: 100%; min-height: 190px; padding: 11px; border: 1px solid var(--ls-border); border-radius: 8px; resize: vertical; background: var(--ls-panel); color: inherit; font: inherit; }
+@keyframes annotation-spin { to { transform: rotate(360deg); } }
+@keyframes annotation-rise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 600px) { .annotation-card-scroll { padding: 15px; } .annotation-card { border-radius: 12px; } .annotation-card-header { padding-left: 15px; } }
+@media (prefers-reduced-motion: reduce) { .annotation-popup, .annotation-selection-button, .annotation-choice-popup, .annotation-context-menu { animation: none; } }

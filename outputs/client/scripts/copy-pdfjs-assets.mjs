@@ -1,0 +1,11 @@
+import { cp, mkdir } from 'node:fs/promises';
+import { createRequire } from 'node:module';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const require = createRequire(import.meta.url);
+const source = dirname(require.resolve('pdfjs-dist/package.json'));
+const destination = resolve(root, 'public/pdfjs');
+await mkdir(destination, { recursive: true });
+for (const name of ['cmaps', 'standard_fonts', 'wasm', 'LICENSE']) await cp(resolve(source, name), resolve(destination, name), { recursive: true });
+console.log('PDF.js offline reading assets copied.');
