@@ -10,6 +10,8 @@ export interface ReaderPosition {
   view: 'original' | 'text';
   scrollY: number;
   scrollX: number;
+  layout?: 'paged' | 'continuous';
+  pageOffset?: number;
 }
 export const READER_PRESETS = [
   { id: 'original', label: '原色', paper: '#ffffff', ink: '#000000' },
@@ -37,6 +39,7 @@ export function readerPosition(value: unknown, pageCount: number, kind: 'pdf' | 
     zoom: bounded(candidate.zoom, .5, 2.5, 1),
     view: kind === 'text' || candidate.view === 'text' ? 'text' : 'original',
     scrollY: bounded(candidate.scrollY, 0, 1, 0), scrollX: bounded(candidate.scrollX, 0, 1, 0),
+    ...(candidate.layout === 'continuous' ? { layout: 'continuous' as const, pageOffset: bounded(candidate.pageOffset, 0, 1, 0) } : candidate.layout === 'paged' ? { layout: 'paged' as const } : {}),
   };
 }
 const rgb = (hex: string) => [1, 3, 5].map(start => parseInt(hex.slice(start, start + 2), 16));

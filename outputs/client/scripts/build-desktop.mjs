@@ -2,6 +2,7 @@ import { build as bundle } from 'esbuild';
 import { build as packageApp, Platform, Arch } from 'electron-builder';
 import { cp, mkdir, readFile, writeFile, copyFile, readdir, stat, rm } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
+import { createReadStream } from 'node:fs';
 import { resolve, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
@@ -64,14 +65,28 @@ const paths = await packageApp({
       { from: resolve(delivery, '开始使用.txt'), to: '开始使用.txt' },
     ],
     asar: true, npmRebuild: false, nodeGypRebuild: false,
+    // The pinned builder writes an ASAR resource even when resource editing is
+    // disabled. Restore the vendor runtime after packing and verify below.
+    afterPack: async context => {
+      await copyFile(require('electron'), resolve(context.appOutDir, 'LearnSomething.exe'));
+    },
     artifactName: 'LearnSomething-${version}-Windows-${arch}.${ext}',
-    win: { target: ['portable', 'zip'], executableName: 'LearnSomething', icon: resolve(root, 'desktop/icon.ico'), signAndEditExecutable: true, signExecutable: false, electronLanguages: ['en-US', 'zh-CN', 'zh-TW'] },
+    // Keep the official runtime byte-for-byte. Editing its unsigned resources
+    // produces a new executable that Windows application control may reject.
+    // The application name, icon and version still come from the app/renderer.
+    win: { target: ['portable', 'zip'], executableName: 'LearnSomething', icon: resolve(root, 'desktop/icon.ico'), signAndEditExecutable: false, signExecutable: false, electronLanguages: ['en-US', 'zh-CN', 'zh-TW'] },
     // In the pinned builder version, true leaves UNPACK_DIR_NAME undefined and
     // uses a unique NSIS plugin directory for each launch, avoiding collisions.
     portable: { requestExecutionLevel: 'user', unicode: true, unpackDirName: true, splashImage: resolve(root, 'desktop/splash.bmp') },
     publish: null,
   },
 });
+async function runtimeHash(path) {
+  const hash = createHash('sha256');
+  for await (const chunk of createReadStream(path)) hash.update(chunk);
+  return hash.digest('hex');
+}
+if (await runtimeHash(resolve(output, 'win-unpacked/LearnSomething.exe')) !== await runtimeHash(require('electron'))) throw new Error('Packaged runtime differs from official Electron; delivery was not updated');
 for (const source of paths.filter(path => /\.(exe|zip)$/.test(path))) {
   const target = resolve(delivery, basename(source));
   await copyFile(source, target);
