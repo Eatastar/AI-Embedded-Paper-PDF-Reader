@@ -80,9 +80,9 @@ export const otherConnectionPresets: ConnectionPreset[] = [
 ];
 
 export const apiFormatOptions: { value: ApiFormat; label: string; help: string }[] = [
-  { value: 'openai-chat', label: 'OpenAI 兼容 · Chat Completions', help: '适用于多数中转站、DeepSeek、Kimi、千问、Gemini 兼容入口、Grok，以及 Ollama、LM Studio 等本地服务。' },
-  { value: 'openai-responses', label: 'OpenAI 原生 · Responses', help: '适用于 GPT 官方，以及明确支持 Responses 的中转站。' },
-  { value: 'anthropic-messages', label: 'Claude 原生 · Messages', help: '适用于 Claude 官方，以及明确支持 Anthropic 格式的中转站。' },
+  { value: 'openai-chat', label: '通用兼容格式（Chat Completions）', help: '适用于支持 OpenAI 兼容接口的 Kimi、千问、DeepSeek、Grok、Ollama、LM Studio 等服务；Gemini 使用其官方兼容入口。' },
+  { value: 'openai-responses', label: 'Responses 格式', help: '适用于明确支持 Responses 的服务。选择 GPT 官方模板时会自动填写此格式。' },
+  { value: 'anthropic-messages', label: 'Messages 格式（Claude / Anthropic）', help: '适用于 Claude 官方，以及明确支持 Anthropic Messages 的服务。' },
 ];
 
 export function profileFromPreset(preset: ConnectionPreset, systemPrompt: string): ProfileInput {

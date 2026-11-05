@@ -233,8 +233,13 @@ button svg { flex-shrink: 0; }
 .profile-text-button.danger:hover { background: var(--ls-danger-bg); }
 .profile-text-button:disabled { opacity: .45; }
 .profile-empty { margin: 6px 0 13px; padding: 12px 13px; background: var(--ls-surface); border-radius: 7px; color: var(--ls-muted); font-size: 11px; line-height: 1.8; }
-.profile-picker-row { display: flex; align-items: center; gap: 7px; }
-.profile-picker { flex: 1; min-width: 0; width: 0; margin: 0; text-overflow: ellipsis; }
+.settings-select { display: block; position: relative; min-width: 0; width: 100%; }
+.field-label > .settings-select { margin-top: 8px; }
+.settings-select > select.field-input { appearance: none; -webkit-appearance: none; width: 100%; min-height: 40px; margin: 0; padding-right: 48px; text-overflow: ellipsis; cursor: pointer; }
+.settings-select-indicator { position: absolute; top: 1px; right: 1px; bottom: 1px; display: flex; align-items: center; justify-content: center; width: 36px; border-left: 1px solid var(--ls-border); border-radius: 0 6px 6px 0; color: var(--ls-muted); background: var(--ls-surface); pointer-events: none; }
+.settings-select:has(select:disabled) .settings-select-indicator { opacity: .5; }
+.profile-picker-row { display: flex; align-items: center; gap: 12px; }
+.profile-picker { flex: 1; min-width: 0; }
 .profile-picker-actions { display: flex; align-items: center; gap: 1px; flex-shrink: 0; }
 .profile-picker-actions .icon-button { width: 28px; height: 28px; }
 .profile-selection-status { margin: 7px 0 0; color: var(--ls-muted); font-size: 10px; line-height: 1.7; overflow-wrap: anywhere; }

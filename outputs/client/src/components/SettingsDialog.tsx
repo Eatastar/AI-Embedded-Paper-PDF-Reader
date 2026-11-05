@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Check, KeyRound, Pencil, PlugZap, Plus, Trash2, X } from 'lucide-react';
+import { useEffect, useRef, useState, type SelectHTMLAttributes } from 'react';
+import { Check, ChevronDown, KeyRound, Pencil, PlugZap, Plus, Trash2, X } from 'lucide-react';
 import type { ModelProfile, ModelSettings, ProfileInput } from '../domain/types';
 import { apiFormatOptions, connectionPresets, otherConnectionPresets, profileFromPreset } from '../domain/model-presets';
 
@@ -8,6 +8,13 @@ function editProfile(profile: ModelProfile): ProfileInput {
     id: profile.id, name: profile.name, apiFormat: profile.apiFormat,
     baseURL: profile.baseURL, model: profile.model, systemPrompt: profile.systemPrompt,
   };
+}
+
+function SettingsSelect({ wrapperClassName = '', ...props }: SelectHTMLAttributes<HTMLSelectElement> & { wrapperClassName?: string }) {
+  return <span className={`settings-select ${wrapperClassName}`}>
+    <select {...props} className="field-input" />
+    <span className="settings-select-indicator" aria-hidden="true"><ChevronDown size={14} strokeWidth={1.6} /></span>
+  </span>;
 }
 
 export function SettingsDialog({ settings, onClose, onSaveProfile, onDeleteProfile, onSelectProfile }: {
@@ -93,13 +100,13 @@ export function SettingsDialog({ settings, onClose, onSaveProfile, onDeleteProfi
       {settings.profiles.length === 0 && <p className="profile-empty">还没有保存的模型，选一个下方模板开始。</p>}
       {settings.profiles.length > 0 && <>
         <div className="profile-picker-row">
-          <select className="field-input profile-picker" aria-label="已保存的连接" value={currentProfile?.id ?? ''} disabled={Boolean(busy)} onChange={event => {
+          <SettingsSelect wrapperClassName="profile-picker" aria-label="已保存的连接" value={currentProfile?.id ?? ''} disabled={Boolean(busy)} onChange={event => {
             const next = settings.profiles.find(profile => profile.id === event.target.value);
             if (next) chooseProfile(next);
           }}>
             <option value="" disabled>选择已保存的连接（{settings.profiles.length}）</option>
             {settings.profiles.map(profile => <option key={profile.id} value={profile.id}>{profile.name} · {profile.model}{settings.activeProfileId === profile.id && settings.mode === 'api' ? ' ✓ 使用中' : ''}</option>)}
-          </select>
+          </SettingsSelect>
           <div className="profile-picker-actions">
             <button type="button" className="profile-text-button" onClick={() => currentProfile && selectProfile(currentProfile.id)} disabled={Boolean(busy) || !currentProfile || (settings.activeProfileId === currentProfile.id && settings.mode === 'api')}>{currentProfile && settings.activeProfileId === currentProfile.id && settings.mode === 'api' ? '使用中' : '使用'}</button>
             <button type="button" className="icon-button" aria-label="编辑所选连接" title="编辑所选连接" onClick={() => { connectionName.current?.focus(); connectionName.current?.select(); }} disabled={Boolean(busy) || !currentProfile}><Pencil size={14} /></button>
@@ -119,13 +126,13 @@ export function SettingsDialog({ settings, onClose, onSaveProfile, onDeleteProfi
           {connectionPresets.map(item => <button type="button" key={item.id} className={`connection-template${presetId === item.id ? ' selected' : ''}`} aria-pressed={presetId === item.id} onClick={() => choosePreset(item.id)} title={item.description}>{item.name}</button>)}
         </div>
         {presetId === 'other' && <div className="other-connection-presets">
-          <label className="field-label">常用服务<select className="field-input" value={otherPresetId} onChange={event => chooseOtherPreset(event.target.value)}>{otherConnectionPresets.map(item => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+          <label className="field-label">常用服务<SettingsSelect value={otherPresetId} onChange={event => chooseOtherPreset(event.target.value)}>{otherConnectionPresets.map(item => <option value={item.id} key={item.id}>{item.name}</option>)}</SettingsSelect></label>
           <p className="field-help">{otherPreset?.description}</p>
         </div>}
         <p className="field-help profile-template-help">{form.id ? '编辑当前配置；点击模板会新建另一项连接，需重新填写密钥。' : '模板只预填接口格式；地址、模型名称和回答偏好都可以修改。'}</p>
         <label className="field-label">连接名称<input ref={connectionName} className="field-input" value={form.name} maxLength={80} required onChange={e => setForm({ ...form, name: e.target.value })} placeholder="例如：本地模型、Kimi、我的 GPT" autoComplete="off" /></label>
-        <label className="field-label">接口格式<select className="field-input" value={form.apiFormat} onChange={e => changeConnection({ apiFormat: e.target.value as ProfileInput['apiFormat'] })}>{apiFormatOptions.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
-        <p className="field-help">{format?.help} 自定义服务请按提供方说明选择。</p>
+        <label className="field-label">接口格式<SettingsSelect aria-describedby="api-format-help" value={form.apiFormat} onChange={e => changeConnection({ apiFormat: e.target.value as ProfileInput['apiFormat'] })}>{apiFormatOptions.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</SettingsSelect></label>
+        <p className="field-help" id="api-format-help">这里选择数据格式，和模型品牌分开；常用服务会自动填好。{format?.help}</p>
         <label className="field-label">API 地址<input className="field-input" type="url" value={form.baseURL} required onChange={e => changeConnection({ baseURL: e.target.value })} placeholder={preset?.addressPlaceholder ?? '填写服务商提供的 API 基础地址，例如 https://api.example.com/v1'} autoComplete="off" /></label>
         <p className="field-help">填写基础地址即可，无需添加 /chat/completions、/responses 或 /messages。本机服务可使用 http://localhost 或 http://127.0.0.1 加端口。</p>
         <label className="field-label">模型名称<input className="field-input" value={form.model} required onChange={e => setForm({ ...form, model: e.target.value })} placeholder={preset?.modelPlaceholder ?? '填写服务商提供的完整模型名称'} autoComplete="off" /></label>
