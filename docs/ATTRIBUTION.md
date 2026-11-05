@@ -2,7 +2,7 @@
 
 项目名称 / Project: **AI-Embedded Paper PDF Reader**（AI 嵌入式论文 PDF 阅读器，原名 learn something）。
 
-上游仓库 / Upstream: https://github.com/Eatastar/Learn-Something
+上游仓库 / Upstream: https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader
 
 ## 实现分工 / Implementation credits
 
@@ -13,6 +13,20 @@ All original application code was implemented by **GPT through Codex**. The huma
 第三方组件保留各自作者的版权、署名和许可证。GPT 实现声明只针对本项目原创应用代码，不包括第三方代码，也不表示每行代码均经过独立人工审计。见 [THIRD_PARTY](THIRD_PARTY.md)。
 
 Third-party components retain their own authorship, copyright and licenses. The GPT implementation statement covers only original application code, not third-party code, and does not claim an independent human audit of every line. See [THIRD_PARTY](THIRD_PARTY.md).
+
+## 提交共同作者 / Commit co-author
+
+由 Codex 参与并创建的新提交保留项目所有者的常规作者身份，并在提交说明末尾加入以下共同作者条目一次。仓库的 `AGENTS.md` 记录了这一约定。已发布提交、标签和发行附件保持原样。
+
+New commits that Codex contributes to and creates retain the repository owner's normal author identity and include the following co-author trailer once. The repository's `AGENTS.md` records this convention. Published commits, tags and release assets remain unchanged.
+
+```text
+Co-authored-by: Codex <noreply@openai.com>
+```
+
+署名格式参考 [Codex 的公开实现](https://github.com/openai/codex/blob/main/codex-rs/ext/git-attribution/src/world_state.rs)和 [GitHub 的共同作者说明](https://docs.github.com/en/pull-requests/how-tos/commit-changes/creating-a-commit-with-multiple-authors)。这会记录 AI 工具的参与，GitHub 头像和贡献统计取决于 GitHub 的账号关联规则。
+
+The format follows [Codex's public implementation](https://github.com/openai/codex/blob/main/codex-rs/ext/git-attribution/src/world_state.rs) and [GitHub's co-author documentation](https://docs.github.com/en/pull-requests/how-tos/commit-changes/creating-a-commit-with-multiple-authors). It records the AI tool's contribution. GitHub avatars and contribution statistics depend on GitHub's account association rules.
 
 ## 下载与改造 / Download and adapt
 
@@ -26,9 +40,9 @@ When publishing a derivative, please include this project's name and upstream li
 
 可直接使用 / Suggested credit:
 
-> 本项目基于 [AI-Embedded Paper PDF Reader](https://github.com/Eatastar/Learn-Something) 修改。
+> 本项目基于 [AI-Embedded Paper PDF Reader](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader) 修改。
 >
-> This project is based on [AI-Embedded Paper PDF Reader](https://github.com/Eatastar/Learn-Something).
+> This project is based on [AI-Embedded Paper PDF Reader](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader).
 
 GitHub 通常通过 fork 关系或仓库链接标注项目来源。需要通知维护者时，可在相关 Issue、PR 或 Discussion 中 `@Eatastar`；不要求为了署名额外发送消息。
 

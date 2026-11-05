@@ -64,7 +64,7 @@ Normal exit waits for saving and backup. Retry or cancel exit if saving fails; f
 If startup fails, run 启动诊断.cmd. Remove personal paths/content/keys before reporting; do not share your whole data directory or model settings.
 
 七、开源、实现与复用 / Open source, credits and reuse
-https://github.com/Eatastar/Learn-Something
+https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader
 原创应用代码全部由 GPT 通过 Codex 实现；人类发起者提出想法、确定需求并选择功能与取舍。
 All original application code was implemented by GPT through Codex. The human initiator proposed ideas, defined requirements and chose features/trade-offs.
 任何人都可以下载，并用 AI agent / vibe coding 改成适合自己的版本。发布衍生版时，请在 README 或发布说明链接上游仓库。

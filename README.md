@@ -6,11 +6,11 @@
 
 A local paper reader with optional AI conversations. Select text in a PDF or an AI answer to ask a question or write a note in place. Highlights keep your chosen colors; click one to reopen it. Choose a Chinese or English interface, remembered locally.
 
-[下载 / Downloads](https://github.com/Eatastar/Learn-Something/releases) · [隐私 / Privacy](docs/PRIVACY.md) · [版本记录 / Changelog](docs/CHANGELOG.md) · [项目总纲 / Project outline](docs/PROJECT.md)
+[下载 / Downloads](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases) · [隐私 / Privacy](docs/PRIVACY.md) · [版本记录 / Changelog](docs/CHANGELOG.md) · [项目总纲 / Project outline](docs/PROJECT.md)
 
-当前源码版本为 **0.1.12**，首个公开正式版为 **v0.1.11**。请以 Releases 中实际发布的附件为准。项目采用 [MIT 许可证](LICENSE)。仓库地址沿用原地址，已有下载链接和衍生项目引用继续有效。
+当前源码版本为 **0.1.12**，首个公开正式版为 **v0.1.11**。请以 Releases 中实际发布的附件为准。项目采用 [MIT 许可证](LICENSE)。仓库已更名为 AI-Embedded-Paper-PDF-Reader；原 Learn-Something 地址会跳转到新仓库，已有下载和引用链接继续有效。
 
-The current source version is **0.1.12**; **v0.1.11** was the first public release. Download the assets actually available on the Releases page. The project uses the [MIT license](LICENSE). The repository URL remains unchanged so existing links keep working.
+The current source version is **0.1.12**; **v0.1.11** was the first public release. Download the assets actually available on the Releases page. The project uses the [MIT license](LICENSE). The repository is now named AI-Embedded-Paper-PDF-Reader. The former Learn-Something address redirects to it, preserving existing download and reference links.
 
 ## 开始使用 / Getting started
 
@@ -48,9 +48,9 @@ Supports Chat Completions, Responses and Anthropic Messages. Templates include G
 
 ## 自由修改与署名 / Adaptation and credits
 
-欢迎任何人下载、使用、fork 本项目，并用 **AI agent / vibe coding** 修改成适合自己的版本。发布衍生版时，请在 README 或发布说明中链接[本项目](https://github.com/Eatastar/Learn-Something)，例如“基于 AI-Embedded Paper PDF Reader 修改”。这是友好的来源标注请求，不增加 MIT 许可证之外的限制。
+欢迎任何人下载、使用、fork 本项目，并用 **AI agent / vibe coding** 修改成适合自己的版本。发布衍生版时，请在 README 或发布说明中链接[本项目](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader)，例如“基于 AI-Embedded Paper PDF Reader 修改”。这是友好的来源标注请求，不增加 MIT 许可证之外的限制。
 
-Everyone is welcome to download, use and fork this project, and adapt it with **AI agents / vibe coding**. Please link to [this project](https://github.com/Eatastar/Learn-Something) when publishing a derivative, for example “Based on AI-Embedded Paper PDF Reader.” This is a courtesy request and adds no restrictions to the MIT license.
+Everyone is welcome to download, use and fork this project, and adapt it with **AI agents / vibe coding**. Please link to [this project](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader) when publishing a derivative, for example “Based on AI-Embedded Paper PDF Reader.” This is a courtesy request and adds no restrictions to the MIT license.
 
 **本项目的原创应用代码全部由 GPT 通过 Codex 实现。人类发起者负责提出想法、确定需求，并对功能进行选择和取舍。** 第三方代码保留各自作者的版权、署名和许可证，不属于上述 GPT 原创声明。见[贡献说明](docs/ATTRIBUTION.md)和[第三方组件](docs/THIRD_PARTY.md)。
 

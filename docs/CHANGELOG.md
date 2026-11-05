@@ -131,3 +131,9 @@ PDF 默认连续滚动，旧版单页偏好首次升级也采用连续阅读；�
 基准记录：129 项客户端检查、528 项交付包核对和隔离桌面启动通过。真实模型和后续扩展的验证范围独立记录。
 
 这次归档保留已经验证的应用代码，新增源码提交范围、仓库说明和改进清单；不包含个人数据和程序安装包。
+
+## 仓库更名与共同作者 / Repository rename and co-author
+
+2026-11-06：仓库更名为 AI-Embedded-Paper-PDF-Reader，文档和客户端源码中的上游链接同步新地址；v0.1.12 与 v0.1.11 的既有提交标签及发行附件保留原样。截图中的 Source code (zip/tar.gz) 是 GitHub 自动提供的对应标签源码，继续保留。新提交使用 Codex 共同作者条目，项目所有者的常规作者身份继续保留。
+
+2026-11-06: Renamed the repository to AI-Embedded-Paper-PDF-Reader and updated upstream links in documentation and client source. Existing v0.1.12/v0.1.11 tags and release assets remain unchanged. GitHub automatically provides the Source code ZIP/tar.gz archives for each tag. New Codex-assisted commits include the Codex co-author trailer while retaining the owner's normal author identity.

@@ -78,6 +78,6 @@ See [PROJECT](../../docs/PROJECT.md) for modules and [ROADMAP](../../docs/ROADMA
 
 ## 实现与复用 / Credits and reuse
 
-原创应用代码全部由 GPT 通过 Codex 实现，人类发起者提出想法、确定需求并选择功能。欢迎任何人下载并用 AI agent / vibe coding 修改；发布衍生版时，请链接[上游](https://github.com/Eatastar/Learn-Something)。项目自身代码采用 MIT，第三方署名和许可继续保留。见[贡献说明](../../docs/ATTRIBUTION.md)。
+原创应用代码全部由 GPT 通过 Codex 实现，人类发起者提出想法、确定需求并选择功能。欢迎任何人下载并用 AI agent / vibe coding 修改；发布衍生版时，请链接[上游](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader)。项目自身代码采用 MIT，第三方署名和许可继续保留。见[贡献说明](../../docs/ATTRIBUTION.md)。
 
-All original application code was implemented by GPT through Codex; the human initiator proposed ideas, defined requirements and selected features. Anyone may download and adapt it with AI agents / vibe coding. Please link to [upstream](https://github.com/Eatastar/Learn-Something) when publishing a derivative. Original code uses MIT; third-party attribution and licenses remain applicable. See [Attribution](../../docs/ATTRIBUTION.md).
+All original application code was implemented by GPT through Codex; the human initiator proposed ideas, defined requirements and selected features. Anyone may download and adapt it with AI agents / vibe coding. Please link to [upstream](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader) when publishing a derivative. Original code uses MIT; third-party attribution and licenses remain applicable. See [Attribution](../../docs/ATTRIBUTION.md).

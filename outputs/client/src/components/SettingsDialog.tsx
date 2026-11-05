@@ -153,6 +153,6 @@ export function SettingsDialog({ settings, onClose, onSaveProfile, onDeleteProfi
       {error && <p className="form-error" role="alert">{t(error)}</p>}
       <footer className="dialog-footer profile-dialog-footer"><span>{t("保存和切换都不会发送问题")}</span><div><button type="button" className="profile-text-button" onClick={onClose} disabled={Boolean(busy)}>{t("取消")}</button><button className="primary-button" disabled={Boolean(busy)} type="submit"><PlugZap size={16} />{busy === 'save' ? t("保存中…") : t("保存并使用")}</button></div></footer>
     </form>
-    <details className="project-about"><summary>{t("关于本项目")}</summary><strong>AI-Embedded Paper PDF Reader</strong><p>{t("本项目的原创应用代码全部由 GPT 通过 Codex 实现；发起者负责提出想法、确定需求及功能取舍。第三方组件保留各自作者署名与许可证。")}</p><p>{t("欢迎下载、使用 AI agent 或 vibe coding 修改成适合自己的版本。发布衍生版本时，请在说明中链接本项目。")}</p><a href="https://github.com/Eatastar/Learn-Something" target="_blank" rel="noreferrer">{t("项目源码与说明")}</a></details>
+    <details className="project-about"><summary>{t("关于本项目")}</summary><strong>AI-Embedded Paper PDF Reader</strong><p>{t("本项目的原创应用代码全部由 GPT 通过 Codex 实现；发起者负责提出想法、确定需求及功能取舍。第三方组件保留各自作者署名与许可证。")}</p><p>{t("欢迎下载、使用 AI agent 或 vibe coding 修改成适合自己的版本。发布衍生版本时，请在说明中链接本项目。")}</p><a href="https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader" target="_blank" rel="noreferrer">{t("项目源码与说明")}</a></details>
   </dialog>;
 }
