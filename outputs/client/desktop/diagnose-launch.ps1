@@ -1,4 +1,4 @@
-param(
+﻿param(
     [ValidateRange(1, 60)]
     [int]$ObservationSeconds = 20
 )

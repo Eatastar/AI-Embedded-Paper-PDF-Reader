@@ -110,7 +110,7 @@ for (const path of [...new Set(paths)].sort()) {
   if (!(await inside(path)).isFile()) throw new Error('Expected source file: ' + path);
   const original = await readFile(join(root, path));
   const binary = binaryFiles.has(path);
-  const content = binary ? original.toString('base64') : new TextDecoder('utf-8', { fatal: true }).decode(original).replace(/\r\n?/g, '\n');
+  const content = binary ? original.toString('base64') : new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(original).replace(/\r\n?/g, '\n');
   const bytes = binary ? original : Buffer.from(content, 'utf8');
   if (!binary) {
     const scan = contentFindings(path, content);
