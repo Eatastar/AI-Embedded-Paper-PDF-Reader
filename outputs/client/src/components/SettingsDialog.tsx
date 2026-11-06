@@ -1,11 +1,14 @@
 import { t } from '../i18n/locale';
 import { useLocale } from '../i18n/react';
 import { LanguageSelector } from './LanguageSelector';
-import { useEffect, useRef, useState, type SelectHTMLAttributes } from 'react';
-import { Check, ChevronDown, KeyRound, Pencil, PlugZap, Plus, Trash2, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Check, KeyRound, Pencil, PlugZap, Plus, Radar, Trash2, X } from 'lucide-react';
 import type { ModelProfile, ModelSettings, ProfileInput } from '../domain/types';
 import { apiFormatOptions, connectionPresets, otherConnectionPresets, profileFromPreset } from '../domain/model-presets';
 import { discoverModels, type DiscoveredModel } from '../adapters/model';
+import { NativeSelect as SettingsSelect } from './NativeSelect';
+// @ts-expect-error Pure URL helper shared with the local server.
+import { modelListEndpoint } from '../../server/model-endpoint.mjs';
 
 function editProfile(profile: ModelProfile): ProfileInput {
   return {
@@ -14,16 +17,9 @@ function editProfile(profile: ModelProfile): ProfileInput {
   };
 }
 
-function SettingsSelect({ wrapperClassName = '', ...props }: SelectHTMLAttributes<HTMLSelectElement> & { wrapperClassName?: string }) {
-  useLocale();
-  return <span className={`settings-select ${wrapperClassName}`}>
-    <select {...props} className="field-input" />
-    <span className="settings-select-indicator" aria-hidden="true"><ChevronDown size={14} strokeWidth={1.6} /></span>
-  </span>;
-}
-
-export function SettingsDialog({ settings, onClose, onSaveProfile, onDeleteProfile, onSelectProfile }: {
+export function SettingsDialog({ settings, initialIntent = 'configure', onClose, onSaveProfile, onDeleteProfile, onSelectProfile }: {
   settings: ModelSettings;
+  initialIntent?: 'configure' | 'discover';
   onClose: () => void;
   onSaveProfile: (value: ProfileInput) => Promise<void>;
   onDeleteProfile: (id: string) => Promise<void>;
@@ -32,6 +28,7 @@ export function SettingsDialog({ settings, onClose, onSaveProfile, onDeleteProfi
   useLocale();
   const dialog = useRef<HTMLDialogElement>(null);
   const connectionName = useRef<HTMLInputElement>(null);
+  const discoveryPanel = useRef<HTMLDivElement>(null), discoverButton = useRef<HTMLButtonElement>(null), modelResults = useRef<HTMLDivElement>(null);
   const firstProfile = settings.profiles.find(profile => profile.id === settings.activeProfileId) ?? settings.profiles[0];
   const [form, setForm] = useState<ProfileInput>(() => firstProfile ? editProfile(firstProfile) : { ...profileFromPreset(connectionPresets[0], settings.systemPrompt), name: t(connectionPresets[0].name) });
   const [presetId, setPresetId] = useState<string | null>(firstProfile ? null : 'relay');
@@ -51,12 +48,26 @@ export function SettingsDialog({ settings, onClose, onSaveProfile, onDeleteProfi
   const otherPreset = otherConnectionPresets.find(item => item.id === otherPresetId);
   const preset = presetId === 'other' ? otherPreset : connectionPresets.find(item => item.id === presetId);
   const format = apiFormatOptions.find(item => item.value === form.apiFormat);
+  let modelEndpoint = '';
+  try { modelEndpoint = modelListEndpoint(form.baseURL).pathname; } catch { /* Incomplete addresses remain editable. */ }
 
   useEffect(() => { dialog.current?.showModal(); }, []);
   useEffect(() => {
     discovery.current?.abort(); setModels([]); setModelFilter(''); setDiscoveryError(''); setDiscovering(false);
     return () => { discovery.current?.abort(); };
   }, [form.id, form.baseURL, form.apiFormat, apiKey, clearApiKey]);
+  useEffect(() => {
+    if (initialIntent !== 'discover') return;
+    const frame = requestAnimationFrame(() => {
+      discoveryPanel.current?.scrollIntoView({ block: 'center' });
+      discoverButton.current?.focus({ preventScroll: true });
+      let local = false;
+      try { local = ['localhost', '127.0.0.1', '[::1]'].includes(new URL(form.baseURL).hostname); } catch { /* Wait for the user to complete the address. */ }
+      if (firstProfile && modelEndpoint && (firstProfile.hasApiKey || local)) void fetchModels();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [initialIntent]);
+  useEffect(() => { if (models.length) modelResults.current?.scrollIntoView({ block: 'nearest' }); }, [models]);
 
   async function fetchModels() {
     discovery.current?.abort();
@@ -119,7 +130,7 @@ export function SettingsDialog({ settings, onClose, onSaveProfile, onDeleteProfi
 
   return <dialog className="settings-dialog profile-settings-dialog" ref={dialog} onCancel={onClose} aria-labelledby="settings-title">
     <header className="dialog-header">
-      <div><span className="eyebrow">MODEL CONNECTIONS</span><h2 id="settings-title">{t("我的模型")}</h2><p className="profile-dialog-intro">{t("提前保存连接，聊天时在输入框左下角切换。")}</p></div>
+      <div><span className="eyebrow">MODEL CONNECTIONS</span><h2 id="settings-title">{initialIntent === 'discover' ? t("上游模型探照") : t("我的模型")}</h2><p className="profile-dialog-intro">{initialIntent === 'discover' ? t("获取当前连接的模型列表，选择后保存使用。") : t("提前保存连接，聊天时在输入框左下角切换。")}</p></div>
       <button type="button" className="icon-button" aria-label={t("关闭设置")} onClick={onClose}><X size={20} /></button>
     </header>
 
@@ -163,18 +174,20 @@ export function SettingsDialog({ settings, onClose, onSaveProfile, onDeleteProfi
         <label className="field-label">{t("接口格式")}<SettingsSelect aria-describedby="api-format-help" value={form.apiFormat} onChange={e => changeConnection({ apiFormat: e.target.value as ProfileInput['apiFormat'] })}>{apiFormatOptions.map(item => <option key={item.value} value={item.value}>{t(item.label)}</option>)}</SettingsSelect></label>
         <p className="field-help" id="api-format-help">{t("这里选择数据格式，和模型品牌分开；常用服务会自动填好。")}{t(format?.help || "")}</p>
         <label className="field-label">{t("API 地址")}<input className="field-input" type="url" value={form.baseURL} required onChange={e => changeConnection({ baseURL: e.target.value })} placeholder={t(preset?.addressPlaceholder ?? t("填写服务商提供的 API 基础地址，例如 https://api.example.com/v1"))} autoComplete="off" /></label>
-        <p className="field-help">{t("填写基础地址即可，无需添加 /chat/completions、/responses 或 /messages。本机服务可使用 http://localhost 或 http://127.0.0.1 加端口。")}</p>
-        <label className="field-label">{t("模型名称")}<input className="field-input" value={form.model} required onChange={e => setForm({ ...form, model: e.target.value })} placeholder={t(preset?.modelPlaceholder ?? t("填写服务商提供的完整模型名称"))} autoComplete="off" /></label>
+        <p className="field-help">{t("推荐填写 API 基础地址；也兼容以 /responses、/chat/completions 或 /messages 结尾的完整地址。本机服务可使用 HTTP。")}</p>
         <label className="field-label">{t("API 密钥")}<span className="field-side">{apiKey ? t("将使用新密钥") : retainedKey ? (currentProfile?.keySaved ? t("已加密保存") : t("本次运行已设置")) : t("未填写，可稍后补充")}</span>
           <span className="password-field"><KeyRound size={16} /><input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} autoComplete="off" placeholder={retainedKey ? t("留空保留此连接的密钥") : t("输入此服务的 API Key，也可先留空")} /></span>
         </label>
         {clearApiKey && currentProfile?.hasApiKey && <p className="profile-key-notice">{t("接口地址或格式已修改，原密钥不会沿用。请填写新密钥，或留空稍后补充。")}</p>}
-        <div className="model-discovery">
-          <div className="model-discovery-action"><button type="button" className="document-tool-button" disabled={discovering || !form.baseURL.trim()} onClick={() => void fetchModels()}>{discovering ? t("正在获取模型…") : t("获取上游模型列表")}</button>{discovering && <button type="button" className="profile-text-button" onClick={() => { discovery.current?.abort(); setDiscovering(false); }}>{t("取消")}</button>}</div>
+        <div ref={discoveryPanel} className="model-discovery" role="region" aria-label={t("上游模型探照")}>
+          <h3><Radar size={16} />{t("上游模型探照")}</h3>
+          <div className="model-discovery-action"><button ref={discoverButton} type="button" className="document-tool-button" disabled={discovering || !modelEndpoint} onClick={() => void fetchModels()}>{discovering ? t("正在获取模型…") : t("探测模型")}</button>{discovering && <button type="button" className="profile-text-button" onClick={() => { discovery.current?.abort(); setDiscovering(false); }}>{t("取消")}</button>}</div>
+          {modelEndpoint && <p className="model-discovery-endpoint">{t("请求接口：GET {0}", [modelEndpoint])}</p>}
           <p className="field-help">{t("填写地址和密钥后获取，无需先填模型名；本机无鉴权服务可留空密钥。此操作只读取模型列表，不发送问题。")}</p>
-          {models.length > 0 && <><label className="field-label">{t("筛选模型")}<input className="field-input" value={modelFilter} onChange={event => setModelFilter(event.target.value)} placeholder={t("输入名称筛选")} /></label><label className="field-label">{t("上游模型（{0}）", [models.length])}<SettingsSelect value={models.some(model => model.id === form.model) ? form.model : ''} onChange={event => setForm({ ...form, model: event.target.value })}><option value="" disabled>{t("请选择模型")}</option>{models.filter(model => model.id === form.model || `${model.id} ${model.label || ''}`.toLowerCase().includes(modelFilter.toLowerCase())).map(model => <option key={model.id} value={model.id}>{model.label ? `${model.label} · ${model.id}` : model.id}</option>)}</SettingsSelect></label><p className="field-help">{t("列表可能包含图像、语音等模型，请选择支持文字对话的模型；未列出的模型仍可手动填写。")}</p></>}
+          {models.length > 0 && <div ref={modelResults}><label className="field-label">{t("筛选模型")}<input className="field-input" value={modelFilter} onChange={event => setModelFilter(event.target.value)} placeholder={t("输入名称筛选")} /></label><label className="field-label">{t("上游模型（{0}）", [models.length])}<SettingsSelect value={models.some(model => model.id === form.model) ? form.model : ''} onChange={event => setForm({ ...form, model: event.target.value })}><option value="" disabled>{t("请选择模型")}</option>{models.filter(model => model.id === form.model || `${model.id} ${model.label || ''}`.toLowerCase().includes(modelFilter.toLowerCase())).map(model => <option key={model.id} value={model.id}>{model.label ? `${model.label} · ${model.id}` : model.id}</option>)}</SettingsSelect></label><p className="field-help">{t("列表可能包含图像、语音等模型，请选择支持文字对话的模型；未列出的模型仍可手动填写。")}</p></div>}
           {discoveryError && <p className="form-error" role="alert">{t(discoveryError)}</p>}
         </div>
+        <label className="field-label">{t("模型名称")}<input className="field-input" value={form.model} required onChange={e => setForm({ ...form, model: e.target.value })} placeholder={t("从上方列表选择，或手动填写模型名称")} autoComplete="off" /></label>
         <p className="field-help profile-storage-help">{settings.persistence === 'encrypted' ? t("密钥使用本机系统加密保存，重启后可继续使用。") : settings.persistence === 'configuration' ? t("连接配置会保存在本机；密钥仅本次运行有效，重启后需重新填写。") : t("当前只能在本次运行中保留连接和密钥，退出后需重新填写。")}{t("密钥不会进入聊天记录或聊天备份。")}</p>
         {settings.storageWarning && <p className="profile-key-notice">{t(settings.storageWarning)}</p>}
         <label className="field-label">{t("回答偏好")}<textarea className="field-input" rows={3} value={form.systemPrompt} onChange={e => setForm({ ...form, systemPrompt: e.target.value })} placeholder={t("例如：用中文回答，解释清楚，适当举例。")} /></label>

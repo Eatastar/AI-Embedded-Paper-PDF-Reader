@@ -1,10 +1,10 @@
 # AI-Embedded Paper PDF Reader 项目总纲 / Project outline
 
-当前版本：客户端 0.1.13，构建 20261106.2，2026年11月6日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
+当前版本：客户端 0.1.14，构建 20261106.3，2026年11月6日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
 
 首个公开正式版沿用 v0.1.11 和现有构建，使用 MIT 许可证。公开范围包括已核对的源码及通用 Windows 发行包；历史检查范围见 [公开发布说明](OPEN_SOURCE_RELEASE.md)，本地数据和请求边界见 [隐私说明](PRIVACY.md)。
 
-Current source: **0.1.13 / 20261106.2**. A local paper reader with optional AI questions and personal notes. Public introductions and release notes are bilingual. Users can select Chinese or English in the app; interface language never rewrites their documents, messages, notes or answer preferences.
+Current source: **0.1.14 / 20261106.3**. A local paper reader with optional AI questions and personal notes. Public introductions and release notes are bilingual. Users can select Chinese or English in the app; interface language never rewrites their documents, messages, notes or answer preferences.
 
 Original application code was implemented entirely by GPT through Codex; the human initiator proposed ideas, defined requirements and selected features/trade-offs. Everyone may download and adapt it with AI agents or vibe coding. Please link to the upstream repository when publishing a derivative; MIT and third-party notices remain applicable. See [Attribution](ATTRIBUTION.md).
 
@@ -150,3 +150,15 @@ PDF 默认连续滚动，旧版单页偏好首次升级也采用连续阅读；�
 验证：239 项自动检查、555 项交付包核对通过。隔离界面验证首页 API 入口、未填模型名获取并筛选模型、约 34 MB / 321 页 PDF 打开及远页/末页导航、快速连续换色、中英文切换与刷新恢复，以及小文件自动全文。模拟失败后切换资料范围，重试的实际请求资料哈希保持一致。打包目录与交付目录均实际启动、保存、备份并正常退出，界面无错误。未使用个人资料或真实 API。真实服务商权限和物理选色手感仍待使用体验。
 
 Validation: 239 automated tests and 555 package checks passed. Isolated UI checks covered the home API entry, fetching/filtering models without a model name, opening a roughly 34 MB / 321-page PDF, distant/final-page navigation, rapid color changes, both languages with reload persistence and small-file full text. After a simulated failure and scope change, the actual retry material retained the same hash. Both packaged and delivered executables passed startup, save, backup and normal exit with no renderer errors. No personal data or real API calls were used; actual provider permissions and physical picker feel remain subject to usage.
+
+
+## 0.1.14 模型探照修正 / Model discovery fix
+
+模型列表共用 server/model-endpoint.mjs 推导地址，兼容完整推理接口而不改保存配置或密钥。NativeSelect 统一首页与设置箭头。首页探测入口与配置分开，已有连接可直接读取；未找到接口时显示实际路径和 HTTP 状态，列表缺失可手填。
+
+The shared model endpoint helper derives the sibling list API from full inference addresses without modifying saved settings/keys. NativeSelect unifies home/settings arrows. Home discovery is separate from setup and fetches usable saved connections directly. The UI shows the path/HTTP failure state and retains manual entry.
+
+
+验证：241 项自动检查、555 项交付包核对通过。严格模拟服务只接受 /v1/models，实际界面验证保存的完整 /v1/responses 地址可直接探测、筛选选择并保存；空模型名获取、本机空密钥、错误路径与 HTTP 404 的中英提示均通过。点击首页箭头区域展开原生列表，36px 箭头区中心差为 0、文字留白 48px。两次实际 EXE 启动、保存、完整备份和退出通过，界面无错误。未读取个人配置或调用真实 API；真实服务商是否开放模型列表仍需其服务确认。
+
+Validation: 241 tests and 555 package checks passed. A strict mock accepted only /v1/models; the UI fetched from a saved full /v1/responses address, filtered/selected and saved models. Blank model names, keyless local services and bilingual path/HTTP 404 feedback were checked. Clicking the home arrow opened the native list; its 36px arrow area had zero center offset and 48px text clearance. Two real EXE startup/save/full-backup/exit checks passed with no renderer errors. No personal settings or real API calls were used; actual provider list availability remains service-dependent.

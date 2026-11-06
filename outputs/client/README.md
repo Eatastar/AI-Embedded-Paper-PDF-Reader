@@ -1,6 +1,6 @@
 # AI-Embedded Paper PDF Reader
 
-**AI 嵌入式论文 PDF 阅读器** · 0.1.13 · 20261106.2
+**AI 嵌入式论文 PDF 阅读器** · 0.1.14 · 20261106.3
 
 本地 PDF 阅读、原文批注和按需 AI 问答。项目介绍、功能、实现分工和复用说明见[项目首页](../../README.md)，历史变化见[版本记录](../../docs/CHANGELOG.md)。
 
@@ -90,3 +90,10 @@ All original application code was implemented by GPT through Codex; the human in
 Open configuration from the home API card, enter the endpoint/key and fetch/filter models before entering a model name. Compatible APIs use `/models`; Claude supports pagination. Unsupported listing falls back to manual entry, without probing other addresses. Lists may contain image/audio models, so choose a text-chat model. Discovery uses the desktop proxy path, sends no paper/chat content, and does not save or activate unsubmitted settings.
 
 API references: [OpenAI models](https://developers.openai.com/api/reference/resources/models/methods/list), [Claude models](https://platform.claude.com/docs/en/api/models/list), [Ollama compatibility](https://docs.ollama.com/api/openai-compatibility).
+
+
+模型探照说明 / Model discovery details
+
+首页“探测上游模型”直接进入列表获取，已保存可用连接会自动读取。使用服务商的 GET 模型列表 API，不是管理后台网页。兼容以 /responses、/chat/completions、/messages 或 /models 结尾的完整地址；推导列表路径时保留主机与前缀，不改保存的连接或密钥。界面显示请求路径及 HTTP 失败状态，仍可手动填模型名。
+
+Discover models on the home screen opens discovery and fetches immediately for a usable saved connection. It uses the provider's GET model-list API, rather than a management webpage. Full /responses, /chat/completions, /messages and /models addresses are accepted; the provider prefix/origin and saved connection/key are preserved. The UI shows the request path and HTTP failure status, with manual model entry available.

@@ -1,5 +1,5 @@
 AI-Embedded Paper PDF Reader
-AI 嵌入式论文 PDF 阅读器 · 0.1.13 · 20261106.2
+AI 嵌入式论文 PDF 阅读器 · 0.1.14 · 20261106.3
 
 一、运行 / Run
 完整解压 ZIP，运行 AI-Embedded-Paper-PDF-Reader.exe，保留所有同目录文件。
@@ -36,7 +36,7 @@ The toolbar, reader margins, settings and annotations follow the paper color. Dr
 Scanned pages support viewing and recoloring, without OCR or image understanding. Contents depend on embedded outlines; search uses extracted text.
 
 五、模型与网络 / Models and networking
-首页直接显示 API 连接。打开配置，填写地址和密钥后点击“获取上游模型列表”，筛选选择模型再保存；不支持列表的服务仍可手动填写。可用中转站、GPT、Claude、DeepSeek 或“其他”服务模板。
+首页直接显示 API 连接。打开配置，填写地址和密钥后点击“探测模型”，筛选选择模型再保存；不支持列表的服务仍可手动填写。可用中转站、GPT、Claude、DeepSeek 或“其他”服务模板。
 The home screen shows API setup. Enter the address and key, fetch available models, filter/select a model and save. Manual entry remains available when listing is unsupported. Choose relay, GPT, Claude, DeepSeek or Other service templates.
 其他服务包含 Kimi、千问、Gemini 兼容入口、Grok、Ollama、LM Studio 和自定义 API。
 Other services include Kimi, Qwen, Gemini's compatible endpoint, Grok, Ollama, LM Studio and custom APIs.
@@ -77,3 +77,10 @@ Original code uses MIT. Linking upstream is a courtesy request, not an extra lic
 大文件 / Large files
 PDF 最大 150 MiB、5000 页、1000 万提取字符；文字文件最大 25 MiB、100 万字符。打开时可查看提取进度并取消。全工作区备份仍以 350 MB 为限，超出时分别导出对话。
 PDF: up to 150 MiB, 5,000 pages and 10 million extracted characters. Text files: up to 25 MiB and 1 million characters. Opening shows progress and supports cancellation. Full-workspace backups retain a 350 MB limit; export conversations separately when needed.
+
+
+模型探照说明 / Model discovery details
+
+首页“探测上游模型”直接进入列表获取，已保存可用连接会自动读取。使用服务商的 GET 模型列表 API，不是管理后台网页。兼容以 /responses、/chat/completions、/messages 或 /models 结尾的完整地址；推导列表路径时保留主机与前缀，不改保存的连接或密钥。界面显示请求路径及 HTTP 失败状态，仍可手动填模型名。
+
+Discover models on the home screen opens discovery and fetches immediately for a usable saved connection. It uses the provider's GET model-list API, rather than a management webpage. Full /responses, /chat/completions, /messages and /models addresses are accepted; the provider prefix/origin and saved connection/key are preserved. The UI shows the request path and HTTP failure status, with manual model entry available.

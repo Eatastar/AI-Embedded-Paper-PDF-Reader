@@ -1,4 +1,5 @@
 import { ProfileError } from './profiles.mjs';
+import { modelListEndpoint } from './model-endpoint.mjs';
 
 const MAX_BYTES = 2 * 1024 * 1024;
 const MAX_MODELS = 2000;
@@ -24,14 +25,15 @@ async function readList(response, signal) {
 
 /** Only lists models at the user-selected destination. Never starts a generation or saves credentials. */
 export async function discoverModels(config, { fetch: fetcher = globalThis.fetch, signal, timeoutMs = 15000 } = {}) {
+  let url;
+  try { url = modelListEndpoint(config.baseURL); }
+  catch { throw failure(400, 'API 地址格式不正确，请填写完整地址。'); }
   const controller = new AbortController();
   const aborted = () => controller.abort();
   signal?.addEventListener('abort', aborted, { once: true });
   if (signal?.aborted) controller.abort();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   const models = new Map();
-  const url = new URL(config.baseURL);
-  url.pathname = `${url.pathname.replace(/\/+$/, '') || '/v1'}/models`;
   const anthropic = config.apiFormat === 'anthropic-messages';
   const headers = anthropic
     ? { 'anthropic-version': '2023-06-01', ...(config.apiKey ? { 'x-api-key': config.apiKey } : {}) }
@@ -43,10 +45,10 @@ export async function discoverModels(config, { fetch: fetcher = globalThis.fetch
       const response = await fetcher(url.href, { method: 'GET', headers: { Accept: 'application/json', ...headers }, redirect: 'error', credentials: 'omit', signal: controller.signal });
       if (!response.ok) {
         await response.body?.cancel().catch(() => {});
-        if ([401, 403].includes(response.status)) throw failure(400, '无法获取模型列表：认证失败，请检查密钥与权限。');
-        if ([404, 405, 501].includes(response.status)) throw failure(400, '此服务未提供模型列表接口，仍可手动填写模型名称。');
-        if (response.status === 429) throw failure(429, '获取模型列表受到限制，请稍后重试。');
-        throw failure(502, '模型列表服务暂时不可用，请稍后重试或手动填写。');
+        if ([401, 403].includes(response.status)) throw failure(400, `无法获取模型列表：认证失败（HTTP ${response.status}），请检查密钥与权限。`);
+        if ([404, 405, 501].includes(response.status)) throw failure(400, `模型列表接口未找到或未开放（HTTP ${response.status}），请检查地址与权限，也可手动填写模型名称。`);
+        if (response.status === 429) throw failure(429, '获取模型列表受到限制（HTTP 429），请稍后重试。');
+        throw failure(502, `模型列表服务暂时不可用（HTTP ${response.status}），请稍后重试或手动填写。`);
       }
       const body = await readList(response, controller.signal);
       if (!body || !Array.isArray(body.data)) throw failure(502, '服务未返回有效的模型列表，请检查地址或手动填写。');

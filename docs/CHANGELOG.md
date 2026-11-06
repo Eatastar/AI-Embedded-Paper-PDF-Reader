@@ -1,5 +1,36 @@
 # 版本记录 / Changelog
 
+## 0.1.14 · 20261106.3 · 2026-11-06
+
+修复填写完整 `/v1/responses` 地址后，模型列表被误拼为 `/v1/responses/models` 的问题。现在兼容基础地址及以 `/responses`、`/chat/completions`、`/messages` 或 `/models` 结尾的完整地址，保留服务商原有前缀和主机。只推导列表请求地址，不修改已保存连接，也不会因此清除原密钥。
+
+Fixes model discovery incorrectly requesting `/v1/responses/models` when given a full `/v1/responses` address. Base addresses and full `/responses`, `/chat/completions`, `/messages` or `/models` addresses now derive the sibling model-list API while preserving the provider's prefix/origin. Saved connections and credentials are unchanged.
+
+首页把“配置 API”和“探测上游模型”分成两个按钮。有可用的已保存连接时，点击探测直接获取列表并定位到结果；支持筛选、选择及保存，模型名仍可手动填写。新连接先填地址和密钥，再点“探测模型”，无需先填模型名。
+
+The home screen separates API setup from Discover models. With a usable saved connection, discovery fetches models immediately and brings the results into view. Filter, select and save a model, or enter a name manually. New connections can fetch models after entering the endpoint/key, without a model name.
+
+探照调用服务商的模型列表 API（通常 `GET /v1/models`），不是抓取管理后台的 Models 网页。界面显示实际请求路径及上游 HTTP 失败状态，方便检查地址、权限或列表接口是否开放；不会自动试探其他主机，也不会逐个调用模型生成回答。
+
+Discovery calls the provider's model-list API (usually `GET /v1/models`), rather than scraping its Models management webpage. The UI shows the request path and upstream HTTP failure status, helping distinguish address, permission and endpoint availability issues. It does not probe other hosts or run a generation against each model.
+
+首页与设置共用统一的原生下拉框，右侧箭头在 36px 区域内居中，文字预留 48px。保留原生列表及键盘选择，点击箭头区域同样展开。
+
+Home and settings now share a native select with a centered arrow in a 36px area and 48px text clearance. Native menus and keyboard selection are retained, including clicking the arrow area.
+
+验证使用合成连接与严格模拟接口，不读取个人配置或调用真实 API。原数据位置、数据库和阅读/批注规则继续沿用。请先正常退出旧版，完整解压新 ZIP，再运行其中的 EXE。已公开的旧 Release 和附件保持原样。
+
+Validation uses synthetic connections and strict mocked endpoints, without personal settings or real API calls. Existing data identity/database and reading/annotation rules remain in use. Exit the old app normally, fully extract the new ZIP and run its EXE. Previously published releases/assets remain unchanged.
+
+原创应用代码全部由 GPT 通过 Codex 实现；人类发起者负责想法、需求与功能取舍。欢迎下载、fork 和使用 AI agent / vibe coding 改造；发布衍生版时请链接[上游项目](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader)。MIT 与第三方许可继续适用。
+
+GPT through Codex implemented all original application code; the human initiator supplied ideas, requirements and feature trade-offs. Download, fork and adapt with AI agents / vibe coding; please link [upstream](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader) when publishing derivatives. MIT and third-party licenses continue to apply.
+
+
+验证：241 项自动检查、555 项交付包核对通过。严格模拟服务只接受 /v1/models，实际界面验证保存的完整 /v1/responses 地址可直接探测、筛选选择并保存；空模型名获取、本机空密钥、错误路径与 HTTP 404 的中英提示均通过。点击首页箭头区域展开原生列表，36px 箭头区中心差为 0、文字留白 48px。两次实际 EXE 启动、保存、完整备份和退出通过，界面无错误。未读取个人配置或调用真实 API；真实服务商是否开放模型列表仍需其服务确认。
+
+Validation: 241 tests and 555 package checks passed. A strict mock accepted only /v1/models; the UI fetched from a saved full /v1/responses address, filtered/selected and saved models. Blank model names, keyless local services and bilingual path/HTTP 404 feedback were checked. Clicking the home arrow opened the native list; its 36px arrow area had zero center offset and 48px text clearance. Two real EXE startup/save/full-backup/exit checks passed with no renderer errors. No personal settings or real API calls were used; actual provider list availability remains service-dependent.
+
 ## 0.1.13 · 20261106.2 · 2026-11-06
 
 - 首页直接显示当前 API 与配置入口；填写地址和密钥后可获取、筛选上游模型，不必先查模型名。兼容接口与 Claude 列表分页已用模拟服务验证；服务未提供列表时仍可手动填写。

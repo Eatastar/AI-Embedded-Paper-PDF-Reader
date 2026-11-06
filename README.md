@@ -8,9 +8,9 @@ A local paper reader with optional AI conversations. Select text in a PDF or an 
 
 [下载 / Downloads](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases) · [隐私 / Privacy](docs/PRIVACY.md) · [版本记录 / Changelog](docs/CHANGELOG.md) · [项目总纲 / Project outline](docs/PROJECT.md)
 
-当前源码版本为 **0.1.13**，首个公开正式版为 **v0.1.11**。请以 Releases 中实际发布的附件为准。项目采用 [MIT 许可证](LICENSE)。仓库已更名为 AI-Embedded-Paper-PDF-Reader；原 Learn-Something 地址会跳转到新仓库，已有下载和引用链接继续有效。
+当前源码版本为 **0.1.14**，首个公开正式版为 **v0.1.11**。请以 Releases 中实际发布的附件为准。项目采用 [MIT 许可证](LICENSE)。仓库已更名为 AI-Embedded-Paper-PDF-Reader；原 Learn-Something 地址会跳转到新仓库，已有下载和引用链接继续有效。
 
-The current source version is **0.1.13**; **v0.1.11** was the first public release. Download the assets actually available on the Releases page. The project uses the [MIT license](LICENSE). The repository is now named AI-Embedded-Paper-PDF-Reader. The former Learn-Something address redirects to it, preserving existing download and reference links.
+The current source version is **0.1.14**; **v0.1.11** was the first public release. Download the assets actually available on the Releases page. The project uses the [MIT license](LICENSE). The repository is now named AI-Embedded-Paper-PDF-Reader. The former Learn-Something address redirects to it, preserving existing download and reference links.
 
 ## 开始使用 / Getting started
 
@@ -20,8 +20,8 @@ The current source version is **0.1.13**; **v0.1.11** was the first public relea
    Open a local PDF from the home screen. Choose Chinese / English on the home screen or in reading/model settings. Customize paper and text colors in Reading settings.
 3. 划选原文，选择询问 AI 或只写批注。在批注框的“高亮颜色”中选择预设色、自定义颜色或十六进制颜色。
    Select text to ask AI or write a note. Highlight color in the annotation panel offers presets, custom colors and hexadecimal input.
-4. 首页直接显示 API 连接。填写地址和密钥，点击“获取上游模型列表”并选择模型；也可手动填写，从首页或聊天输入框切换已保存连接。
-   The home screen shows your API connection. Enter its address and key, fetch available models and choose one, or enter a name manually. Switch saved connections on the home screen or at the lower left of chat.
+4. 首页直接显示 API 连接。填写地址和密钥，点击“探测上游模型”并选择模型；也可手动填写，从首页或聊天输入框切换已保存连接。
+   The home screen shows your API connection. Enter its address and key, click Discover models and choose one, or enter a name manually. Switch saved connections on the home screen or at the lower left of chat.
 
 普通阅读、搜索和笔记不调用 AI。发送问题会发送完整有效主对话；附件默认小文件全文、大文件按需引用，另带选中文字及所在页片段。原文件留在本机。自动模式在超过 25 MiB、300 页或 12 万提取字符时使用本地关键词检索，每份引用片段最多 2.4 万字符；选区和对话另计。阅读设置可切换全文或按需引用，工具栏显示范围。失败重试沿用首次请求的资料；资料不足会明确提示，全文仍受请求与模型容量限制，不静默截断主对话。桌面版沿用系统代理，不附带代理节点或 API 密钥。详见[隐私说明](docs/PRIVACY.md)。
 

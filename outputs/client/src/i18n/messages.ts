@@ -1,5 +1,18 @@
 // UI-owned text only. User messages, paper text and annotations are never passed through this catalog.
 export const english: Record<string, string> = {
+  "模型列表接口未找到或未开放（HTTP {0}），请检查地址与权限，也可手动填写模型名称。": "The model list endpoint was not found or is unavailable (HTTP {0}). Check the address and permissions, or enter a model name manually.",
+  "配置 API": "API setup",
+  "探测上游模型": "Discover models",
+  "上游模型探照": "Model discovery",
+  "探测模型": "Fetch models",
+  "获取当前连接的模型列表，选择后保存使用。": "Get models from this connection, then choose one and save to use it.",
+  "请求接口：GET {0}": "API request: GET {0}",
+  "从上方列表选择，或手动填写模型名称": "Choose from the list above or enter a model name manually",
+  "无法获取模型列表：认证失败（HTTP {0}），请检查密钥与权限。": "Model discovery failed: authentication was rejected (HTTP {0}). Check the key and permissions.",
+  "此服务未提供模型列表接口（HTTP {0}），仍可手动填写模型名称。": "This service does not provide a model list endpoint (HTTP {0}). You can still enter a model name manually.",
+  "获取模型列表受到限制（HTTP 429），请稍后重试。": "Model discovery is rate limited (HTTP 429). Try again later.",
+  "模型列表服务暂时不可用（HTTP {0}），请稍后重试或手动填写。": "The model list service is temporarily unavailable (HTTP {0}). Try again later or enter a model manually.",
+  "推荐填写 API 基础地址；也兼容以 /responses、/chat/completions 或 /messages 结尾的完整地址。本机服务可使用 HTTP。": "An API base address is recommended. Full /responses, /chat/completions or /messages addresses also work. Local services can use HTTP.",
   "该文档全文超过单次请求范围，请在阅读设置中选择按需引用。": "This document is too long for a single full-text request. Choose relevant excerpts in Reading settings.",
   "自动模式：超过 25 MB、300 页或 12 万字符时按需引用，每份最多引用 2.4 万字符。全文模式仍受模型容量限制。": "Auto uses relevant excerpts above 25 MB, 300 pages or 120,000 characters, with up to 24,000 excerpt characters per file. Full text mode is still limited by model capacity.",
   "PDF 超过 150 MB，请先拆分或压缩。": "This PDF exceeds 150 MB. Split or compress it first.",

@@ -175,6 +175,10 @@
 .reader-api-card p { margin: 0 0 5px; font-size: 12px; }
 .reader-api-card small { color: var(--ls-muted); font-size: 11px; line-height: 1.6; }
 .reader-api-actions { display: grid; gap: 9px; min-width: 190px; max-width: 50%; }
+.reader-api-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.reader-api-buttons > button { flex: 1 1 115px; justify-content: center; white-space: nowrap; }
+.model-discovery h3 { display: flex; gap: 7px; align-items: center; font-size: 13px; font-weight: 600; margin: 0 0 12px; }
+.model-discovery-endpoint { margin: 8px 0; font: 11px/1.6 ui-monospace, monospace; color: var(--ls-muted); overflow-wrap: anywhere; }
 .reader-api-actions select, .reader-context-setting select { width: 100%; padding: 7px 9px; border: 1px solid var(--ls-border); border-radius: 6px; background: var(--ls-panel); color: var(--ls-text); font: inherit; }
 .reader-context-setting select { max-width: 285px; }
 .model-discovery { margin: 12px 0 17px; padding: 12px; border: 1px solid var(--ls-border); border-radius: 8px; background: var(--ls-surface); }
