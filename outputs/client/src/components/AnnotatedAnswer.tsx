@@ -290,7 +290,7 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
       if (!createAnnotation(draft, { text, model })) throw new Error('原文位置已变化，请重新选词翻译。');
     } });
   };
-  useEffect(() => () => translation?.releaseSource(sourceKey), [sourceKey, isComplete, translation?.releaseSource]);
+  useEffect(() => () => translation?.releaseSource(sourceKey), [sourceKey, translation?.releaseSource]);
   useEffect(() => {
     if (!translation?.enabled || !isComplete) return;
     const keydown = (event: KeyboardEvent) => {

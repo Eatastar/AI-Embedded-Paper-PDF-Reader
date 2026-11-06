@@ -1,5 +1,5 @@
 AI-Embedded Paper PDF Reader
-AI 嵌入式论文 PDF 阅读器 · 0.1.16 · 20261106.5
+AI 嵌入式论文 PDF 阅读器 · 0.1.17 · 20261106.6
 
 一、运行 / Run
 完整解压 ZIP，运行 AI-Embedded-Paper-PDF-Reader.exe，保留所有同目录文件。
@@ -100,3 +100,8 @@ Select text and right-click to translate or press Alt+1. The separate Translate 
 PDF 自带的参考文献和图号链接支持文内精确跳转，并可返回跳转前位置。HTTP/HTTPS 网页链接交由系统浏览器打开，不执行脚本或文件动作；没有原生链接的文字不猜测跳转。深色配色修正彩色字边缘的白色残影，原 PDF 不改写。
 
 Embedded PDF references/figure links navigate to their page positions, with return navigation. HTTP/HTTPS links open in the system browser; scripts and file actions are not executed. No destination is guessed for unlinked text. Dark colors correct white halos around colored text without modifying the PDF.
+
+翻译滚动保留 / Translation while scrolling
+滚动时保留翻译框，连续阅读暂留当前翻译的来源页，滚远后仍可保留为原位置的批注。普通框外点击、Esc 或 × 关闭，拖动滚动条不会关闭。
+
+The translation panel remains open while scrolling, retaining its source page in continuous reading so it can still be saved as a note at the original passage. Ordinary outside click, Esc or × closes it; dragging the scrollbar does not.

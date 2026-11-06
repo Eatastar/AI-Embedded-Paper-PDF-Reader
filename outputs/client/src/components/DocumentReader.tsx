@@ -24,6 +24,7 @@ import { ReaderNavigation } from './ReaderNavigation';
 import { PdfAnnotatedPage } from './PdfAnnotatedPage';
 import { AnnotatedAnswer } from './AnnotatedAnswer';
 import type { AnnotatedAnswerProps } from './AnnotatedAnswer';
+import { useTranslation } from './Translation';
 import './documents.css';
 
 export interface DocumentReaderProps extends Omit<AnnotatedAnswerProps, 'messageId' | 'version' | 'plainText' | 'content' | 'contentReadyKey' | 'contentClassName'> {
@@ -41,6 +42,10 @@ const ReaderPageSlot = memo(function ReaderPageSlot({ index, number, width, heig
 
 export function DocumentReader({ source, onClose, focused, onToggleFocus, modelLabel, onOpenModelSettings, onBackup, onOpenFile, contextMode, onContextMode, onLocation, ...annotationProps }: DocumentReaderProps) {
   useLocale();
+  const translation = useTranslation();
+  // Keep only the active translation's source page mounted so scrolling cannot
+  // discard its result or the original anchor used by "Keep as a plain note".
+  const translationPage = useMemo(() => translation?.sourceKey ? source.pages.findIndex(page => `${annotationProps.conversationId}:${page.messageId}:${page.versionId}` === translation.sourceKey) : -1, [translation?.sourceKey, annotationProps.conversationId, source.pages]);
   const [initial] = useState(() => loadReaderPosition(source.id, source.pages.length, source.kind));
   const [pageIndex, setPageIndex] = useState(initial.pageIndex), [pageInput, setPageInput] = useState(String(initial.pageIndex + 1));
   const [view, setView] = useState(initial.view), [layout, setLayout] = useState<'paged' | 'continuous'>(initial.layout || 'continuous');
@@ -343,7 +348,7 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
         {view === 'original' && fileError && <div className="document-reader-empty" role="alert"><p>{t(fileError)}</p><button type="button" onClick={() => switchView('text')}>{t("打开已保存文字")}</button></div>}
         {view === 'original' && pdf && (continuous ? <div className="reader-continuous-pages">{source.pages.map((p, index) => {
           const size = pdfPageSize(geometry[index] || geometry[0] || { width: 612, height: 792 }, availableWidth, zoom);
-          const active = nearPages.has(index) || forcedPage === index || openedPage === index;
+          const active = nearPages.has(index) || forcedPage === index || openedPage === index || translationPage === index;
           return <ReaderPageSlot key={p.versionId} index={index} number={p.pageNumber} width={size.width} height={size.height} empty={!p.text.trim()} register={registerSlot}>{active ? renderPage(index) : null}</ReaderPageSlot>;
         })}</div> : <div key={`${source.id}:${pageIndex}:pdf`}>{renderPage(pageIndex)}</div>)}
         {page && view === 'text' && hasText && <article ref={textRef} className="document-page-text" key={`${source.id}:${pageIndex}:text`}><p className="document-text-page-label">{t("第 {0} 页 · 提取文字", [page.pageNumber])}</p><AnnotatedAnswer {...annotationProps} readerStyle={palette} annotations={annotationsByPage.get(pageIndex) || []} messageId={page.messageId} version={version(pageIndex)} plainText /></article>}

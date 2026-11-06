@@ -1,5 +1,11 @@
 # 版本记录 / Changelog
 
+## 0.1.17 · 20261106.6 · 2026-11-06
+
+移除翻译框的滚动关闭行为，暂留当前翻译的来源页，保证跨页阅读后仍能保存回原位置。框外点击与滚动/拖动区分，Esc 和 × 继续关闭。默认 Alt+1 与选段请求范围不变。
+
+Translation panels now remain open during scrolling, retaining their source page for note saving after cross-page reading. Outside clicks are distinguished from scrolling/dragging; Esc and × still close the panel. Alt+1 and selection-only requests are unchanged.
+
 ## 0.1.16 · 20261106.5 · 2026-11-06
 
 新增右键 / Alt+1 划词翻译：独立 API 与提示词，只发送选段；临时结果可转普通笔记。恢复 PDF 自带的引用、图号链接及返回位置，修正深色背景下彩色字边缘白色残影。完整规则与验证见[本版发布说明](RELEASE_NOTES.md)。

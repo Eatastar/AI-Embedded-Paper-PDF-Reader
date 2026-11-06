@@ -21,7 +21,7 @@ export interface TranslationSelection {
   save: (text: string, model: string) => void;
 }
 interface Result { id: number; source: TranslationSelection; request: TranslationRequest; text: string; model: string; status: 'streaming' | 'complete' | 'error'; error?: string }
-interface TranslationActions { preferences: TranslationPreferences; translate: (source: TranslationSelection) => void; releaseSource: (key: string) => void; openSettings: () => void; enabled: boolean }
+interface TranslationActions { preferences: TranslationPreferences; sourceKey: string | null; translate: (source: TranslationSelection) => void; releaseSource: (key: string) => void; openSettings: () => void; enabled: boolean }
 const TranslationContext = createContext<TranslationActions | null>(null);
 export const useTranslation = () => useContext(TranslationContext);
 
@@ -84,10 +84,26 @@ export function TranslationProvider({ settings, scope, enabled, onSaveProfile, o
   const openSettings = useCallback(() => { dismiss(); setSettingsOpen(true); }, [dismiss]);
   useEffect(() => {
     if (!result) return;
-    const outside = (event: PointerEvent) => { if (event.target instanceof Node && !popup.current?.contains(event.target)) dismiss(); };
+    let outsidePress: { id: number; x: number; y: number; moved: boolean } | null = null;
+    const onScrollbar = (event: PointerEvent) => {
+      if (!(event.target instanceof HTMLElement)) return false;
+      const element = event.target, rect = element.getBoundingClientRect();
+      return (element.scrollHeight > element.clientHeight && (event.clientX < rect.left + element.clientLeft || event.clientX >= rect.left + element.clientLeft + element.clientWidth))
+        || (element.scrollWidth > element.clientWidth && (event.clientY < rect.top + element.clientTop || event.clientY >= rect.top + element.clientTop + element.clientHeight));
+    };
+    // Dismiss genuine outside clicks, not scrollbar drags or touch scrolling.
+    const down = (event: PointerEvent) => {
+      outsidePress = event.button === 0 && event.target instanceof Node && !popup.current?.contains(event.target) && !onScrollbar(event) ? { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false } : null;
+    };
+    const move = (event: PointerEvent) => { if (outsidePress?.id === event.pointerId && Math.hypot(event.clientX - outsidePress.x, event.clientY - outsidePress.y) >= 6) outsidePress.moved = true; };
+    const up = (event: PointerEvent) => {
+      const press = outsidePress; outsidePress = null;
+      if (press?.id === event.pointerId && !press.moved && Math.hypot(event.clientX - press.x, event.clientY - press.y) < 6 && !onScrollbar(event) && event.target instanceof Node && !popup.current?.contains(event.target)) dismiss();
+    };
+    const cancel = () => { outsidePress = null; };
     const key = (event: KeyboardEvent) => { if (event.key === 'Escape' && !document.querySelector('dialog[open]')) { event.preventDefault(); dismiss(); } };
-    document.addEventListener('pointerdown', outside); document.addEventListener('keydown', key);
-    return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', key); };
+    document.addEventListener('pointerdown', down); document.addEventListener('pointermove', move); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', cancel); document.addEventListener('keydown', key);
+    return () => { document.removeEventListener('pointerdown', down); document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', cancel); document.removeEventListener('keydown', key); };
   }, [result?.id, dismiss]);
   useLayoutEffect(() => {
     if (!result) return;
@@ -101,12 +117,10 @@ export function TranslationProvider({ settings, scope, enabled, onSaveProfile, o
     };
     place(); const observer = new ResizeObserver(place); if (popup.current) observer.observe(popup.current);
     window.addEventListener('resize', place);
-    // Moving the source away should not leave a detached translation over another page.
-    const scroll = (event: Event) => { if (!(event.target instanceof Node) || !popup.current?.contains(event.target)) dismiss(); };
-    window.addEventListener('scroll', scroll, true);
-    return () => { observer.disconnect(); window.removeEventListener('resize', place); window.removeEventListener('scroll', scroll, true); };
-  }, [result?.id, dismiss]);
-  const value = useMemo(() => ({ preferences, translate: (source: TranslationSelection) => { void run(source); }, releaseSource, openSettings, enabled: enabled && !settingsOpen }), [preferences, run, releaseSource, openSettings, enabled, settingsOpen]);
+    return () => { observer.disconnect(); window.removeEventListener('resize', place); };
+  }, [result?.id]);
+  const sourceKey = result?.source.sourceKey ?? null;
+  const value = useMemo(() => ({ preferences, sourceKey, translate: (source: TranslationSelection) => { void run(source); }, releaseSource, openSettings, enabled: enabled && !settingsOpen }), [preferences, sourceKey, run, releaseSource, openSettings, enabled, settingsOpen]);
   return <TranslationContext.Provider value={value}>{children}
     {settingsOpen && <TranslationSettings settings={settings} value={preferences} onSave={changePreferences} onClose={() => setSettingsOpen(false)} onSaveProfile={onSaveProfile} onDeleteProfile={onDeleteProfile} />}
     {result && createPortal(<MovableAnnotationPopup key={result.id} popupRef={popup} style={{ ...result.source.style, ...position }}><section className="annotation-card translation-result" role="dialog" aria-label={t('临时译文')} data-testid="translation-result">
