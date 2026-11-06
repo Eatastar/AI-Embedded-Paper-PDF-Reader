@@ -116,21 +116,23 @@ button svg { flex-shrink: 0; }
 .answer-error { font-size: 12px; line-height: 1.8; color: var(--ls-danger); background: var(--ls-danger-bg); border-radius: 6px; padding: 12px 15px; margin-top: 15px; }
 .chat-bottom { height: 22px; }
 .composer-area { max-width: 808px; width: 100%; margin: 0 auto; padding: 12px 38px 17px; position: relative; }
-.main-composer { border: 1px solid var(--ls-border); background: var(--ls-panel); border-radius: 14px; padding: 16px 17px 12px; box-shadow: 0 3px 16px #62471608; }
+.main-composer { border: 1px solid var(--ls-border); background: var(--ls-panel); border-radius: 14px; padding: 16px 17px 12px; box-shadow: 0 3px 16px #62471608; container-type: inline-size; container-name: chat-composer; }
 .main-composer:focus-within { border-color: var(--ls-border-strong); box-shadow: 0 0 0 3px #62471612; }
-.composer-input { width: 100%; resize: none; padding: 0; margin: 0; border: none; background: transparent; color: var(--ls-ink); outline: none !important; font-size: 13px; min-height: 35px; line-height: 1.7; display: block; }
+.composer-input { width: 100%; resize: none; padding: 0; margin: 0; border: none; background: transparent; color: var(--ls-ink); outline: none !important; font-size: 13px; min-height: 48px; line-height: 1.7; display: block; }
 .composer-input::placeholder { color: var(--ls-muted); }
-.composer-toolbar { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; gap: 10px; }
-.composer-toolbar > span { display: flex; align-items: center; gap: 6px; color: var(--ls-muted); font-size: 10px; }
-.composer-model-controls { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--ls-muted); font-size: 10px; }
-.composer-model-controls > svg { flex-shrink: 0; }
-.composer-model-controls select { max-width: min(330px, 40vw); min-width: 80px; padding: 5px 18px 5px 2px; border: 0; border-radius: 4px; background: transparent; color: var(--ls-text); font: inherit; text-overflow: ellipsis; cursor: pointer; }
-.composer-model-controls select:hover { background: var(--ls-surface); }
-.composer-model-controls select:focus-visible { outline: 2px solid var(--ls-focus); outline-offset: 2px; }
-.composer-model-controls select:disabled { opacity: .5; cursor: wait; }
-.composer-model-controls > button { padding: 5px 6px; border: 0; border-radius: 4px; background: transparent; color: var(--ls-muted); font-size: 10px; white-space: nowrap; }
-.composer-model-controls > button:hover { background: var(--ls-surface); color: var(--ls-text); }
-@media (max-width: 540px) { .composer-model-controls select { max-width: 38vw; } .composer-model-controls { gap: 3px; } }
+.composer-toolbar { display: flex; align-items: center; margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--ls-border); gap: 9px; }
+.composer-quick-actions { display: flex; align-items: center; flex: none; gap: 4px; min-width: 0; }
+.composer-quick-actions .upload-document-button { display: inline-flex; align-items: center; justify-content: center; flex: none; gap: 5px; min-width: 30px; min-height: 30px; padding: 6px; border: 0; border-radius: 6px; color: var(--ls-muted); background: transparent; font: inherit; font-size: 11px; line-height: 1; white-space: nowrap; cursor: pointer; }
+.composer-quick-actions .upload-document-button:hover { color: var(--ls-text); background: var(--ls-surface); }
+.composer-quick-actions button:focus-visible { outline: 2px solid var(--ls-focus); outline-offset: 2px; }
+.composer-quick-actions button:disabled { opacity: .45; cursor: default; }
+.composer-model-controls { display: flex; align-items: center; flex: 0 1 220px; min-width: 72px; margin-left: auto; color: var(--ls-muted); font-size: 11px; }
+.composer-model-controls .composer-model-select > select.field-input { min-width: 0; min-height: 30px; max-width: 100%; padding: 5px 29px 5px 8px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--ls-text); font: inherit; line-height: 1.5; }
+.composer-model-controls .composer-model-select > select.field-input:hover { background: var(--ls-surface); }
+.composer-model-controls .composer-model-select > select.field-input:focus-visible { outline: 2px solid var(--ls-focus); outline-offset: 2px; }
+.composer-model-controls .composer-model-select > .settings-select-indicator { width: 25px; border: 0; background: transparent; border-radius: 5px; }
+@container chat-composer (max-width: 480px) { .upload-document-button .composer-action-label { display: none; } }
+@container chat-composer (max-width: 400px) { .chat-reference-trigger .composer-action-label { display: none; } .composer-toolbar { gap: 7px; } }
 .send-button { display: flex; align-items: center; justify-content: center; width: 33px; height: 33px; border-radius: 9px; border: 0; background: var(--ls-accent); color: var(--ls-on-accent); flex-shrink: 0; }
 .send-button:disabled { background: var(--ls-selected); opacity: 1; }
 .send-button:not(:disabled):hover { background: var(--ls-accent-strong); }
@@ -198,7 +200,6 @@ button svg { flex-shrink: 0; }
   .user-message > div { max-width: 100%; font-size: 13px; padding: 11px 14px; }
   .composer-area { padding: 10px 16px 12px; }
   .composer-input { font-size: 16px; }
-  .composer-toolbar > span { font-size: 9px; }
   .composer-footnote { font-size: 8px; }
   .empty-state { padding: 45px 15px; }
   .empty-state h1 { font-size: 31px; }
@@ -280,9 +281,6 @@ button svg { flex-shrink: 0; }
 .with-reader .conversation-pane { flex: 1; max-width: 44%; }
 .with-reader .reading-column { padding: 25px 22px 0; }
 .with-reader .composer-area { padding: 12px 17px 17px; }
-.with-reader .composer-model-controls { flex-wrap: wrap; gap: 3px; }
-.with-reader .composer-model-controls select { max-width: 150px; }
-.with-reader .composer-manage-models { display: none; }
 .with-reader .empty-state h1 { font-size: 29px; }
 .with-reader .starter-question { min-width: 0; }
 .app-shell.reader-focused .sidebar, .app-shell.reader-focused .conversation-pane { display: none; }
@@ -306,12 +304,10 @@ button svg { flex-shrink: 0; }
 .document-attachments > button > svg, .document-attachments > button > small { flex-shrink: 0; }
 .document-attachments > button > small { color: var(--ls-muted); font-size: 9px; }
 .document-attachments > p { flex-basis: 100%; margin: 0; font-size: 9px; color: var(--ls-muted); line-height: 1.7; }
-.composer-model-controls .upload-document-button { display: inline-flex; align-items: center; gap: 3px; color: var(--ls-text); padding: 5px 6px 5px 0; }
 .answer-error > p { font-size: 10px; margin: 6px 0 0; color: var(--ls-danger); }
 @media (max-width: 1050px) {
   .document-pane { position: absolute; inset: 0; z-index: 30; padding: 10px; background: var(--ls-paper); }
   .with-reader .conversation-pane { max-width: none; }
-  .with-reader .composer-model-controls select { max-width: min(330px, 40vw); }
   .reader-primary.chat-open .with-reader .document-pane { position: relative; inset: auto; z-index: 0; padding: 0; }
   .reader-primary.chat-open .with-reader .conversation-pane { position: absolute; inset: 0; z-index: 3; background: var(--ls-paper); max-width: none; }
 }

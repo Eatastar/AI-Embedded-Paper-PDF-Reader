@@ -1,5 +1,15 @@
 # 版本记录 / Changelog
 
+## 0.1.21 · 20261107.1 · 2026-11-07
+
+优化聊天输入框：上方只保留文字输入，下方集中放本地文件、引用批注、模型与发送按钮，并增加间距及轻分隔线。批注数量并入按钮，窄栏自动缩短标签，模型下拉箭头保持居中；重复的“管理模型”入口收进模型列表，顶部设置继续可用。
+
+Refines the chat composer: typing stays above one lower toolbar for local files, annotation references, model selection and Send, with more spacing and a subtle divider. Selected annotations use an inline count badge, labels adapt to narrow panes and the model arrow stays centered. Model management remains in the selector and top settings rather than repeating a text button.
+
+验证：269 项自动检查及 73 项实际界面检查通过；覆盖中英文、288–640px 输入栏、批注选中/清除，以及原有引用、删除与重试。
+
+Validation: 269 tests and 73 real UI checks passed, covering Chinese/English, 288–640px composer panes, selecting/clearing references and existing reference/deletion/retry behavior.
+
 ## 0.1.20 · 20261106.9 · 2026-11-06
 
 聊天发送尚未删除的有效主对话及所选文档资料，默认不读取批注；点击输入框上方“引用批注”后，只把手动选择的问答或笔记加入该次问题。PDF 批注只引用所属文档、选段和本次问题，不带聊天及其他批注；在 AI 回答上提问时，仅引用批注绑定的那一版原回答。

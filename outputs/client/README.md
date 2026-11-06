@@ -1,6 +1,6 @@
 # AI-Embedded Paper PDF Reader
 
-**AI 嵌入式论文 PDF 阅读器** · 0.1.20 · 20261106.9
+**AI 嵌入式论文 PDF 阅读器** · 0.1.21 · 20261107.1
 
 主要功能：本地 PDF 阅读、自定义纸张配色、AI 问答批注、划词翻译及可选聊天模式。划选单词或段落后右键翻译或按 Alt+1，在原文旁查看译文；可配置独立 API、翻译提示词和快捷键，只发送选段与翻译提示词，并可将译文保留为普通批注。
 
@@ -32,9 +32,9 @@ Each highlight has one current Q&A. Edit it or ask again; replacement happens on
 
 ## 引用批注与删除对话 / References and chat deletion
 
-输入框上方点击“引用批注”，可搜索并选择当前阅读记录/对话中已保存的问答或笔记，每次最多 10 条。发送后可在该条问题下展开查看引用副本，后续讨论沿用聊天中已发送的内容。
+在输入框下方工具栏点击“引用批注”，可搜索并选择当前阅读记录/对话中已保存的问答或笔记，每次最多 10 条。发送后可在该条问题下展开查看引用副本，后续讨论沿用聊天中已发送的内容。
 
-Use Reference annotations above the composer to search and select saved Q&A or notes from the current reading record/conversation, up to ten per question. Expand the sent question to inspect the reference copy; subsequent discussion uses the contents already sent in chat.
+Use Reference annotations in the composer toolbar to search and select saved Q&A or notes from the current reading record/conversation, up to ten per question. Expand the sent question to inspect the reference copy; subsequent discussion uses the contents already sent in chat.
 
 每轮回答下方的“删除本轮”会直接删除本轮问题、全部回答版本及这些回答上的批注，不进入回收站；PDF 原文批注和文件保留。同时清除剩余失败回答的旧请求快照，后续聊天中对被删回答批注的手动引用也会移除，重试不会通过这些缓存带回已删内容。以前的自动备份、迁移存档和导出文件可能仍含旧内容。
 
@@ -56,11 +56,11 @@ Choose 简体中文 / English on the home screen or in reading/model settings. T
 
 Save your API address, model name and key in Models & settings. Templates include GPT, Claude, DeepSeek, relays and Other, with Kimi, Qwen, Gemini's compatible endpoint, Grok, Ollama, LM Studio and custom addresses. API formats are protocols: Chat Completions, Responses or Anthropic Messages.
 
-保存或切换连接不发送问题。远程服务用 HTTPS，本机未启用鉴权时可留空密钥。桌面版沿用系统代理；API 地址仍填服务商地址。聊天发送尚未删除的有效主对话及所选文档资料，默认不读取批注；点击输入框上方“引用批注”后，只把手动选择的问答或笔记加入该次问题。PDF 批注只引用所属文档、选段和本次问题，不带聊天及其他批注；在 AI 回答上提问时，仅引用批注绑定的那一版原回答。
+保存或切换连接不发送问题。远程服务用 HTTPS，本机未启用鉴权时可留空密钥。桌面版沿用系统代理；API 地址仍填服务商地址。聊天发送尚未删除的有效主对话及所选文档资料，默认不读取批注；点击输入框下方工具栏“引用批注”后，只把手动选择的问答或笔记加入该次问题。PDF 批注只引用所属文档、选段和本次问题，不带聊天及其他批注；在 AI 回答上提问时，仅引用批注绑定的那一版原回答。
 
 文档范围继续支持自动、全文或按需引用：自动模式下，小文件发送全文提取文字，超过 25 MiB、300 页或 12 万提取字符时在本机检索，每份文档最多引用 2.4 万片段字符，选段和问题另计。原 PDF 和页面图片不作为文件上传。资料不足时明确提示，全文仍受请求和模型容量限制。批注失败重试保留本次问题、回答偏好和文档范围，从同一份不可变来源重新组装请求，不保存整段聊天快照。详见[隐私说明](../../docs/PRIVACY.md)。
 
-Saving or switching sends no question. Use HTTPS for remote services; unauthenticated local services may leave the key empty. The desktop app follows the system proxy. Chat sends the remaining valid main conversation and document material, without automatically reading annotations. Reference annotations above the composer adds only the Q&A or notes you select to that question. A PDF annotation uses only its own document, selection and current question, without chat or other annotations. An annotation on an AI answer uses only its bound original answer version.
+Saving or switching sends no question. Use HTTPS for remote services; unauthenticated local services may leave the key empty. The desktop app follows the system proxy. Chat sends the remaining valid main conversation and document material, without automatically reading annotations. Reference annotations in the composer toolbar adds only the Q&A or notes you select to that question. A PDF annotation uses only its own document, selection and current question, without chat or other annotations. An annotation on an AI answer uses only its bound original answer version.
 
 Document scope still supports Auto, Full text and Relevant excerpts. Auto sends full extracted text for small files; above 25 MiB, 300 pages or 120,000 extracted characters, local retrieval sends at most 24,000 excerpt characters per document, with the selection and question additional. Original PDFs and page images are not uploaded as files. Missing evidence is disclosed, and full text remains subject to request/model limits. Failed annotation retries retain the question, answer preference and document scope and rebuild from the same immutable source, without storing a full-chat snapshot. See [Privacy](../../docs/PRIVACY.md).
 

@@ -12,9 +12,9 @@ A desktop reader built around local PDFs. Connect your preferred AI provider, re
 
 [下载 / Downloads](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases) · [本版发布说明 / Release notes](docs/RELEASE_NOTES.md) · [隐私 / Privacy](docs/PRIVACY.md) · [版本记录 / Changelog](docs/CHANGELOG.md) · [项目总纲 / Project outline](docs/PROJECT.md)
 
-当前源码版本：**0.1.20**。Windows x64 客户端请以 Releases 中实际发布的完整 ZIP 为准。中文 / English 界面均可在程序内切换，选择保存在本机。
+当前源码版本：**0.1.21**。Windows x64 客户端请以 Releases 中实际发布的完整 ZIP 为准。中文 / English 界面均可在程序内切换，选择保存在本机。
 
-Current source version: **0.1.20**. Download the complete Windows x64 ZIP actually published on Releases. Switch between Chinese and English in the app; your choice is remembered locally.
+Current source version: **0.1.21**. Download the complete Windows x64 ZIP actually published on Releases. Switch between Chinese and English in the app; your choice is remembered locally.
 
 ## 主要功能 / Main features
 
@@ -28,9 +28,9 @@ Current source version: **0.1.20**. Download the complete Windows x64 ZIP actual
 
 ## 独立批注与聊天 / Independent annotations and chat
 
-聊天发送尚未删除的有效主对话及所选文档资料，默认不读取批注；点击输入框上方“引用批注”后，只把手动选择的问答或笔记加入该次问题。PDF 批注只引用所属文档、选段和本次问题，不带聊天及其他批注；在 AI 回答上提问时，仅引用批注绑定的那一版原回答。
+聊天发送尚未删除的有效主对话及所选文档资料，默认不读取批注；点击输入框下方工具栏“引用批注”后，只把手动选择的问答或笔记加入该次问题。PDF 批注只引用所属文档、选段和本次问题，不带聊天及其他批注；在 AI 回答上提问时，仅引用批注绑定的那一版原回答。
 
-Chat sends the remaining valid main conversation and document material, without automatically reading annotations. Reference annotations above the composer adds only the Q&A or notes you select to that question. A PDF annotation uses only its own document, selection and current question, without chat or other annotations. An annotation on an AI answer uses only its bound original answer version.
+Chat sends the remaining valid main conversation and document material, without automatically reading annotations. Reference annotations in the composer toolbar adds only the Q&A or notes you select to that question. A PDF annotation uses only its own document, selection and current question, without chat or other annotations. An annotation on an AI answer uses only its bound original answer version.
 
 聊天中可逐轮删除问题及回答，清除关联的旧请求缓存；PDF 原文批注保留。批注保留论文背景：小文件默认全文，大文件默认按需引用，也可在阅读设置中选择全文。
 

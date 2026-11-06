@@ -3,7 +3,7 @@ import { useLocale } from './i18n/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AssistantRuntimeProvider, ComposerPrimitive, ThreadPrimitive, useExternalStoreRuntime } from '@assistant-ui/react';
 import type { ThreadMessageLike } from '@assistant-ui/react';
-import { ArrowDown, ArrowUp, BookOpen, Check, ChevronLeft, ChevronRight, Download, FileUp, FileText, FolderOpen, Menu, MessageSquare, MessageSquareQuote, Paperclip, PenLine, Plus, RefreshCw, RotateCcw, Settings2, Sparkles, Square, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, BookOpen, Check, ChevronLeft, ChevronRight, Download, FileUp, FileText, FolderOpen, Menu, MessageSquare, MessageSquareQuote, Paperclip, PenLine, Plus, RefreshCw, RotateCcw, Settings2, Square, Trash2, X } from 'lucide-react';
 import type { Annotation, ChatMessage, Conversation, InputMessage, MessageVersion, ModelSettings, ProfileInput, Workspace } from './domain/types';
 import { activeVersion, addAssistantVersion, buildMainContext, completeAnnotation, createAssistantMessage, createConversation, createUserMessage, deleteAnnotation, restoreAnnotation, deleteConversation, restoreConversation, prepareAnnotationRequest, updateAnnotationCopy, saveNoteAnnotation } from './domain/workspace';
 import { exportWorkspaceWithFiles, importWorkspaceWithFiles, saveDocumentBytes, getDocumentBytes } from './adapters/storage';
@@ -31,6 +31,7 @@ import { changeAnnotationColor } from './domain/highlight-colors';
 import { TranslationButton, TranslationProvider } from './components/Translation';
 import { canReferenceAnnotation, captureAnnotationReferences, chatRound } from './domain/chat-references';
 import { ChatAnnotationPicker, ChatAnnotationReferences, DeleteChatTurnDialog } from './components/ChatAnnotations';
+import { NativeSelect } from './components/NativeSelect';
 
 const DEFAULT_SETTINGS: ModelSettings = { mode: 'demo', baseURL: 'https://api.openai.com/v1', model: '', systemPrompt: '请用中文清晰地回答，解释概念时适当举例。', hasApiKey: false, apiFormat: 'openai-chat', profiles: [], activeProfileId: null, persistence: 'session' };
 type Busy = { conversationId: string; messageId: string; versionId: string; controller: AbortController };
@@ -555,14 +556,18 @@ export function ChatView(props: ChatViewProps) {
       {!atBottom && <button className="scroll-bottom icon-button" aria-label={t("回到对话底部")} onClick={() => bottom.current?.scrollIntoView({ behavior: 'smooth' })}><ArrowDown size={18} /></button>}
       <div className="composer-area">
         <ComposerPrimitive.Root className="main-composer">
-          <div className="chat-reference-tools"><button type="button" disabled={globallyBusy} onClick={() => setPickingAnnotations(true)}><MessageSquareQuote size={14} />{t('引用批注')}</button>{selectedAnnotations.length > 0 && <><span>{t('已选 {0} 条批注', [selectedAnnotations.length])}</span><button type="button" className="chat-reference-clear" disabled={globallyBusy} aria-label={t('清除本次批注引用')} onClick={() => setSelectedAnnotations([])}><X size={13} /></button></>}</div>
           <ComposerPrimitive.Input className="composer-input" placeholder={t("想弄懂什么？从这里开始…")} aria-label={t("输入主对话问题")} autoFocus={false} disabled={globallyBusy} maxRows={7} addAttachmentOnPaste={false} unstable_focusOnScrollToBottom={false} unstable_focusOnRunStart={false} />
-          <div className="composer-toolbar"><div className="composer-model-controls"><button type="button" className="upload-document-button" aria-label={t("添加本地文件")} title={t("从本地选择 PDF、TXT 或 Markdown")} disabled={globallyBusy} onClick={props.onUpload}><Paperclip size={14} /><span>{props.fileBusy ? t("读取中…") : t("本地文件")}</span></button><Sparkles size={14} /><select aria-label={t("选择预载模型")} title={t("选择已保存的模型配置")} value={settings.mode === 'demo' ? '__demo__' : settings.activeProfileId || '__current__'} disabled={props.modelSwitchDisabled} onChange={event => { if (event.target.value === '__manage__') props.onManageModels(); else props.onChooseModel(event.target.value === '__demo__' ? null : event.target.value); }}>
+          <div className="composer-toolbar">
+            <div className="composer-quick-actions"><button type="button" className="upload-document-button" aria-label={t("添加本地文件")} title={t("从本地选择 PDF、TXT 或 Markdown")} disabled={globallyBusy} onClick={props.onUpload}><Paperclip size={15} /><span className="composer-action-label">{props.fileBusy ? t("读取中…") : t("本地文件")}</span></button>
+              <div className="chat-reference-tools"><button type="button" className="chat-reference-trigger" data-selected={selectedAnnotations.length > 0 || undefined} aria-label={t('引用批注')} title={selectedAnnotations.length ? `${t('引用批注')} · ${t('已选 {0} 条批注', [selectedAnnotations.length])}` : t('引用批注')} disabled={globallyBusy} onClick={() => setPickingAnnotations(true)}><MessageSquareQuote size={15} /><span className="composer-action-label">{t('引用批注')}</span>{selectedAnnotations.length > 0 && <span className="chat-reference-count" aria-hidden="true">{selectedAnnotations.length}</span>}</button>{selectedAnnotations.length > 0 && <><span className="visually-hidden" role="status">{t('已选 {0} 条批注', [selectedAnnotations.length])}</span><button type="button" className="chat-reference-clear" title={t('清除本次批注引用')} disabled={globallyBusy} aria-label={t('清除本次批注引用')} onClick={() => setSelectedAnnotations([])}><X size={13} /></button></>}</div>
+            </div>
+            <div className="composer-model-controls"><NativeSelect wrapperClassName="composer-model-select" aria-label={t("选择预载模型")} title={settings.mode === 'api' ? settings.model : t("选择已保存的模型配置")} value={settings.mode === 'demo' ? '__demo__' : settings.activeProfileId || '__current__'} disabled={props.modelSwitchDisabled} onChange={event => { if (event.target.value === '__manage__') props.onManageModels(); else props.onChooseModel(event.target.value === '__demo__' ? null : event.target.value); }}>
             <option value="__demo__">{t("演示模式")}</option>
             {settings.mode === 'api' && !settings.activeProfileId && <option value="__current__" disabled>{settings.model || t("当前连接（未保存）")}</option>}
             {settings.profiles.map(profile => <option key={profile.id} value={profile.id}>{profile.name} · {profile.model}{!profile.hasApiKey && !/^http:\/\/(127\.0\.0\.1|localhost|\[::1\])(?=[:/]|$)/.test(profile.baseURL) ? t("（需填写密钥）") : ''}</option>)}
             <option value="__manage__">{t("＋ 添加或管理模型…")}</option>
-          </select><button type="button" className="composer-manage-models" onClick={props.onManageModels} disabled={props.modelSwitchDisabled}>{t("管理模型")}</button></div>{isRunning ? <ComposerPrimitive.Cancel className="send-button" aria-label={t("停止生成")}><Square size={15} fill="currentColor" /></ComposerPrimitive.Cancel> : <ComposerPrimitive.Send className="send-button" aria-label={t("发送问题")}><ArrowUp size={20} /></ComposerPrimitive.Send>}</div>
+            </NativeSelect></div>{isRunning ? <ComposerPrimitive.Cancel className="send-button" aria-label={t("停止生成")}><Square size={15} fill="currentColor" /></ComposerPrimitive.Cancel> : <ComposerPrimitive.Send className="send-button" aria-label={t("发送问题")}><ArrowUp size={20} /></ComposerPrimitive.Send>}
+          </div>
         </ComposerPrimitive.Root>
         <p className="composer-footnote">{t("Enter 发送，Shift + Enter 换行")}<span>·</span>{t('批注独立提问，聊天只引用你主动选择的批注')}</p>
       </div>

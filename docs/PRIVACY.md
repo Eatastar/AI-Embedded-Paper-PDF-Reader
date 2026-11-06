@@ -15,7 +15,7 @@ AI-Embedded Paper PDF Reader 在本机保存阅读资料、聊天、批注和 AP
 
 打开、翻页、换色、搜索、写普通批注、保存模型配置和切换模型均不调用 AI。
 
-聊天发送尚未删除的有效主对话及所选文档资料，默认不读取批注；点击输入框上方“引用批注”后，只把手动选择的问答或笔记加入该次问题。PDF 批注只引用所属文档、选段和本次问题，不带聊天及其他批注；在 AI 回答上提问时，仅引用批注绑定的那一版原回答。
+聊天发送尚未删除的有效主对话及所选文档资料，默认不读取批注；点击输入框下方工具栏“引用批注”后，只把手动选择的问答或笔记加入该次问题。PDF 批注只引用所属文档、选段和本次问题，不带聊天及其他批注；在 AI 回答上提问时，仅引用批注绑定的那一版原回答。
 
 文档范围继续支持自动、全文或按需引用：自动模式下，小文件发送全文提取文字，超过 25 MiB、300 页或 12 万提取字符时在本机检索，每份文档最多引用 2.4 万片段字符，选段和问题另计。原 PDF 和页面图片不作为文件上传。资料不足时明确提示，全文仍受请求和模型容量限制。批注失败重试保留本次问题、回答偏好和文档范围，从同一份不可变来源重新组装请求，不保存整段聊天快照。
 
@@ -45,7 +45,7 @@ Windows 桌面版通过 Electron / Chromium 网络组件读取系统代理设置
 
 The app stores original document bytes, extracted text, conversations, annotations, reading position and API connection settings locally. You supply the endpoints and keys; the app does not upload them to a project-operated server. The project runs no credential hosting, cloud document library, account service or usage collection endpoint. Model connections and credentials are separate from the conversation database. The Windows desktop app encrypts saved keys with the operating system; if encryption is unavailable, connection metadata can still be saved but keys remain only in session memory, without a plaintext key file. Conversation backups include original attachments and notes, but no model credential fields. Interface language is an independent local preference and is not included in these backups.
 
-Reading, turning pages, recoloring, searching, writing personal notes and saving/switching connections make no AI requests. Chat sends the remaining valid main conversation and document material, without automatically reading annotations. Reference annotations above the composer adds only the Q&A or notes you select to that question. A PDF annotation uses only its own document, selection and current question, without chat or other annotations. An annotation on an AI answer uses only its bound original answer version.
+Reading, turning pages, recoloring, searching, writing personal notes and saving/switching connections make no AI requests. Chat sends the remaining valid main conversation and document material, without automatically reading annotations. Reference annotations in the composer toolbar adds only the Q&A or notes you select to that question. A PDF annotation uses only its own document, selection and current question, without chat or other annotations. An annotation on an AI answer uses only its bound original answer version.
 
 Document scope still supports Auto, Full text and Relevant excerpts. Auto sends full extracted text for small files; above 25 MiB, 300 pages or 120,000 extracted characters, local retrieval sends at most 24,000 excerpt characters per document, with the selection and question additional. Original PDFs and page images are not uploaded as files. Missing evidence is disclosed, and full text remains subject to request/model limits. Failed annotation retries retain the question, answer preference and document scope and rebuild from the same immutable source, without storing a full-chat snapshot.
 

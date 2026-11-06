@@ -1,7 +1,9 @@
-.chat-reference-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; padding: 6px 10px 0; font-size: 11px; color: var(--ls-muted); }
-.chat-reference-tools button { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--ls-border); border-radius: 7px; padding: 5px 8px; color: var(--ls-text); background: var(--ls-panel); font: inherit; cursor: pointer; }
+.chat-reference-tools { display: flex; align-items: center; flex: none; gap: 2px; padding: 0; font-size: 11px; color: var(--ls-muted); }
+.chat-reference-tools button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 30px; min-height: 30px; border: 0; border-radius: 6px; padding: 6px; color: var(--ls-muted); background: transparent; font: inherit; line-height: 1; white-space: nowrap; cursor: pointer; }
+.chat-reference-tools button:hover, .chat-reference-tools .chat-reference-trigger[data-selected] { color: var(--ls-text); background: var(--ls-surface); }
 .chat-reference-tools button:disabled { opacity: .4; cursor: default; }
-.chat-reference-tools .chat-reference-clear { border: 0; padding: 4px; color: var(--ls-muted); }
+.chat-reference-tools .chat-reference-clear { min-width: 24px; padding: 4px; color: var(--ls-muted); }
+.chat-reference-count { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--ls-selected); color: var(--ls-ink); font-size: 10px; }
 .chat-annotation-picker { max-width: min(640px, calc(100vw - 32px)); }
 .chat-annotation-picker .dialog-header p { max-width: 510px; margin: 6px 0 0; font-size: 12px; line-height: 1.6; color: var(--ls-muted); }
 .chat-annotation-search { width: 100%; box-sizing: border-box; border: 1px solid var(--ls-border); border-radius: 7px; padding: 9px 10px; color: var(--ls-text); background: var(--ls-panel); font: inherit; }

@@ -1,5 +1,5 @@
 AI-Embedded Paper PDF Reader
-AI 嵌入式论文 PDF 阅读器 · 0.1.20 · 20261106.9
+AI 嵌入式论文 PDF 阅读器 · 0.1.21 · 20261107.1
 
 一、运行 / Run
 完整解压 ZIP，运行 AI-Embedded-Paper-PDF-Reader.exe，保留所有同目录文件。
@@ -48,9 +48,9 @@ Other services include Kimi, Qwen, Gemini's compatible endpoint, Grok, Ollama, L
 API formats are protocols: Chat Completions, Responses and Anthropic Messages. Model names and availability depend on the provider.
 保存或切换连接不发送问题。普通阅读、搜索和笔记不调用 AI。
 Saving/switching connections sends no questions. Reading, searching and personal notes make no AI requests.
-聊天发送尚未删除的有效主对话及所选文档资料，默认不读取批注；点击输入框上方“引用批注”后，只把手动选择的问答或笔记加入该次问题。PDF 批注只引用所属文档、选段和本次问题，不带聊天及其他批注；在 AI 回答上提问时，仅引用批注绑定的那一版原回答。
+聊天发送尚未删除的有效主对话及所选文档资料，默认不读取批注；点击输入框下方工具栏“引用批注”后，只把手动选择的问答或笔记加入该次问题。PDF 批注只引用所属文档、选段和本次问题，不带聊天及其他批注；在 AI 回答上提问时，仅引用批注绑定的那一版原回答。
 文档范围继续支持自动、全文或按需引用：自动模式下，小文件发送全文提取文字，超过 25 MiB、300 页或 12 万提取字符时在本机检索，每份文档最多引用 2.4 万片段字符，选段和问题另计。原 PDF 和页面图片不作为文件上传。资料不足时明确提示，全文仍受请求和模型容量限制。批注失败重试保留本次问题、回答偏好和文档范围，从同一份不可变来源重新组装请求，不保存整段聊天快照。
-Chat sends the remaining valid main conversation and document material, without automatically reading annotations. Reference annotations above the composer adds only the Q&A or notes you select to that question. A PDF annotation uses only its own document, selection and current question, without chat or other annotations. An annotation on an AI answer uses only its bound original answer version.
+Chat sends the remaining valid main conversation and document material, without automatically reading annotations. Reference annotations in the composer toolbar adds only the Q&A or notes you select to that question. A PDF annotation uses only its own document, selection and current question, without chat or other annotations. An annotation on an AI answer uses only its bound original answer version.
 Document scope still supports Auto, Full text and Relevant excerpts. Auto sends full extracted text for small files; above 25 MiB, 300 pages or 120,000 extracted characters, local retrieval sends at most 24,000 excerpt characters per document, with the selection and question additional. Original PDFs and page images are not uploaded as files. Missing evidence is disclosed, and full text remains subject to request/model limits. Failed annotation retries retain the question, answer preference and document scope and rebuild from the same immutable source, without storing a full-chat snapshot.
 桌面版沿用系统代理，不含代理节点或密钥。使用代理时保持代理工具运行并开启系统代理；API 地址仍填服务商地址。
 The desktop app follows the system proxy and includes no proxy nodes or keys. Keep your proxy app and system proxy enabled when needed, and keep the provider's address in the API field.
@@ -113,8 +113,8 @@ Embedded PDF references/figure links navigate to their page positions, with retu
 The translation panel remains open while scrolling, retaining its source page in continuous reading so it can still be saved as a note at the original passage. Ordinary outside click, Esc or × closes it; dragging the scrollbar does not.
 
 八、聊天引用与删除 / Chat references and deletion
-输入框上方“引用批注”可以选择当前记录中已保存的问答或笔记，发送后可展开查看当时的副本。
-Reference annotations above the composer selects saved Q&A or notes in the current record; expand the sent question to inspect its copy.
+输入框下方工具栏“引用批注”可以选择当前记录中已保存的问答或笔记，发送后可展开查看当时的副本。
+Reference annotations in the composer toolbar selects saved Q&A or notes in the current record; expand the sent question to inspect its copy.
 每轮回答下方的“删除本轮”会直接删除本轮问题、全部回答版本及这些回答上的批注，不进入回收站；PDF 原文批注和文件保留。同时清除剩余失败回答的旧请求快照，后续聊天中对被删回答批注的手动引用也会移除，重试不会通过这些缓存带回已删内容。以前的自动备份、迁移存档和导出文件可能仍含旧内容。
 Delete round under each answer permanently removes that question, all answer versions and annotations attached to those answers, without Trash. PDF annotations and files remain. Remaining failed-answer snapshots and later manual references to the removed answer annotations are also cleared, so retries cannot restore deleted content through these caches. Earlier automatic backups, migration archives and exports may still contain old content.
 0.1.20 可读取旧备份；含新增引用和重试设置的备份，请使用 0.1.20 或更新版本恢复。
