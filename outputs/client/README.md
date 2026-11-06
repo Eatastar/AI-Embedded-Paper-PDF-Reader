@@ -1,6 +1,6 @@
 # AI-Embedded Paper PDF Reader
 
-**AI 嵌入式论文 PDF 阅读器** · 0.1.15 · 20261106.4
+**AI 嵌入式论文 PDF 阅读器** · 0.1.16 · 20261106.5
 
 连接自己的 API 或自行部署的模型服务，在 PDF 原文的批注中直接询问 AI。以本地阅读为主，支持自定义纸张配色，聊天按需打开。项目介绍、功能、实现分工和复用说明见[项目首页](../../README.md)，历史变化见[版本记录](../../docs/CHANGELOG.md)。
 
@@ -104,3 +104,13 @@ Discover models on the home screen opens discovery and fetches immediately for a
 连接名称只作本地备注；在上游模型下拉框中选择实际调用模型，保存并使用后生效。模型按名称及自然数字顺序排列，手动输入按需展开，保留未列出的自定义模型。
 
 Connection names are local labels. Choose the actual API model in the upstream list and Save and use. Models sort by name with natural numbers; manual entry expands on demand and preserves unlisted custom models.
+
+## 划词翻译与 PDF 链接 / Translation and PDF links
+
+选中文字后右键翻译或按默认 Alt+1；右上角独立“翻译”按钮可设置目标语言、提示词、独立 API 及自定义快捷键。连接列表共用，翻译选择不切换聊天。只发送选段和翻译提示词，不发送全文、所在页或聊天历史。临时面板显示译文和模型，框外点击、Esc 或 × 关闭并丢弃；点击保留后才创建普通批注。翻译设置单独记在本机，不进入聊天备份。
+
+Select text and right-click to translate or press Alt+1. The separate Translate button configures the target language, prompt, independent API and shortcut. Connections are shared without switching chat. Only the selection and translation prompt are sent, without full text, page or history. Outside click, Esc or × discards temporary text/model results; Keep creates a plain note. Settings stay local outside conversation backups.
+
+PDF 自带的参考文献和图号链接支持文内精确跳转，并可返回跳转前位置。HTTP/HTTPS 网页链接交由系统浏览器打开，不执行脚本或文件动作；没有原生链接的文字不猜测跳转。深色配色修正彩色字边缘的白色残影，原 PDF 不改写。
+
+Embedded PDF references/figure links navigate to their page positions, with return navigation. HTTP/HTTPS links open in the system browser; scripts and file actions are not executed. No destination is guessed for unlinked text. Dark colors correct white halos around colored text without modifying the PDF.

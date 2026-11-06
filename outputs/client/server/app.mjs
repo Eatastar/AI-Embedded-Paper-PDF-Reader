@@ -9,6 +9,7 @@ import { createProfileManager, ProfileError } from './profiles.mjs';
 import { discoverModels } from './model-discovery.mjs';
 import { streamProtocolReply } from './protocols.mjs';
 import { errorDetails, safeRequestRecord } from './diagnostics.mjs';
+import { translationRequest, TranslationError } from './translation.mjs';
 
 export { isLocalEndpoint } from './profiles.mjs';
 
@@ -180,8 +181,8 @@ export function createAppServer({ env = process.env, distDir = resolve('dist'), 
         const body = await readJson(req, SETTINGS_BODY_LIMIT);
         return json(res, 200, profiles.deleteProfile(body?.profileId));
       }
-      if (pathname === '/api/chat' && req.method === 'POST') {
-        const body = validateChat(await readJson(req, CHAT_BODY_LIMIT));
+      if ((pathname === '/api/chat' || pathname === '/api/translate') && req.method === 'POST') {
+        const body = pathname === '/api/translate' ? translationRequest(await readJson(req, 192 * 1024)) : validateChat(await readJson(req, CHAT_BODY_LIMIT));
         const activeSettings = profiles.forRequest(body.profileId);
         const requestId = randomUUID();
         const startedAt = Date.now();
@@ -274,7 +275,7 @@ export function createAppServer({ env = process.env, distDir = resolve('dist'), 
       if (!['GET', 'HEAD'].includes(req.method || '')) throw new RequestError(405, '不支持该操作。');
       await serveFile(req, res, pathname, distDir);
     } catch (error) {
-      if (!res.headersSent) json(res, error instanceof RequestError || error instanceof ProfileError ? error.status : 500, { error: error instanceof RequestError || error instanceof ProfileError ? error.message : '本地服务遇到问题，请重试。' });
+      if (!res.headersSent) json(res, error instanceof RequestError || error instanceof ProfileError || error instanceof TranslationError ? error.status : 500, { error: error instanceof RequestError || error instanceof ProfileError || error instanceof TranslationError ? error.message : '本地服务遇到问题，请重试。' });
       else if (!res.writableEnded) res.end();
     }
   });

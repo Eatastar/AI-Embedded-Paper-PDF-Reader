@@ -2,13 +2,15 @@ import { t } from '../i18n/locale';
 import { useLocale } from '../i18n/react';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { ChevronLeft, ChevronRight, Columns2, Download, Eye, FolderOpen, Maximize2, Minus, PanelLeft, Plus, Settings2, SlidersHorizontal, X } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Columns2, Download, Eye, FolderOpen, Maximize2, Minus, PanelLeft, Plus, Settings2, SlidersHorizontal, X } from 'lucide-react';
 import type { ReaderAppearance } from '../domain/reader';
 import { LanguageSelector } from './LanguageSelector';
 import { ReaderAppearancePanel } from './ReaderAppearancePanel';
 import type { DocumentContextMode } from '../domain/document-context';
+import { TranslationButton } from './Translation';
 
 interface Props {
+  onReturnFromLink?: () => void;
   name: string; kind: 'pdf' | 'text'; pageCount: number; pageIndex: number; pageInput: string;
   pageInputRef: RefObject<HTMLInputElement | null>; onPageInput: (value: string) => void; onCommitPage: () => void; onPage: (index: number) => void;
   zoom: number; onZoom: (value: number) => void; view: 'original' | 'text'; onView: (value: 'original' | 'text') => void;
@@ -51,11 +53,13 @@ export function ReaderToolbar(props: Props) {
       <button type="button" className="document-icon-button" aria-label={t("文档导航")} title={t("目录、搜索与批注")} aria-expanded={props.navigationOpen} onClick={props.onToggleNavigation}><PanelLeft size={18} /></button>
       <div className="reader-toolbar-title" title={`${props.name} · ${mode} · ${props.relevantContext ? t('按需引用') : t('全文')}`}><strong>{props.name}</strong><span className="reader-mode-label">{mode} · {props.relevantContext ? t('按需引用') : t('全文')}</span></div>
       <div className="document-page-navigation">
+        {props.onReturnFromLink && <button type="button" className="document-icon-button" aria-label={t('返回跳转前位置')} title={t('返回跳转前位置')} onClick={props.onReturnFromLink}><ArrowLeft size={16} /></button>}
         <button type="button" className="document-icon-button" aria-label={t("上一页")} disabled={props.pageIndex <= 0} onClick={() => props.onPage(props.pageIndex - 1)}><ChevronLeft size={17} /></button>
         <label><input ref={props.pageInputRef} aria-label={t("文档页码")} type="text" inputMode="numeric" value={props.pageInput} onChange={event => props.onPageInput(event.target.value)} onBlur={props.onCommitPage} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.blur(); } }} /><span> / {props.pageCount}</span></label>
         <button type="button" className="document-icon-button" aria-label={t("下一页")} disabled={props.pageIndex >= props.pageCount - 1} onClick={() => props.onPage(props.pageIndex + 1)}><ChevronRight size={17} /></button>
       </div>
       {props.kind === 'pdf' && props.view === 'original' && <div className="document-zoom-controls reader-toolbar-zoom">{zoomControls}</div>}
+      <TranslationButton />
       <button ref={triggerRef} type="button" className="document-icon-button" aria-label={t("阅读设置")} title={t("阅读模式、配色与更多")} aria-controls={id} aria-expanded={settingsOpen} onClick={() => setSettingsOpen(value => !value)}><SlidersHorizontal size={18} /></button>
       <button type="button" className="document-icon-button" aria-label={props.focused ? t("显示聊天") : t("专注阅读")} title={props.focused ? t("显示聊天") : t("专注阅读")} onClick={props.onToggleFocus}>{props.focused ? <Columns2 size={18} /> : <Maximize2 size={18} />}</button>
       <button type="button" className="document-icon-button" aria-label={t("关闭文档阅读")} title={t("关闭文档阅读")} onClick={props.onClose}><X size={19} /></button>

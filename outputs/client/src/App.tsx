@@ -28,6 +28,7 @@ import { conversationFileGroups, fileAnnotationCounter, localDocumentReferences,
 import type { LocalDocumentGroup, LocalDocumentReference } from './domain/local-library';
 import { loadReaderSession, saveReaderSession } from './adapters/reader-session';
 import { changeAnnotationColor } from './domain/highlight-colors';
+import { TranslationButton, TranslationProvider } from './components/Translation';
 
 const DEFAULT_SETTINGS: ModelSettings = { mode: 'demo', baseURL: 'https://api.openai.com/v1', model: '', systemPrompt: '请用中文清晰地回答，解释概念时适当举例。', hasApiKey: false, apiFormat: 'openai-chat', profiles: [], activeProfileId: null, persistence: 'session' };
 type Busy = { conversationId: string; messageId: string; versionId: string; controller: AbortController };
@@ -82,6 +83,7 @@ export default function App() {
     closingRef.current = true; setClosing(true);
     try {
       document.dispatchEvent(new Event('learn:save-edits'));
+      document.dispatchEvent(new Event('learn:close-translations'));
       fileController.current?.abort();
       mainRequest.current?.controller.abort();
       for (const controller of annotationRequests.current.values()) controller.abort();
@@ -151,6 +153,12 @@ export default function App() {
     ensureModelIdle();
     const next = await saveProfile(value);
     setSettings(next); notify('模型配置已保存。');
+  }
+  async function storeTranslationProfile(value: ProfileInput) {
+    ensureModelIdle();
+    const next = await saveProfile({ ...value, activate: false });
+    setSettings(next); notify('共享 API 连接已保存。');
+    return next;
   }
   async function removeProfile(id: string) {
     ensureModelIdle();
@@ -408,7 +416,7 @@ export default function App() {
   }
   const recoveryDialog = recoveryOpen && <RecoveryDialog recovery={Boolean(loadError)} onClose={() => setRecoveryOpen(false)} onRestore={restoreBackup} onCreate={checkpoint} onExport={workspace ? (legacy, currentOnly) => downloadBackup(currentOnly ? current.current?.activeConversationId : undefined, legacy, true) : undefined} />;
   if (!workspace || !active) return <div className="loading-screen"><PenLine size={30} /><h1>AI-Embedded Paper PDF Reader</h1><p>{t(loadError || t("正在打开你的阅读空间…"))}</p>{loadError && <div className="recovery-toolbar"><button onClick={() => setRecoveryOpen(true)} className="primary-button">{t("从备份恢复")}</button><button onClick={() => location.reload()} className="secondary-button">{t("重新打开")}</button></div>}{recoveryDialog}</div>;
-  return <div className={'app-shell reader-primary' + (readerFocused ? ' reader-focused' : ' chat-open')}>
+  return <TranslationProvider settings={settings} scope={`${active.id}:${openDocument?.id || 'chat'}:${readerFocused}`} enabled={!closing && !fileBusy && !settingsOpen && !recoveryOpen && !trashOpen} onSaveProfile={storeTranslationProfile} onDeleteProfile={removeProfile} onNotify={notify}><div className={'app-shell reader-primary' + (readerFocused ? ' reader-focused' : ' chat-open')}>
     {sidebarOpen && <button className="mobile-overlay" aria-label={t("关闭对话列表")} onClick={() => setSidebarOpen(false)} />}
     <aside className={'sidebar ' + (sidebarOpen ? 'sidebar-open' : '')}>
       <div className="brand"><span className="brand-mark"><PenLine size={20} /></span><span className="brand-name">AI-Embedded Paper PDF Reader<small>{t("阅读与批注")}</small></span><button className="icon-button mobile-close" aria-label={t("关闭对话列表")} onClick={() => setSidebarOpen(false)}><X size={18} /></button></div>
@@ -432,7 +440,7 @@ export default function App() {
     <main className="main-pane">
       <header className="topbar">
         <div className="topbar-heading"><button className="icon-button mobile-menu" aria-label={t("打开对话列表")} onClick={() => setSidebarOpen(true)}><Menu size={20} /></button><span>{openDocument && readerFocused ? openDocument.name : active.title}</span><span className="version-badge" title={t("构建 {0} · {1}", [__APP_BUILD__, new Date(__APP_BUILD_TIME__).toLocaleString(getLocale(), { hour12: false })])}>{__APP_VERSION__} · {__APP_BUILD__}</span></div>
-        <div className="topbar-actions"><button className="icon-button" aria-label={t("返回阅读器")} title={t("返回阅读器")} onClick={() => setReaderFocused(true)}><BookOpen size={18} /></button><button className="icon-button" aria-label={t("备份当前对话")} title={t("单独备份这个对话及其文件")} onClick={() => void downloadBackup(active.id)}><Download size={17} /></button><button className={'connection-button ' + (settings.mode === 'demo' ? 'demo-connection' : '')} onClick={() => setSettingsOpen(true)}><span className="status-dot" />{settings.mode === 'demo' ? t("演示模式") : settings.model || t("连接模型")}<Settings2 size={14} /></button></div>
+        <div className="topbar-actions"><TranslationButton /><button className="icon-button" aria-label={t("返回阅读器")} title={t("返回阅读器")} onClick={() => setReaderFocused(true)}><BookOpen size={18} /></button><button className="icon-button" aria-label={t("备份当前对话")} title={t("单独备份这个对话及其文件")} onClick={() => void downloadBackup(active.id)}><Download size={17} /></button><button className={'connection-button ' + (settings.mode === 'demo' ? 'demo-connection' : '')} onClick={() => setSettingsOpen(true)}><span className="status-dot" />{settings.mode === 'demo' ? t("演示模式") : settings.model || t("连接模型")}<Settings2 size={14} /></button></div>
       </header>
       <div className={'workspace-content ' + (openDocument ? 'with-reader' : '')}>
       <div className="conversation-pane">
@@ -452,7 +460,7 @@ export default function App() {
     {trashOpen && <TrashDialog workspace={workspace} busy={fileBusy || mainBusyId !== null || annotationRequests.current.size > 0} onClose={() => setTrashOpen(false)} onPurge={purgeTrash} onRestore={restoreTrash} />}
     {backupWarning && <div className="save-failure" role="alert">{t(backupWarning)}<button onClick={() => setRecoveryOpen(true)}>{t("备份与恢复")}</button></div>}
     {closing && <div className="closing-overlay" role="status">{t("正在保存并关闭…")}</div>}
-  </div>;
+  </div></TranslationProvider>;
 }
 
 type ChatViewProps = {

@@ -12,9 +12,9 @@ A desktop reader built around local PDFs. Connect your preferred AI provider, re
 
 [下载 / Downloads](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases) · [本版发布说明 / Release notes](docs/RELEASE_NOTES.md) · [隐私 / Privacy](docs/PRIVACY.md) · [版本记录 / Changelog](docs/CHANGELOG.md) · [项目总纲 / Project outline](docs/PROJECT.md)
 
-当前源码版本：**0.1.15**。Windows x64 客户端请从 Releases 下载完整 ZIP。中文 / English 界面均可在程序内切换，选择保存在本机。
+当前源码版本：**0.1.16**。Windows x64 客户端请以 Releases 中实际发布的完整 ZIP 为准。中文 / English 界面均可在程序内切换，选择保存在本机。
 
-Current source version: **0.1.15**. Download the complete Windows x64 ZIP from Releases. Switch between Chinese and English in the app; your choice is remembered locally.
+Current source version: **0.1.16**. Download the complete Windows x64 ZIP actually published on Releases. Switch between Chinese and English in the app; your choice is remembered locally.
 
 ## 主要功能 / Main features
 
@@ -31,9 +31,9 @@ Current source version: **0.1.15**. Download the complete Windows x64 ZIP from R
 
 **Your API endpoints, model settings and keys are stored on your computer, not uploaded to a project-operated server.** The app provides no project-hosted credential service or preloaded keys; you choose the service and model. The Windows desktop app encrypts saved keys using the operating system. If encryption is unavailable, keys stay in memory for that session rather than being written to a plaintext key file. Credentials are stored separately from conversations and excluded from conversation backups; diagnostic logs omit keys and authorization headers.
 
-普通阅读、搜索、调色和笔记不调用 AI。**提问或获取模型列表时，密钥会发送给你配置的服务用于认证；提问还会发送相应的对话和文档提取文字。** 原 PDF 不作为文件上传。项目没有云端文件库、账号服务或使用情况收集接口。本地保存避免向项目方托管密钥，但安全性仍取决于你选择的服务和本机环境。完整的数据范围与代理说明见[隐私说明](docs/PRIVACY.md)。
+普通阅读、搜索、调色和笔记不调用 AI。**提问或获取模型列表时，密钥会发送给你配置的服务用于认证；提问还会发送相应的对话和文档提取文字。** 原 PDF 不作为文件上传。划词翻译只发送选段和翻译提示词。项目没有云端文件库、账号服务或使用情况收集接口。本地保存避免向项目方托管密钥，但安全性仍取决于你选择的服务和本机环境。完整的数据范围与代理说明见[隐私说明](docs/PRIVACY.md)。
 
-Reading, search, recoloring and plain notes make no AI requests. **Asking a question or fetching models sends authentication to your configured service; questions also send the relevant conversation and extracted document text.** Original PDFs are not uploaded as files. The project has no cloud document library, account service or usage collection endpoint. Local storage avoids entrusting credentials to the project, but security still depends on your chosen service and computer. See [Privacy](docs/PRIVACY.md) for data scope and proxy behavior.
+Reading, search, recoloring and plain notes make no AI requests. **Asking a question or fetching models sends authentication to your configured service; questions also send the relevant conversation and extracted document text.** Original PDFs are not uploaded as files. Quick translation sends only the selection and translation prompt. The project has no cloud document library, account service or usage collection endpoint. Local storage avoids entrusting credentials to the project, but security still depends on your chosen service and computer. See [Privacy](docs/PRIVACY.md) for data scope and proxy behavior.
 
 ## 开始使用 / Getting started
 
@@ -45,6 +45,16 @@ Reading, search, recoloring and plain notes make no AI requests. **Asking a ques
    To use AI, open API setup on the home screen, enter the endpoint/key and discover upstream models. Choose the actual model and Save and use, or enter its name manually if listing is unavailable.
 4. 划选原文，选择“询问 AI”或“只写批注”。点击高亮重开批注；需要更长的讨论时，从阅读器工具栏打开聊天。
    Select text to ask AI or write a note. Click a highlight to reopen its panel, or open chat from the reader toolbar for a longer discussion.
+
+## 划词翻译与 PDF 链接 / Translation and PDF links
+
+选中文字后右键翻译或按默认 Alt+1；右上角独立“翻译”按钮可设置目标语言、提示词、独立 API 及自定义快捷键。连接列表共用，翻译选择不切换聊天。只发送选段和翻译提示词，不发送全文、所在页或聊天历史。临时面板显示译文和模型，框外点击、Esc 或 × 关闭并丢弃；点击保留后才创建普通批注。翻译设置单独记在本机，不进入聊天备份。
+
+Select text and right-click to translate or press Alt+1. The separate Translate button configures the target language, prompt, independent API and shortcut. Connections are shared without switching chat. Only the selection and translation prompt are sent, without full text, page or history. Outside click, Esc or × discards temporary text/model results; Keep creates a plain note. Settings stay local outside conversation backups.
+
+PDF 自带的参考文献和图号链接支持文内精确跳转，并可返回跳转前位置。HTTP/HTTPS 网页链接交由系统浏览器打开，不执行脚本或文件动作；没有原生链接的文字不猜测跳转。深色配色修正彩色字边缘的白色残影，原 PDF 不改写。
+
+Embedded PDF references/figure links navigate to their page positions, with return navigation. HTTP/HTTPS links open in the system browser; scripts and file actions are not executed. No destination is guessed for unlinked text. Dark colors correct white halos around colored text without modifying the PDF.
 
 ## 连接与文档支持 / Connections and document support
 

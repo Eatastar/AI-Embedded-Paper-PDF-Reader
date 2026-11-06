@@ -1,61 +1,51 @@
-# AI-Embedded Paper PDF Reader v0.1.15
+# AI-Embedded Paper PDF Reader v0.1.16
 
-**接入自己的 API，在论文原文的批注中直接向 AI 提问。** 这是一个以本地 PDF 阅读为主的桌面阅读器，支持自选 AI 服务、中转 API 和自行部署的模型服务。
+新增划词翻译，并修复深色阅读的彩色字边缘与 PDF 引用跳转。
+Adds selection translation and fixes colored text edges in dark reading and PDF reference navigation.
 
-**Connect your own API and ask AI questions directly in annotations on a paper.** A desktop reader built around local PDFs, with your preferred AI provider, relay API or self-hosted model service.
+## 划词翻译 / Quick translation
 
-## 四项主要功能 / Four main features
+- 选中文字后右键翻译或按 **Alt+1**。支持 PDF 原排版、提取文字与聊天中的完整回答。
+  Select text and right-click to translate or press **Alt+1** in PDF pages, extracted text and completed chat answers.
+- 右上角独立“翻译”按钮，与阅读设置分开，可设置目标语言、自定义提示词、独立 API 和快捷键，并恢复默认。原文语言自动识别，目标语言与界面语言分开。
+  A separate Translate button configures target language, custom prompt, independent API and shortcut, with restore-default actions. Source language is detected automatically; the target language is independent of the interface language.
+- 连接与聊天、批注共用。新建连接可供全程序使用，选择翻译连接不切换聊天；编辑共享连接会影响所有使用它的功能。
+  Connections are shared with chat and annotations. New connections are available throughout the app; choosing a translation connection does not switch chat. Editing a shared connection affects every feature using it.
+- **只发送选中文字和翻译提示词**，不带全文、所在页、聊天历史、其他批注或聊天偏好。三种接口格式沿用已有系统代理和本机加密凭证。
+  **Only the selection and translation prompt are sent**, without full text, the page, chat history, other annotations or chat preferences. All three API formats retain existing proxy and locally encrypted credential handling.
+- 原文旁的临时面板只显示译文和本次模型，提供复制、保留、关闭操作，可拖动并跟随阅读配色。框外点击、Esc 或 × 关闭并停止未完成请求，晚到结果不会重新弹出。超长选段明确提示，不截断。
+  A movable temporary panel beside the source shows the translation and its model, with copy, keep and close controls and matching reading colors. Outside click, Esc or × discards it and cancels pending work; late results do not reopen it. Oversized selections are rejected without truncation.
+- 点击“保留为普通批注”才创建高亮和可编辑笔记，保留译文与模型来源。临时译文不进入聊天、批注列表或备份；保留后随普通笔记正常保存、备份和恢复。
+  Keep as a plain note creates the highlight and editable note with its translation/model source. Temporary results stay out of chats, annotation lists and backups; kept notes persist, back up and restore normally.
 
-- **阅读 PDF**：保留原排版，连续滚动或单页阅读，支持目录、搜索、手势缩放及续读。
-  **Read PDFs** in their original layout, with continuous/single-page reading, contents, search, pinch zoom and reading position memory.
-- **调整纸张颜色**：自选纸张和文字颜色，阅读器工具栏与周边同步配色，保留彩图并支持原色对照。减少刺眼白底，方便畏光或对明亮屏幕敏感的读者按个人感受调整。
-  **Adjust paper colors** with matching reader controls/margins, preserved colored figures and original-color comparison. Reduce bright white backgrounds and tailor the display for readers with light sensitivity, including photophobia.
-- **AI 问答批注**：划选原文就地提问，问答留在对应高亮里，点击重开；支持自选高亮颜色、重新提问及普通笔记。
-  **AI Q&A annotations**: select a passage and ask in place. Reopen the Q&A from its highlight, choose highlight colors, ask again or write a plain note.
-- **聊天模式**：需要进一步讨论时打开，收起后回到原文，保留阅读位置和缩放。
-  **Optional chat** for longer discussions, returning to the document with reading position and zoom retained.
+## PDF 修复 / PDF fixes
 
-## 自 v0.1.12 以来的更新 / Updates since v0.1.12
+- 修正蓝色引用等彩色字与白纸混合的抗锯齿边缘，减少深色背景下的白色残影；保留彩色区域内部和原 PDF 字节。
+  Corrects white-matted antialiased edges around colored text on dark paper, preserving colored interiors and original PDF bytes.
+- 恢复 PDF 自带的参考文献和图号链接，跳到目的页的具体位置。连续和单页模式均支持，可从工具栏返回跳转前位置；保留正常拖选，已有批注优先打开。
+  Follows embedded PDF reference/figure links to their positions within destination pages in continuous and single-page modes, with return navigation. Text selection remains available and existing annotations take precedence.
+- 普通 HTTP/HTTPS 链接在系统浏览器打开，不执行 PDF 脚本、启动文件或外部文档动作。没有内嵌链接的文字不会猜测跳转。
+  HTTP/HTTPS links open in the system browser. PDF scripts, file launches and external-document actions are not executed. No destination is guessed for unlinked text.
 
-- **API 入口与模型选择更直接**：首页显示 API 配置及“探测上游模型”；有可用连接时直接读取服务的模型列表 API。兼容完整的 `/responses`、`/chat/completions`、`/messages` 或 `/models` 地址，修复列表地址拼接错误。模型按实际 ID 排序，可筛选、直接选择并保存使用；手动输入按需展开。连接名称只是本地备注。
-  **Easier API setup and model selection**: configure or discover models from the home screen. A usable saved connection fetches the provider's model-list API directly. Full `/responses`, `/chat/completions`, `/messages` and `/models` addresses are supported with corrected list-path derivation. Filter models, sorted by their actual IDs, then select and save one. Manual entry expands on demand; connection names are local labels.
-- **支持更大的论文**：PDF 上限提高到 150 MiB、5000 页和 1000 万提取字符；提取显示进度并可取消，页面按需准备和绘制。默认“小文件全文，大文件按需引用”，在本机查找相关段落，减少不必要的 AI 上下文；可在阅读设置中切换范围。
-  **Larger papers**: PDFs support up to 150 MiB, 5,000 pages and 10 million extracted characters, with cancellable extraction progress and on-demand page preparation/rendering. Auto mode uses full extracted text for small files and locally retrieved passages for large files, reducing unnecessary AI context. Override the scope in Reading settings.
-- **阅读配色更连贯**：纸张色同步到工具栏、阅读区边缘、设置、导航和批注框。调色在后台快速预览，停下后恢复清晰；过期结果不再覆盖新颜色，选色器不再被色值回写打断。
-  **More consistent reading colors**: paper colors extend to the toolbar, margins, settings, navigation and annotation panels. Background previews refine after adjustment; stale jobs no longer overwrite newer colors or reset the native picker.
-- **失败重试保留原资料**：主聊天和批注均沿用首次请求的资料，后续切换范围不改变该次重试；全文超出请求或模型容量时明确提示。
-  **Retries retain their original material** for both chat and annotations, even after changing context scope. Oversized full-text requests produce an explicit error.
+## 隐私与更新 / Privacy and updating
 
-## API 与隐私 / API and privacy
+API 配置与密钥保存在本机，不上传到项目方服务器；调用时仍向所选服务发送认证。翻译设置单独记在本机，不进入聊天备份。原应用标识、数据位置、数据库与备份格式保持兼容，历史 Release、标签和附件保留。
 
-API 地址、模型配置和密钥保存在本机，不上传到项目方服务器。Windows 桌面版使用系统加密保存密钥；系统加密不可用时，密钥仅留在本次运行的内存中。模型凭证字段不进入聊天备份，诊断日志不记录密钥或授权头。
+API settings and keys stay on your computer rather than being uploaded to a project-operated server; authentication is sent to the chosen service when calling it. Translation settings are separate local preferences outside conversation backups. App identity, data location, database and backup formats remain compatible; historical releases, tags and assets are preserved.
 
-Endpoints, model settings and keys stay on your computer, without upload to a project-operated server. The Windows desktop app encrypts saved keys using the operating system; if encryption is unavailable, keys remain in session memory only. Model credential fields are excluded from conversation backups; diagnostic logs omit keys and authorization headers.
+下载完整 Windows x64 ZIP，全部解压后运行 AI-Embedded-Paper-PDF-Reader.exe，保留同目录全部文件。先正常退出旧版，再运行新版。
+Download and fully extract the Windows x64 ZIP, then run AI-Embedded-Paper-PDF-Reader.exe, keeping all accompanying files. Exit the old version normally before starting the new one.
 
-普通阅读、调色、搜索和笔记不调用 AI。提问或获取模型列表时，密钥会发给你配置的服务用于认证；提问还会发送相应的对话和提取文字，原 PDF 不作为文件上传。默认大文件采用本地检索片段，仍包含选区、所在页片段和完整有效主对话；按需引用可能遗漏材料，可按需要切换。所选服务和本机环境仍影响安全性。详见[隐私说明](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/blob/main/docs/PRIVACY.md)。
+原创应用代码全部由 GPT 通过 Codex 实现；人类发起者负责想法、需求与功能取舍。欢迎下载、fork 和用 AI agent / vibe coding 改造，发布衍生版时请链接[上游项目](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader)。MIT 与第三方许可继续适用。
 
-Reading, recoloring, search and plain notes make no AI requests. Asking or listing models sends authentication to your configured service; questions also send conversation and extracted text. Original PDFs are not uploaded as files. Large-file retrieval includes the selection, passages from its page and full valid main conversation; retrieval can miss material, so adjust the scope when needed. Security still depends on your chosen service and computer. See [Privacy](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/blob/main/docs/PRIVACY.md).
+GPT through Codex implemented all original application code; the human initiator supplied ideas, requirements and feature trade-offs. Download, fork and adapt with AI agents / vibe coding; please link [upstream](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader) when publishing derivatives. MIT and third-party licenses continue to apply.
 
-## 下载与更新 / Download and update
+## 验证与校验 / Validation and checksum
 
-下载 `AI-Embedded-Paper-PDF-Reader-0.1.15-Windows-x64.zip`，**完整解压**，运行其中的 `AI-Embedded-Paper-PDF-Reader.exe`。保留同目录全部文件，无需另装 Node.js。更新前正常退出旧版，不要同时运行新旧版本；已有聊天、批注、阅读偏好和模型连接继续沿用。历史 Release 与附件保留。
+251 项自动检查、558 项交付核对通过。打包目录与最终交付目录的 EXE 均实际启动、保存、创建完整备份并正常退出。隔离界面验证右键 / Alt+1 / 自定义快捷键、共享连接新建、独立模型调用、译文转笔记及刷新恢复；实际导出的备份不包含临时译文、翻译设置或模型凭证，合成 PDF 原字节一致。连续和单页引用、图号定位、返回及深色边缘均已检查。所有验证使用合成资料和模拟 API，不读取个人记录或调用真实服务。
 
-Download `AI-Embedded-Paper-PDF-Reader-0.1.15-Windows-x64.zip`, **fully extract it** and run `AI-Embedded-Paper-PDF-Reader.exe`. Keep all accompanying files; no separate Node.js installation is needed. Exit the old app normally before updating and avoid running both versions together. Existing conversations, annotations, reading preferences and connections remain in use. Historical releases/assets are preserved.
+251 automated tests and 558 package checks passed. Both packaged and delivered executables passed real startup, save, full backup and normal exit. Isolated UI checks covered right-click / Alt+1 / custom shortcuts, shared connection creation, independent model calls, conversion to notes and reload persistence. An actual exported backup excluded temporary translations, translation settings and model credentials, while retaining the exact synthetic PDF bytes. Continuous/single-page references, figure destinations, return navigation and dark edges were checked. All verification used synthetic material and mocked APIs, without personal records or real services.
 
-本版仍不包含 OCR 或扫描图片理解；全工作区备份保留 350 MB 容量保护，大量文件可分别导出对话。上游模型列表、权限和上下文容量由所选服务决定。
+ZIP: AI-Embedded-Paper-PDF-Reader-0.1.16-Windows-x64.zip
 
-This release has no OCR or scanned-image understanding. Full workspace backups retain a 350 MB capacity guard; export conversations separately for larger collections. Upstream model listing, permissions and context capacity depend on the chosen service.
-
-校验文件 / Checksum file: `AI-Embedded-Paper-PDF-Reader-0.1.15-Windows-x64.zip.sha256`
-
-ZIP SHA-256: `45e4aeaf8ffde1aeea15a4dbc0b1bfe9cb0ef2509461c3b21ba390880c3e5cd0`
-
-## 验证与署名 / Validation and credits
-
-此程序已通过 243 项自动检查、555 项交付核对，以及两次实际 EXE 启动、保存、完整备份和正常退出验证。隔离测试使用合成 PDF 和模拟 API，核对大文件、配色、模型选择及实际请求中的模型 ID，不读取个人记录或调用真实 API。此次发布文档整理不改动已验证的程序和 ZIP 字节。
-
-The application passed 243 automated tests, 555 package checks and two real EXE startup/save/full-backup/normal-exit checks. Isolated testing used synthetic PDFs and mocked APIs to check large files, colors, model selection and the model ID in an actual mocked request. No personal records or real API calls were used. This release documentation update does not alter the verified application or ZIP bytes.
-
-原创应用代码全部由 GPT 通过 Codex 实现；人类发起者负责想法、需求与功能取舍。欢迎下载、fork 和用 AI agent / vibe coding 修改成适合自己的版本，发布衍生版时请链接[上游项目](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader)。这是友好署名请求；MIT 与第三方许可继续适用。
-
-GPT through Codex implemented all original application code; the human initiator supplied ideas, requirements and feature trade-offs. Download, fork and adapt with AI agents / vibe coding; please link [upstream](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader) when publishing derivatives. This is a courtesy attribution request; MIT and third-party licenses continue to apply.
+SHA-256: `23e0e0fbabdd711e7aafc91fd50c0ead6d1d6e5c787bec86a15d415580076eb3`

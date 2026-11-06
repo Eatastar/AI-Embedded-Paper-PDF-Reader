@@ -1,10 +1,10 @@
 # AI-Embedded Paper PDF Reader 项目总纲 / Project outline
 
-当前版本：客户端 0.1.15，构建 20261106.4，2026年11月6日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
+当前版本：客户端 0.1.16，构建 20261106.5，2026年11月6日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
 
 首个公开正式版沿用 v0.1.11 和现有构建，使用 MIT 许可证。公开范围包括已核对的源码及通用 Windows 发行包；历史检查范围见 [公开发布说明](OPEN_SOURCE_RELEASE.md)，本地数据和请求边界见 [隐私说明](PRIVACY.md)。
 
-Current source: **0.1.15 / 20261106.4**. A local paper reader with optional AI questions and personal notes. Public introductions and release notes are bilingual. Users can select Chinese or English in the app; interface language never rewrites their documents, messages, notes or answer preferences.
+Current source: **0.1.16 / 20261106.5**. A local paper reader with optional AI questions and personal notes. Public introductions and release notes are bilingual. Users can select Chinese or English in the app; interface language never rewrites their documents, messages, notes or answer preferences.
 
 Original application code was implemented entirely by GPT through Codex; the human initiator proposed ideas, defined requirements and selected features/trade-offs. Everyone may download and adapt it with AI agents or vibe coding. Please link to the upstream repository when publishing a derivative; MIT and third-party notices remain applicable. See [Attribution](ATTRIBUTION.md).
 
@@ -22,7 +22,7 @@ Keep questions beside their source. Select, ask and take notes directly in AI an
 4. 平时只保留不同颜色的高亮，点击打开弹框。× 或框外点击收起，内容继续保存；独立的“停止回答”可中断生成并重试原问题。
 5. 批注框可拖动，正文和高亮保持文字光标。编辑时关闭会保存修改，取消编辑则放弃本次修改。
 6. 重新生成主回答得到独立版本，旧批注留在原版本，新版本不继承旧批注。
-7. 发送问题会发送完整有效主对话；附件默认小文件全文、大文件按需引用，另带选中文字及所在页片段。原文件留在本机。自动模式在超过 25 MiB、300 页或 12 万提取字符时使用本地关键词检索，每份引用片段最多 2.4 万字符；选区和对话另计。阅读设置可切换全文或按需引用，工具栏显示范围。失败重试沿用首次请求的资料；资料不足会明确提示，全文仍受请求与模型容量限制，不静默截断主对话。失败残文不作为成功回答加入上下文。
+7. 聊天与 AI 问答批注发送完整有效主对话；附件默认小文件全文、大文件按需引用，另带选中文字及所在页片段。原文件留在本机。自动模式在超过 25 MiB、300 页或 12 万提取字符时使用本地关键词检索，每份引用片段最多 2.4 万字符；选区和对话另计。阅读设置可切换全文或按需引用，工具栏显示范围。失败重试沿用首次请求的资料；资料不足会明确提示，全文仍受请求与模型容量限制，不静默截断主对话。失败残文不作为成功回答加入上下文。
 8. 文件原字节保存在本机。阅读配色只改变显示，不改写 PDF。
 9. 普通删除移入回收站；回收站支持恢复、单条永久删除和清空，永久删除对话时原子移除记录与附件原字节，正在排队的旧保存不能复活记录。历史自动备份和导出文件不随当前记录删除而改写。JSON 备份包含文档原字节和批注，追加导入不覆盖已有记录。
 10. 模型配置与聊天分别存储，桌面凭证使用系统加密，不进入聊天备份或源码仓库。
@@ -44,6 +44,8 @@ English: The home screen exposes API setup and model discovery. PDFs support up 
 
 | 模块 | 实现位置 | 职责 |
 | --- | --- | --- |
+| 划词翻译 / Quick translation | src/components/Translation.tsx、src/domain/translation.ts、src/adapters/translation.ts、server/translation.mjs | 独立选段请求、临时结果、共享连接与 Alt+1 / Isolated selection requests, temporary results, shared connections and Alt+1 |
+| PDF 链接 / PDF links | src/adapters/pdf-links.ts、PdfAnnotatedPage.tsx、DocumentReader.tsx | 文内坐标定位和返回 / Internal destinations and return navigation |
 | 模型列表 / Model discovery | `server/model-discovery.mjs`、`server/profiles.mjs`、`src/components/SettingsDialog.tsx` | 限时列表请求、认证隔离、分页和筛选 / Bounded listing, isolated authentication, pagination and filtering |
 | 资料范围 / Document scope | `src/domain/document-context.ts`、`src/adapters/document-context.ts` | 本地检索、范围说明、全文兜底与固定请求 / Local retrieval, scope disclosure, full text option and frozen requests |
 | 大文件限制 / Large-file limits | `src/domain/document-limits.ts` | 解析、保存、恢复共用限制 / Shared parsing, storage and recovery limits |
@@ -78,7 +80,7 @@ React、TypeScript、Vite、assistant-ui、Recogito Text Annotator、Streamdown�
 
 ## 当前边界
 
-- 单文件最多 25 MiB，PDF 最多 300 页，提取文字最多 100 万字符，每个对话最多 10 份文件。
+- PDF 最多 150 MiB、5000 页、1000 万提取字符；TXT/Markdown 最多 25 MiB、100 万字符，每个对话最多 10 份文件。
 - 阅读器支持分页和连续模式；只绘制视野附近页面，打开的批注页保留。目录来自 PDF 内嵌结构，搜索范围是本机已提取文字。
 - 搜索列出前 200 处并显示完整匹配总数；批注分批列出，可继续加载。文字批注仍在单页内选择，跨页选区、缩略图、书签及 OCR 为后续工作。
 - 扫描页可看和换色，当前不含 OCR 或图像内容理解。
@@ -178,3 +180,13 @@ Validation: 243 tests, 555 package checks and two real EXE startup/save/backup/e
 本机清理：核对原 ZIP 哈希及旧程序逐文件内容后，移除 0.1.12–0.1.14 程序、ZIP、校验和旧说明，以及临时构建和明确隔离的测试副本，共 19 处、2,052,401,296 字节。发行目录只保留 0.1.15，真实个人数据、源码/Git 历史及已公开 Release 资产保留。
 
 Local cleanup removed 19 verified old release/build/test targets (2,052,401,296 bytes). The release directory retains only 0.1.15. Personal data, source/Git history and published GitHub assets remain intact.
+
+## 划词翻译与 PDF 链接 / Translation and PDF links
+
+选中文字后右键翻译或按默认 Alt+1；右上角独立“翻译”按钮可设置目标语言、提示词、独立 API 及自定义快捷键。连接列表共用，翻译选择不切换聊天。只发送选段和翻译提示词，不发送全文、所在页或聊天历史。临时面板显示译文和模型，框外点击、Esc 或 × 关闭并丢弃；点击保留后才创建普通批注。翻译设置单独记在本机，不进入聊天备份。
+
+Select text and right-click to translate or press Alt+1. The separate Translate button configures the target language, prompt, independent API and shortcut. Connections are shared without switching chat. Only the selection and translation prompt are sent, without full text, page or history. Outside click, Esc or × discards temporary text/model results; Keep creates a plain note. Settings stay local outside conversation backups.
+
+PDF 自带的参考文献和图号链接支持文内精确跳转，并可返回跳转前位置。HTTP/HTTPS 网页链接交由系统浏览器打开，不执行脚本或文件动作；没有原生链接的文字不猜测跳转。深色配色修正彩色字边缘的白色残影，原 PDF 不改写。
+
+Embedded PDF references/figure links navigate to their page positions, with return navigation. HTTP/HTTPS links open in the system browser; scripts and file actions are not executed. No destination is guessed for unlinked text. Dark colors correct white halos around colored text without modifying the PDF.

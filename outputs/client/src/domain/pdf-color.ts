@@ -12,5 +12,5 @@ export function colorPreview(source: PixelFrame, maxPixels = 500_000): PixelFram
   return { width, height, data };
 }
 export function colorFrame(source: PixelFrame, appearance: ReaderAppearance): PixelFrame {
-  return { width: source.width, height: source.height, data: recolorPagePixels(source.data, appearance) };
+  return { width: source.width, height: source.height, data: recolorPagePixels(source.data, appearance, undefined, source.width) };
 }

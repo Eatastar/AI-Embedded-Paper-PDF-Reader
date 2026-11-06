@@ -61,7 +61,7 @@ export function readerTheme(paper: string, ink: string): Record<string, string> 
 }
 
 /** Recolor a display copy only. Preserve saturated colors and all alpha bytes. */
-export function recolorPagePixels(source: Uint8ClampedArray, appearance: ReaderAppearance, destination = new Uint8ClampedArray(source.length)): Uint8ClampedArray {
+export function recolorPagePixels(source: Uint8ClampedArray, appearance: ReaderAppearance, destination = new Uint8ClampedArray(source.length), width = 0): Uint8ClampedArray {
   if (destination.length !== source.length || source.length % 4 !== 0 || source.buffer === destination.buffer) throw new Error('A separate RGBA display buffer is required');
   if (appearance.preset === 'original') { destination.set(source); return destination; }
   const paper = rgb(appearance.paper), ink = rgb(appearance.ink);
@@ -75,6 +75,34 @@ export function recolorPagePixels(source: Uint8ClampedArray, appearance: ReaderA
     destination[i + 1] = g * originalWeight + (ink[1] + (paper[1] - ink[1]) * tone) * weight;
     destination[i + 2] = b * originalWeight + (ink[2] + (paper[2] - ink[2]) * tone) * weight;
     destination[i + 3] = source[i + 3];
+  }
+  // Colored glyph edges were rasterized against white paper. Keeping those
+  // blended pixels verbatim creates a white halo on dark paper. Only unmatte
+  // pixels next to both white paper and stronger ink of the same hue; uniform
+  // pastel figures and colored interiors keep their original RGB values.
+  const height = width > 0 ? source.length / 4 / width : 0;
+  if (appearance.preserveColors && Number.isInteger(height) && height > 0) {
+    for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4, r = source[i], g = source[i + 1], b = source[i + 2];
+      const low = Math.min(r, g, b), high = Math.max(r, g, b), chroma = high - low;
+      if (chroma < 8 || low < 16 || high < 230) continue;
+      let paperNeighbor = false, inkLow = low;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        if ((!dx && !dy) || x + dx < 0 || x + dx >= width || y + dy < 0 || y + dy >= height) continue;
+        const j = ((y + dy) * width + x + dx) * 4;
+        if (!source[j + 3]) continue;
+        const nr = source[j], ng = source[j + 1], nb = source[j + 2], min = Math.min(nr, ng, nb), max = Math.max(nr, ng, nb), c = max - min;
+        if (min >= 245 && c <= 8) paperNeighbor = true;
+        if (min > 64 || min >= low - 12 || c < Math.max(48, chroma * 1.15)) continue;
+        const hueDifference = Math.abs((r - low) / chroma - (nr - min) / c) + Math.abs((g - low) / chroma - (ng - min) / c) + Math.abs((b - low) / chroma - (nb - min) / c);
+        if (hueDifference < .35) inkLow = Math.min(inkLow, min);
+      }
+      if (!paperNeighbor || inkLow === low) continue;
+      const whiteCoverage = 1 - (255 - low) / (255 - inkLow);
+      destination[i] = r + (paper[0] - 255) * whiteCoverage;
+      destination[i + 1] = g + (paper[1] - 255) * whiteCoverage;
+      destination[i + 2] = b + (paper[2] - 255) * whiteCoverage;
+    }
   }
   return destination;
 }

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PdfColorProcessor } from '../src/adapters/pdf-color';
 import { colorFrame, colorPreview, type PixelFrame } from '../src/domain/pdf-color';
-import { DEFAULT_READER_APPEARANCE, readerContrast, readerTheme } from '../src/domain/reader';
+import { DEFAULT_READER_APPEARANCE, readerAppearance, readerContrast, readerTheme } from '../src/domain/reader';
 import { activeReaderPage, readerPageAtFocus } from '../src/domain/reader-navigation';
 class FakeWorker {
   onmessage: ((event: { data: unknown }) => void) | null = null;
@@ -38,6 +38,19 @@ test('reader chrome follows arbitrary paper colors and retains readable controls
     assert.equal(theme['--ls-panel'], paper); assert.equal(theme['--reader-paper'], paper); assert.ok(readerContrast(paper, theme['--ls-text']) >= 4.5);
     assert.notEqual(theme['--ls-code'], '#1c1d20'); assert.notEqual(theme['--ls-border'], theme['--ls-panel']);
   }
+});
+
+test('blue citation antialiasing loses its white matte on dark paper while flat colored figures remain intact', async () => {
+  const colors = [[255,255,255,255], [180,180,255,255], [0,0,255,255], [235,242,224,255]];
+  const source: PixelFrame = { width: 3, height: 3, data: new Uint8ClampedArray([colors[0],colors[0],colors[0], colors[0],colors[1],colors[2], colors[0],colors[0],colors[0]].flat()) };
+  const snapshot = source.data.slice(), dark = readerAppearance({ ...DEFAULT_READER_APPEARANCE, preset: 'dark' });
+  const frame = colorFrame(source, dark), edge = [...frame.data.slice(16, 20)];
+  assert.ok(edge[0] < 40 && edge[1] < 40 && edge[2] < 120, 'A white-backed edge must blend into dark paper, rather than remain pale');
+  assert.deepEqual([...frame.data.slice(20, 24)], colors[2]); assert.deepEqual(source.data, snapshot);
+  const figure = { width: 3, height: 3, data: new Uint8ClampedArray(Array.from({ length: 9 }, () => colors[3]).flat()) };
+  assert.deepEqual(colorFrame(figure, dark).data, figure.data);
+  const fallback = new PdfColorProcessor(() => { throw Error('synthetic Worker unavailable'); });
+  assert.deepEqual((await fallback.prepare(source, dark))?.data, frame.data); fallback.dispose();
 });
 
 test('scroll tracking locates the same nearest page with logarithmic measurements in a 5000-page reader', () => {

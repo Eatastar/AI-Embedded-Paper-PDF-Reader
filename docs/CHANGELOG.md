@@ -1,5 +1,15 @@
 # 版本记录 / Changelog
 
+## 0.1.16 · 20261106.5 · 2026-11-06
+
+新增右键 / Alt+1 划词翻译：独立 API 与提示词，只发送选段；临时结果可转普通笔记。恢复 PDF 自带的引用、图号链接及返回位置，修正深色背景下彩色字边缘白色残影。完整规则与验证见[本版发布说明](RELEASE_NOTES.md)。
+
+Adds right-click / Alt+1 translation with its own API and prompt, selection-only requests and optional plain-note saving. Restores embedded PDF reference/figure navigation and return positions, and corrects colored-text white halos on dark paper. See [release notes](RELEASE_NOTES.md) for details and validation.
+
+验证：251 项自动检查、558 项交付核对及两次实际 EXE 启动 / 保存 / 完整备份 / 退出通过，163 份允许公开源码检查通过。隔离界面和实际备份验证仅发送选段、保留才保存、独立模型与 PDF 链接位置；未使用个人资料或真实 API。
+
+Validation: 251 tests, 558 package checks, two real EXE startup/save/full-backup/exit checks and the 163-file public source review passed. Synthetic UI and actual-backup checks covered selection-only requests, explicit note saving, independent models and PDF link positions. No personal material or real API was used.
+
 ## 0.1.15 · 20261106.4 · 2026-11-06
 
 发布文档：重写双语 README，突出自选 API / 自部署模型服务、PDF 阅读、可调纸张配色、AI 问答批注和可选聊天；隐私说明区分本地密钥存储与发往所选服务的请求认证。新增[本版发布说明](RELEASE_NOTES.md)，汇总自公开 v0.1.12 以来的更新。此次文档整理不改动已验证的 0.1.15 程序和 ZIP 字节。

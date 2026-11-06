@@ -39,6 +39,10 @@
 .document-text-layer .markedContent { display: contents; }
 .document-text-layer ::selection { color: transparent; background: #ddbd586e; }
 .document-text-layer br::selection { background: transparent; }
+.document-page-stage[data-link-hover="true"] .document-text-layer :is(span, br) { cursor: pointer; }
+.pdf-link-accessibility { position: absolute; inset: 0; pointer-events: none; }
+.pdf-link-keyboard { position: absolute; border: 0; padding: 0; background: transparent; pointer-events: none; }
+.pdf-link-keyboard:focus-visible { outline: 2px solid var(--ls-focus); outline-offset: 2px; }
 .document-text-layer[data-main-rotation="90"] { transform: rotate(90deg) translateY(-100%); }
 .document-text-layer[data-main-rotation="180"] { transform: rotate(180deg) translate(-100%, -100%); }
 .document-text-layer[data-main-rotation="270"] { transform: rotate(270deg) translateX(-100%); }

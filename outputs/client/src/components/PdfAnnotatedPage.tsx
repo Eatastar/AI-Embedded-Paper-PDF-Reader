@@ -11,6 +11,7 @@ import { markReaderSearch } from '../adapters/reader-search';
 import { pdfPageSize } from '../domain/pdf-zoom';
 import type { ReaderAppearance } from '../domain/reader';
 import type { SearchFocus } from '../domain/reader-navigation';
+import { pdfLinkAt, readPdfLinks, type PdfLink } from '../adapters/pdf-links';
 import { AnnotatedAnswer } from './AnnotatedAnswer';
 import type { AnnotatedAnswerProps } from './AnnotatedAnswer';
 
@@ -26,15 +27,18 @@ interface PdfAnnotatedPageProps extends AnnotatedAnswerProps {
   maxPixels?: number;
   search: SearchFocus | null;
   onSearchLocated: (marker: HTMLElement | null, request: number) => void;
+  onPdfLink: (link: PdfLink) => void;
 }
 
-export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appearance, compareOriginal, onPageReady, queue, maxPixels = 16_000_000, search, onSearchLocated, ...annotationProps }: PdfAnnotatedPageProps) {
+export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appearance, compareOriginal, onPageReady, queue, maxPixels = 16_000_000, search, onSearchLocated, onPdfLink, ...annotationProps }: PdfAnnotatedPageProps) {
   useLocale();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const presentationRef = useRef<HTMLDivElement>(null);
   const [readyKey, setReadyKey] = useState(0);
+  const [links, setLinks] = useState<PdfLink[]>([]);
+  const linkClickStart = useRef<{ x: number; y: number } | null>(null);
   const [renderError, setRenderError] = useState('');
   const [colorError, setColorError] = useState(false);
   const originalRef = useRef<ImageData | null>(null);
@@ -113,6 +117,8 @@ export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appear
       if (!publishedScale.current) { stage.style.width = `${width}px`; stage.style.height = `${height}px`; }
       frameJob = startPdfFrame(page, library, viewport, outputScale, canvas.ownerDocument);
       const frame = await frameJob.promise;
+      let nextLinks: PdfLink[] = [];
+      try { nextLinks = await readPdfLinks(page, viewport, controller.signal); } catch { controller.signal.throwIfAborted(); }
       if (!cancelled && requested.current.zoom === zoom && requested.current.availableWidth === availableWidth) {
         if (!paintRef.current(frame.original)) throw new Error('Page color preparation failed');
         // This whole commit is synchronous. The white source bitmap never enters
@@ -122,6 +128,7 @@ export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appear
         stage.style.height = canvas.style.height = `${height}px`;
         stage.style.setProperty('--total-scale-factor', String(viewport.scale * viewport.userUnit));
         text.replaceChildren(frame.text);
+        setLinks(nextLinks);
         canvas.dataset.pageReady = 'true';
         publishedScale.current = viewport.scale;
         preview();
@@ -148,10 +155,22 @@ export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appear
     {!readyKey && !renderError && <div className="document-render-status" role="status">{t("正在显示原页面…")}</div>}
     {renderError && <div className="document-reader-warning" role="alert">{t(renderError)}</div>}
     {colorError && <div className="document-reader-warning" role="status">{t("这一页暂时无法换色，可切换“可批注文本”，或主动选择“原色对照”查看。")}</div>}
-    <div ref={presentationRef} className="document-page-presentation"><AnnotatedAnswer {...annotationProps} contentReadyKey={readyKey} contentClassName="document-page-annotator" content={
-      <div ref={stageRef} className="document-page-stage">
+    <div ref={presentationRef} className="document-page-presentation"><AnnotatedAnswer {...annotationProps} onSourceClick={point => {
+      const stage = stageRef.current, start = linkClickStart.current;
+      if (!readyKey || !stage || !start || Math.hypot(point.x - start.x, point.y - start.y) > 4) return false;
+      const rect = stage.getBoundingClientRect(), scaleX = stage.offsetWidth / rect.width, scaleY = stage.offsetHeight / rect.height;
+      const link = pdfLinkAt(links, (point.x - rect.left) * scaleX, (point.y - rect.top) * scaleY);
+      if (!link) return false;
+      onPdfLink(link); return true;
+    }} contentReadyKey={readyKey} contentClassName="document-page-annotator" content={
+      <div ref={stageRef} className="document-page-stage" onPointerDown={event => { linkClickStart.current = event.button === 0 ? { x: event.clientX, y: event.clientY } : null; }} onPointerMove={event => {
+        const stage = event.currentTarget, rect = stage.getBoundingClientRect();
+        const link = readyKey && pdfLinkAt(links, (event.clientX - rect.left) * stage.offsetWidth / rect.width, (event.clientY - rect.top) * stage.offsetHeight / rect.height);
+        stage.dataset.linkHover = link ? 'true' : 'false'; stage.title = link ? (link.url || t('跳转到文内引用')) : '';
+      }} onPointerLeave={event => { event.currentTarget.dataset.linkHover = 'false'; }}>
         <canvas ref={canvasRef} className="document-page-canvas" aria-label={t("PDF 第 {0} 页原页面", [pageNumber])} role="img" />
         <div ref={textRef} />
+        {readyKey > 0 && <div className="pdf-link-accessibility">{links.map(link => <button type="button" key={link.id} className="pdf-link-keyboard" style={link.rect} aria-label={link.url ? t('打开链接：{0}', [link.url]) : t('跳转到文内引用：{0}', [link.label])} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); onPdfLink(link); } }} />)}</div>}
       </div>
     } /></div>
   </div>;

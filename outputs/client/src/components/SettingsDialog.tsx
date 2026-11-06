@@ -2,6 +2,7 @@ import { t } from '../i18n/locale';
 import { useLocale } from '../i18n/react';
 import { LanguageSelector } from './LanguageSelector';
 import { useEffect, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { Check, KeyRound, Pencil, PlugZap, Plus, Radar, Trash2, X } from 'lucide-react';
 import type { ModelProfile, ModelSettings, ProfileInput } from '../domain/types';
 import { apiFormatOptions, connectionPresets, otherConnectionPresets, profileFromPreset } from '../domain/model-presets';
@@ -17,9 +18,12 @@ function editProfile(profile: ModelProfile): ProfileInput {
   };
 }
 
-export function SettingsDialog({ settings, initialIntent = 'configure', onClose, onSaveProfile, onDeleteProfile, onSelectProfile }: {
+export function SettingsDialog({ settings, initialIntent = 'configure', purpose = 'chat', initialProfileId, style, onClose, onSaveProfile, onDeleteProfile, onSelectProfile }: {
   settings: ModelSettings;
   initialIntent?: 'configure' | 'discover';
+  purpose?: 'chat' | 'translation';
+  initialProfileId?: string | null;
+  style?: CSSProperties;
   onClose: () => void;
   onSaveProfile: (value: ProfileInput) => Promise<void>;
   onDeleteProfile: (id: string) => Promise<void>;
@@ -29,8 +33,8 @@ export function SettingsDialog({ settings, initialIntent = 'configure', onClose,
   const dialog = useRef<HTMLDialogElement>(null);
   const connectionName = useRef<HTMLInputElement>(null);
   const discoveryPanel = useRef<HTMLDivElement>(null), discoverButton = useRef<HTMLButtonElement>(null), modelResults = useRef<HTMLDivElement>(null);
-  const firstProfile = settings.profiles.find(profile => profile.id === settings.activeProfileId) ?? settings.profiles[0];
-  const [form, setForm] = useState<ProfileInput>(() => firstProfile ? editProfile(firstProfile) : { ...profileFromPreset(connectionPresets[0], settings.systemPrompt), name: t(connectionPresets[0].name) });
+  const firstProfile = initialProfileId === null ? undefined : settings.profiles.find(profile => profile.id === (initialProfileId ?? settings.activeProfileId)) ?? settings.profiles[0];
+  const [form, setForm] = useState<ProfileInput>(() => firstProfile ? editProfile(firstProfile) : { ...profileFromPreset(connectionPresets[0], purpose === 'translation' ? '' : settings.systemPrompt), name: t(connectionPresets[0].name) });
   const [presetId, setPresetId] = useState<string | null>(firstProfile ? null : 'relay');
   const [otherPresetId, setOtherPresetId] = useState('custom');
   const [apiKey, setApiKey] = useState('');
@@ -86,14 +90,14 @@ export function SettingsDialog({ settings, initialIntent = 'configure', onClose,
   function choosePreset(id: string) {
     const next = connectionPresets.find(item => item.id === id);
     if (!next) return;
-    setForm({ ...profileFromPreset(next, settings.systemPrompt), name: t(next.name) });
+    setForm({ ...profileFromPreset(next, purpose === 'translation' ? '' : settings.systemPrompt), name: t(next.name) });
     setOtherPresetId('custom');
     setPresetId(id); setApiKey(''); setClearApiKey(false); setDeleteId(null); setError('');
   }
   function chooseOtherPreset(id: string) {
     const next = otherConnectionPresets.find(item => item.id === id);
     if (!next) return;
-    setForm({ ...profileFromPreset(next, settings.systemPrompt), name: t(next.name) });
+    setForm({ ...profileFromPreset(next, purpose === 'translation' ? '' : settings.systemPrompt), name: t(next.name) });
     setOtherPresetId(id); setApiKey(''); setClearApiKey(false); setDeleteId(null); setError('');
   }
   function chooseProfile(profile: ModelProfile) {
@@ -109,7 +113,7 @@ export function SettingsDialog({ settings, initialIntent = 'configure', onClose,
     event.preventDefault(); setError(''); setBusy('save');
     discovery.current?.abort(); setDiscovering(false);
     try {
-      await onSaveProfile({ ...form, apiKey: apiKey.trim() || undefined, clearApiKey: clearApiKey && !apiKey.trim(), activate: true });
+      await onSaveProfile({ ...form, apiKey: apiKey.trim() || undefined, clearApiKey: clearApiKey && !apiKey.trim(), activate: purpose !== 'translation' });
       onClose();
     } catch (e) { setError(e instanceof Error ? e.message : '配置未能保存，请重试。'); }
     finally { setBusy(null); }
@@ -130,9 +134,9 @@ export function SettingsDialog({ settings, initialIntent = 'configure', onClose,
     finally { setBusy(null); }
   }
 
-  return <dialog className="settings-dialog profile-settings-dialog" ref={dialog} onCancel={onClose} aria-labelledby="settings-title">
+  return <dialog className="settings-dialog profile-settings-dialog" style={style} ref={dialog} onCancel={onClose} aria-labelledby="settings-title">
     <header className="dialog-header">
-      <div><span className="eyebrow">MODEL CONNECTIONS</span><h2 id="settings-title">{initialIntent === 'discover' ? t("上游模型探照") : t("我的模型")}</h2><p className="profile-dialog-intro">{initialIntent === 'discover' ? t("获取当前连接的模型列表，选择后保存使用。") : t("提前保存连接，聊天时在输入框左下角切换。")}</p></div>
+      <div><span className="eyebrow">MODEL CONNECTIONS</span><h2 id="settings-title">{purpose === 'translation' ? t("翻译的共享 API 连接") : initialIntent === 'discover' ? t("上游模型探照") : t("我的模型")}</h2><p className="profile-dialog-intro">{purpose === 'translation' ? t("新建连接可供全程序使用；编辑共享连接会影响所有使用它的功能。翻译提示词在翻译设置中调整。") : initialIntent === 'discover' ? t("获取当前连接的模型列表，选择后保存使用。") : t("提前保存连接，聊天时在输入框左下角切换。")}</p></div>
       <button type="button" className="icon-button" aria-label={t("关闭设置")} onClick={onClose}><X size={20} /></button>
     </header>
 
@@ -150,15 +154,15 @@ export function SettingsDialog({ settings, initialIntent = 'configure', onClose,
             {settings.profiles.map(profile => <option key={profile.id} value={profile.id}>{profile.name} · {profile.model}{settings.activeProfileId === profile.id && settings.mode === 'api' ? t(" ✓ 使用中") : ''}</option>)}
           </SettingsSelect>
           <div className="profile-picker-actions">
-            <button type="button" className="profile-text-button" onClick={() => currentProfile && selectProfile(currentProfile.id)} disabled={Boolean(busy) || !currentProfile || (settings.activeProfileId === currentProfile.id && settings.mode === 'api')}>{currentProfile && settings.activeProfileId === currentProfile.id && settings.mode === 'api' ? t("使用中") : t("使用")}</button>
+            <button type="button" className="profile-text-button" onClick={() => currentProfile && selectProfile(currentProfile.id)} disabled={Boolean(busy) || !currentProfile || (purpose !== 'translation' && settings.activeProfileId === currentProfile.id && settings.mode === 'api')}>{purpose === 'translation' ? t("用于翻译") : currentProfile && settings.activeProfileId === currentProfile.id && settings.mode === 'api' ? t("使用中") : t("使用")}</button>
             <button type="button" className="icon-button" aria-label={t("编辑所选连接")} title={t("编辑所选连接")} onClick={() => { connectionName.current?.focus(); connectionName.current?.select(); }} disabled={Boolean(busy) || !currentProfile}><Pencil size={14} /></button>
             <button type="button" className="icon-button" aria-label={t("删除所选连接")} title={t("删除所选连接")} onClick={() => currentProfile && setDeleteId(currentProfile.id)} disabled={Boolean(busy) || !currentProfile}><Trash2 size={14} /></button>
           </div>
         </div>
-        {currentProfile && <p className="profile-selection-status">{currentProfile.hasApiKey ? (currentProfile.keySaved ? t("密钥已加密保存") : t("密钥仅本次有效")) : t("未设置密钥；本机服务未启用鉴权时可留空")}<span>{t("选择后可在下方编辑，点击“使用”切换。")}</span></p>}
+        {currentProfile && <p className="profile-selection-status">{currentProfile.hasApiKey ? (currentProfile.keySaved ? t("密钥已加密保存") : t("密钥仅本次有效")) : t("未设置密钥；本机服务未启用鉴权时可留空")}<span>{purpose === 'translation' ? t("选择此连接用于翻译，不切换聊天连接。") : t("选择后可在下方编辑，点击“使用”切换。")}</span></p>}
         {deleteId && currentProfile?.id === deleteId && <div className="profile-delete-confirm"><span>{t("删除“")}{currentProfile.name}{t("”及其密钥？聊天和批注会保留。")}</span><div><button type="button" className="profile-text-button" onClick={() => setDeleteId(null)} disabled={Boolean(busy)}>{t("取消")}</button><button type="button" className="profile-text-button danger" onClick={() => deleteProfile(deleteId)} disabled={Boolean(busy)}>{busy === 'delete' ? t("删除中…") : t("确认删除")}</button></div></div>}
       </>}
-      <button type="button" className="profile-demo-button" onClick={() => selectProfile(null)} disabled={Boolean(busy)}>{settings.mode === 'demo' && <Check size={13} />}{t("使用本地演示")}<span>{t("不调用 API")}</span></button>
+      {purpose !== 'translation' && <button type="button" className="profile-demo-button" onClick={() => selectProfile(null)} disabled={Boolean(busy)}>{settings.mode === 'demo' && <Check size={13} />}{t("使用本地演示")}<span>{t("不调用 API")}</span></button>}
     </section>
 
     <form onSubmit={submit}>
@@ -193,7 +197,7 @@ export function SettingsDialog({ settings, initialIntent = 'configure', onClose,
               <option value="" disabled>{form.model && !selectedListedModel ? t("当前调用：{0}（未在列表中）", [form.model]) : t("请选择调用模型")}</option>
               {models.filter(model => model.id === form.model || `${model.id} ${model.label || ''}`.toLowerCase().includes(modelFilter.toLowerCase())).map(model => <option key={model.id} value={model.id}>{model.label ? `${model.id} · ${model.label}` : model.id}</option>)}
             </SettingsSelect></label>
-            <p className="field-help" id="selected-model-help">{t("这里选择的就是实际调用模型，点击“保存并使用”后生效。列表已按模型名称排序。")}</p>
+            <p className="field-help" id="selected-model-help">{purpose === 'translation' ? t("这里选择实际调用的模型，保存后用于翻译。列表已按模型名称排序。") : t("这里选择的就是实际调用模型，点击“保存并使用”后生效。列表已按模型名称排序。")}</p>
             <p className="field-help">{t("列表可能包含图像、语音等模型，请选择支持文字对话的模型；未列出的模型仍可手动填写。")}</p>
             <button type="button" className="profile-text-button" aria-expanded={manualModel} aria-controls="manual-model-field" onClick={() => setManualModel(value => !value)}>{manualModel ? t("收起手动输入") : t("手动填写模型名称")}</button>
           </div>}
@@ -202,10 +206,10 @@ export function SettingsDialog({ settings, initialIntent = 'configure', onClose,
         {(!models.length || manualModel) && <div id="manual-model-field"><label className="field-label">{t("调用模型（手动填写）")}<input className="field-input" value={form.model} required onChange={e => setForm({ ...form, model: e.target.value })} placeholder={t("填写服务商提供的准确模型 ID")} autoComplete="off" /></label><p className="field-help">{t("这是 API 接受的模型名称，不是本地显示名称。")}</p></div>}
         <p className="field-help profile-storage-help">{settings.persistence === 'encrypted' ? t("密钥使用本机系统加密保存，重启后可继续使用。") : settings.persistence === 'configuration' ? t("连接配置会保存在本机；密钥仅本次运行有效，重启后需重新填写。") : t("当前只能在本次运行中保留连接和密钥，退出后需重新填写。")}{t("密钥不会进入聊天记录或聊天备份。")}</p>
         {settings.storageWarning && <p className="profile-key-notice">{t(settings.storageWarning)}</p>}
-        <label className="field-label">{t("回答偏好")}<textarea className="field-input" rows={3} value={form.systemPrompt} onChange={e => setForm({ ...form, systemPrompt: e.target.value })} placeholder={t("例如：用中文回答，解释清楚，适当举例。")} /></label>
+        {purpose !== 'translation' && <label className="field-label">{t("回答偏好")}<textarea className="field-input" rows={3} value={form.systemPrompt} onChange={e => setForm({ ...form, systemPrompt: e.target.value })} placeholder={t("例如：用中文回答，解释清楚，适当举例。")} /></label>}
       </fieldset>
       {error && <p className="form-error" role="alert">{t(error)}</p>}
-      <footer className="dialog-footer profile-dialog-footer"><span>{t("保存和切换都不会发送问题")}</span><div><button type="button" className="profile-text-button" onClick={onClose} disabled={Boolean(busy)}>{t("取消")}</button><button className="primary-button" disabled={Boolean(busy)} type="submit"><PlugZap size={16} />{busy === 'save' ? t("保存中…") : t("保存并使用")}</button></div></footer>
+      <footer className="dialog-footer profile-dialog-footer"><span>{t("保存和切换都不会发送问题")}</span><div><button type="button" className="profile-text-button" onClick={onClose} disabled={Boolean(busy)}>{t("取消")}</button><button className="primary-button" disabled={Boolean(busy)} type="submit"><PlugZap size={16} />{busy === 'save' ? t("保存中…") : purpose === 'translation' ? t("保存并用于翻译") : t("保存并使用")}</button></div></footer>
     </form>
     <details className="project-about"><summary>{t("关于本项目")}</summary><strong>AI-Embedded Paper PDF Reader</strong><p>{t("本项目的原创应用代码全部由 GPT 通过 Codex 实现；发起者负责提出想法、确定需求及功能取舍。第三方组件保留各自作者署名与许可证。")}</p><p>{t("欢迎下载、使用 AI agent 或 vibe coding 修改成适合自己的版本。发布衍生版本时，请在说明中链接本项目。")}</p><a href="https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader" target="_blank" rel="noreferrer">{t("项目源码与说明")}</a></details>
   </dialog>;

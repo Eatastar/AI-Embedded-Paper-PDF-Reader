@@ -7,6 +7,7 @@ import type { DocumentAttachment, MessageVersion } from '../domain/types';
 import { loadPdfDocument } from '../adapters/documents';
 import { bindPdfZoom } from '../adapters/pdf-zoom';
 import { PdfRenderQueue, readPdfOutline } from '../adapters/pdf-navigation';
+import { resolvePdfDestination, type PdfLink } from '../adapters/pdf-links';
 import { markReaderSearch } from '../adapters/reader-search';
 import { readerAnnotationRange } from '../adapters/reader-location';
 import { getDocumentBytes } from '../adapters/storage';
@@ -65,6 +66,10 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
   const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined), scrollFrame = useRef(0);
   const searchRequest = useRef(0), pendingSearch = useRef<number | null>(null), pendingNote = useRef<string | null>(null);
   const handledOpen = useRef<string | null>(null);
+  const [linkHistory, setLinkHistory] = useState<ReaderPosition[]>([]);
+  const linkController = useRef<AbortController | null>(null);
+  const pendingLink = useRef<{ pageIndex: number; x: number; y: number } | null>(null);
+  useEffect(() => () => linkController.current?.abort(), []);
   const continuous = source.kind === 'pdf' && view === 'original' && layout === 'continuous';
   const openedPage = useMemo(() => {
     const opened = annotationProps.annotations.find(a => a.id === annotationProps.openAnnotationId);
@@ -136,6 +141,7 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
     scroll();
   };
   const jump = (value: number, keepAnnotation = false) => {
+    pendingLink.current = null;
     const index = Math.max(0, Math.min(source.pages.length - 1, value));
     anchor.current = null; restoring.current = true;
     position.current = { ...position.current, pageIndex: index, pageOffset: 0, scrollY: 0, scrollX: 0 };
@@ -144,6 +150,38 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
     if (!keepAnnotation) { pendingNote.current = null; annotationProps.onOpen(null); }
   };
   const clearSearch = () => { pendingSearch.current = null; setSearch(null); };
+  const locateLink = () => {
+    const target = pendingLink.current, element = viewportRef.current;
+    if (!target || !element) return;
+    const body = pageBody(target.pageIndex);
+    if (!body?.querySelector('canvas[data-page-ready="true"]')) return;
+    restore(); pendingLink.current = null;
+    const rect = body.getBoundingClientRect(), viewport = element.getBoundingClientRect();
+    element.scrollTop += rect.top + rect.height * target.y - viewport.top - focusY(element);
+    const targetX = rect.left + rect.width * target.x;
+    if (targetX < viewport.left || targetX > viewport.right) element.scrollLeft += targetX - viewport.left - 24;
+    scroll();
+  };
+  const followPdfLink = async (link: PdfLink) => {
+    if (link.url) { window.open(link.url, '_blank', 'noopener,noreferrer'); return; }
+    if (!pdf) return;
+    linkController.current?.abort(); const controller = new AbortController(); linkController.current = controller;
+    const from = readPosition();
+    try {
+      const target = await resolvePdfDestination(pdf, link.destination, controller.signal);
+      if (!target) { annotationProps.onNotify('这条 PDF 链接没有可用的文内位置。'); return; }
+      setLinkHistory(history => [...history.slice(-19), from]); clearSearch(); jump(target.pageIndex);
+      pendingLink.current = target;
+    } catch { if (!controller.signal.aborted) annotationProps.onNotify('暂时无法跳转到这条 PDF 引用。'); }
+  };
+  const returnFromLink = () => {
+    const previous = linkHistory.at(-1); if (!previous) return;
+    linkController.current?.abort(); clearSearch(); jump(previous.pageIndex);
+    position.current = { ...previous, zoom: position.current.zoom, view: position.current.view, layout: position.current.layout };
+    pendingPosition.current = { ...position.current };
+    setLinkHistory(history => history.slice(0, -1));
+  };
+  useLayoutEffect(() => { locateLink(); }, [navigationRevision, geometry, zoom]);
   const selectPage = (index: number) => { clearSearch(); jump(index); };
   const selectSearch = (hit: SearchHit, query: string) => {
     const request = ++searchRequest.current; pendingSearch.current = request;
@@ -277,7 +315,7 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
     if (!prose || !text) return;
     const result = markReaderSearch(prose, text, search.query, search.ordinal); locateSearch(result.marker, search.request); return result.clear;
   }, [view, search, pageIndex]);
-  const ready = (index: number) => { restore(); setForcedPage(current => current === index ? null : current); locateNoteRef.current(); };
+  const ready = (index: number) => { restore(); locateLink(); setForcedPage(current => current === index ? null : current); locateNoteRef.current(); };
   const page = source.pages[pageIndex], hasText = Boolean(page?.text.trim());
   const version = (index: number): MessageVersion => ({ id: source.pages[index].versionId, content: source.pages[index].text, status: 'complete', createdAt: source.createdAt });
   const annotationsByPage = useMemo(() => {
@@ -286,7 +324,7 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
     for (const annotation of annotationProps.annotations) { const page = pages.get(annotation.messageId); if (page?.versionId !== annotation.versionId) continue; const group = groups.get(page.index) || []; group.push(annotation); groups.set(page.index, group); }
     return groups;
   }, [source.pages, annotationProps.annotations]);
-  const renderPage = (index: number) => <PdfAnnotatedPage {...annotationProps} readerStyle={palette} annotations={annotationsByPage.get(index) || []} messageId={source.pages[index].messageId} version={version(index)} pdf={pdf!} pageNumber={source.pages[index].pageNumber} availableWidth={availableWidth} zoom={zoom} appearance={appearance} compareOriginal={compareOriginal} onPageReady={() => ready(index)} queue={queue} maxPixels={continuous ? 8_000_000 : 16_000_000} search={search?.pageIndex === index ? search : null} onSearchLocated={locateSearch} />;
+  const renderPage = (index: number) => <PdfAnnotatedPage {...annotationProps} readerStyle={palette} annotations={annotationsByPage.get(index) || []} messageId={source.pages[index].messageId} version={version(index)} pdf={pdf!} pageNumber={source.pages[index].pageNumber} availableWidth={availableWidth} zoom={zoom} appearance={appearance} compareOriginal={compareOriginal} onPageReady={() => ready(index)} queue={queue} maxPixels={continuous ? 8_000_000 : 16_000_000} search={search?.pageIndex === index ? search : null} onSearchLocated={locateSearch} onPdfLink={link => void followPdfLink(link)} />;
   const commitPage = () => {
     if (!/^\d+$/u.test(pageInput)) { setPageInput(String(position.current.pageIndex + 1)); return; }
     const index = Math.max(0, Math.min(source.pages.length - 1, Number(pageInput) - 1));
@@ -296,7 +334,7 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
   const original = compareOriginal || appearance.preset === 'original', paper = original ? '#ffffff' : appearance.paper, ink = original ? '#000000' : appearance.ink;
   const palette = readerTheme(paper, ink) as CSSProperties;
   return <section ref={rootRef} className="document-reader" role="region" aria-label={t("文档阅读：{0}", [source.name])} data-testid="document-reader" data-reader-focused={focused} data-reader-dark={colorLuminance(paper) < .25 ? 'true' : 'false'} data-reader-narrow={narrow} data-reader-layout={continuous ? 'continuous' : 'paged'} style={palette}>
-    <ReaderToolbar contextMode={contextMode} onContextMode={onContextMode} relevantContext={usesRelevantContext(source, contextMode)} onOpenFile={onOpenFile} name={source.name} kind={source.kind} pageCount={source.pages.length} pageIndex={pageIndex} pageInput={pageInput} pageInputRef={pageInputRef} onPageInput={setPageInput} onCommitPage={commitPage} onPage={selectPage} zoom={zoom} onZoom={changeZoom} view={view} onView={switchView} layout={layout} onLayout={switchLayout} appearance={appearance} onAppearance={value => { setCompareOriginal(false); setAppearance(value); }} saved={appearanceSaved && positionSaved} compareOriginal={compareOriginal} onCompareOriginal={() => setCompareOriginal(value => !value)} navigationOpen={navigationOpen} onToggleNavigation={() => setNavigationOpen(value => !value)} focused={focused} onToggleFocus={() => { flush(); onToggleFocus(); }} onClose={() => { flush(); onClose(); }} modelLabel={modelLabel} onOpenModelSettings={onOpenModelSettings} onBackup={onBackup} />
+    <ReaderToolbar onReturnFromLink={linkHistory.length ? returnFromLink : undefined} contextMode={contextMode} onContextMode={onContextMode} relevantContext={usesRelevantContext(source, contextMode)} onOpenFile={onOpenFile} name={source.name} kind={source.kind} pageCount={source.pages.length} pageIndex={pageIndex} pageInput={pageInput} pageInputRef={pageInputRef} onPageInput={setPageInput} onCommitPage={commitPage} onPage={selectPage} zoom={zoom} onZoom={changeZoom} view={view} onView={switchView} layout={layout} onLayout={switchLayout} appearance={appearance} onAppearance={value => { setCompareOriginal(false); setAppearance(value); }} saved={appearanceSaved && positionSaved} compareOriginal={compareOriginal} onCompareOriginal={() => setCompareOriginal(value => !value)} navigationOpen={navigationOpen} onToggleNavigation={() => setNavigationOpen(value => !value)} focused={focused} onToggleFocus={() => { flush(); onToggleFocus(); }} onClose={() => { flush(); onClose(); }} modelLabel={modelLabel} onOpenModelSettings={onOpenModelSettings} onBackup={onBackup} />
     <div className="document-reader-body">
       <ReaderNavigation open={navigationOpen} source={source} annotations={annotationProps.annotations} pageIndex={pageIndex} outline={outline} outlineLoading={loading || outlineLoading} outlineError={outlineError || Boolean(fileError)} outlineTruncated={outlineTruncated} onClose={() => setNavigationOpen(false)} onPage={selectPage} onSearch={selectSearch} onClearSearch={clearSearch} onAnnotation={selectAnnotation} />
       <div ref={viewportRef} className={`document-reader-viewport ${view === 'text' ? 'document-reader-text-viewport' : ''}`} onScroll={scroll}>

@@ -4,6 +4,7 @@ export type { DiscoveredModel } from '../domain/model-list';
 
 export type SettingsUpdate = Partial<Omit<ModelSettings, 'hasApiKey'>> & { apiKey?: string; clearApiKey?: boolean };
 export interface ReplyRequest { messages: InputMessage[]; kind: 'main' | 'annotation'; quote?: string; variant?: number; profileId?: string | null }
+export interface TranslationRequest { profileId: string; text: string; prompt: string; targetLanguage: string }
 
 async function readFailure(response: Response): Promise<string> {
   try { const body = await response.json() as { error?: string }; return body.error || `请求失败（${response.status}）。`; }
@@ -40,8 +41,16 @@ export async function discoverModels(input: ProfileInput, signal?: AbortSignal):
 }
 
 export async function streamReply(request: ReplyRequest, onDelta: (text: string) => void, signal?: AbortSignal): Promise<{ modelLabel: string }> {
+  return streamRequest('/api/chat', request, onDelta, signal);
+}
+
+export async function streamTranslation(request: TranslationRequest, onDelta: (text: string) => void, signal?: AbortSignal): Promise<{ modelLabel: string }> {
+  return streamRequest('/api/translate', request, onDelta, signal);
+}
+
+async function streamRequest(path: string, request: ReplyRequest | TranslationRequest, onDelta: (text: string) => void, signal?: AbortSignal): Promise<{ modelLabel: string }> {
   signal?.throwIfAborted();
-  const response = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId: crypto.randomUUID(), ...request }), signal });
+  const response = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId: crypto.randomUUID(), ...request }), signal });
   if (!response.ok) throw new Error(await readFailure(response));
   if (!response.body || !response.headers.get('content-type')?.includes('text/event-stream')) throw new Error('本地服务没有返回可读取的回答。');
   const reader = response.body.getReader();

@@ -1,6 +1,6 @@
 # 改进清单 / Roadmap
 
-审查基准为客户端 0.1.6；截至 0.1.13 已完成项用勾选标记，其余仍为待办。优先处理长期保存、恢复和操作可控性，再补齐论文阅读流程。
+审查基准为客户端 0.1.6；截至 0.1.16 已完成项用勾选标记，其余仍为待办。优先处理长期保存、恢复和操作可控性，再补齐论文阅读流程。
 
 ## 优先处理
 
@@ -56,3 +56,9 @@
 - [x] 新名称、双语介绍、GPT 实现署名与衍生项目说明。 / New name, bilingual introductions, GPT implementation credit and derivative guidance.
 
 Next priorities remain request controls, clearer source references, extraction quality, thumbnails/bookmarks and optional OCR/image workflows. These are plans rather than released capabilities. Existing completed items above record earlier storage, recovery and reading improvements.
+
+## 0.1.16 已落实 / Completed in 0.1.16
+
+- [x] 独立 API / 提示词 / 快捷键划词翻译，Alt+1 默认，临时结果可转普通笔记。 / Independent selection translation; Alt+1 by default, temporary results can become plain notes.
+- [x] PDF 原生引用、图号链接、页内定位和返回，保留正常拖选。 / Embedded PDF reference/figure links with within-page positions and return navigation.
+- [x] 深色背景下彩色字边缘去除白色残影。 / Remove white mattes around colored text on dark paper.

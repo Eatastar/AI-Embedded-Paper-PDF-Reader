@@ -3,7 +3,9 @@ import { useLocale } from '../i18n/react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, Clipboard, Copy, MessageSquare, MessageSquarePlus, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Clipboard, Copy, Languages, MessageSquare, MessageSquarePlus, Trash2, X } from 'lucide-react';
+import { useTranslation } from './Translation';
+import { matchesTranslationShortcut, shortcutLabel } from '../domain/translation';
 import { MathMarkdown } from './MathMarkdown';
 import { createTextAnnotator, rangeToSelector } from '@recogito/text-annotator';
 import type { TextAnnotator, TextAnnotation, TextSelector } from '@recogito/text-annotator';
@@ -36,6 +38,7 @@ export interface AnnotatedAnswerProps {
   contentReadyKey?: string | number;
   contentClassName?: string;
   readerStyle?: CSSProperties;
+  onSourceClick?: (point: { x: number; y: number }) => boolean;
 }
 
 interface SavedAnchor { selectors: TextSelector[] }
@@ -78,8 +81,10 @@ function popupPosition(rect: DOMRect | null, height = 440, preferredWidth = 390)
   return { width, maxHeight, left, top: Math.max(16, Math.min(idealTop, window.innerHeight - Math.min(height, maxHeight) - 16)) };
 }
 
-export function AnnotatedAnswer({ conversationId, messageId, version, annotations, reservedColors = [], openAnnotationId, onOpen, onCreate, onUpdate, onAsk, onStop, onReask, onDelete, onNotify, disabled, plainText = false, content, contentReadyKey, contentClassName = '', readerStyle }: AnnotatedAnswerProps) {
+export function AnnotatedAnswer({ conversationId, messageId, version, annotations, reservedColors = [], openAnnotationId, onOpen, onCreate, onUpdate, onAsk, onStop, onReask, onDelete, onNotify, disabled, plainText = false, content, contentReadyKey, contentClassName = '', readerStyle, onSourceClick }: AnnotatedAnswerProps) {
   useLocale();
+  const translation = useTranslation();
+  const sourceKey = `${conversationId}:${messageId}:${version.id}`;
   const proseRef = useRef<HTMLDivElement>(null);
   const annotatorRef = useRef<TextAnnotator<TextAnnotation, TextAnnotation> | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
@@ -254,11 +259,13 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
         setAnnotationChoice(null);
         onOpen(matching[0].id);
       }
+    } else if (onSourceClick?.({ x: event.clientX, y: event.clientY })) {
+      event.preventDefault();
     }
   };
 
-  const createAnnotation = (draft = selectionDraft) => {
-    if (!draft || !isComplete || !annotatorRef.current) return;
+  const createAnnotation = (draft = selectionDraft, savedTranslation?: { text: string; model: string }) => {
+    if (!draft || !isComplete || !annotatorRef.current || !proseRef.current?.isConnected) return false;
     const now = Date.now();
     const id = crypto.randomUUID();
     lastRectRef.current = draft.rect;
@@ -266,14 +273,40 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
     let colorIndex = 0;
     while (usedColors.has(annotationColor(colorIndex).toLowerCase())) colorIndex += 1;
     const nextColor = annotationColor(colorIndex);
-    try { onCreate({ id, conversationId, messageId, versionId: version.id, quote: draft.selector.quote, anchor: { selectors: [draft.selector] } satisfies SavedAnchor, color: nextColor, mode: 'ask', question: '', answer: '', edited: false, status: 'draft', createdAt: now, updatedAt: now }); }
-    catch (error) { onNotify(error instanceof Error ? error.message : t("无法创建批注，请先导出备份。")); return; }
+    try { onCreate({ id, conversationId, messageId, versionId: version.id, quote: draft.selector.quote, anchor: { selectors: [draft.selector] } satisfies SavedAnchor, color: nextColor, mode: savedTranslation ? 'note' : 'ask', ...(savedTranslation ? { note: `${savedTranslation.text}\n\n${t('翻译模型：{0}', [savedTranslation.model])}` } : {}), question: '', answer: '', edited: false, status: savedTranslation ? 'noted' : 'draft', createdAt: now, updatedAt: now }); }
+    catch (error) { if (savedTranslation) throw error; onNotify(error instanceof Error ? error.message : t("无法创建批注，请先导出备份。")); return false; }
     onOpen(id);
     setAnnotationChoice(null);
     setSelectionDraft(null);
     setAnswerMenu(null);
     window.getSelection()?.removeAllRanges();
+    return true;
   };
+
+  const translateSelection = (draft: SelectionDraft) => {
+    if (!translation?.enabled || !isComplete || !proseRef.current) return;
+    setSelectionDraft(null); setAnswerMenu(null); setAnnotationChoice(null); onOpen(null);
+    translation.translate({ sourceKey, text: draft.selector.quote, element: proseRef.current, rect: draft.rect, style: readerStyle, save: (text, model) => {
+      if (!createAnnotation(draft, { text, model })) throw new Error('原文位置已变化，请重新选词翻译。');
+    } });
+  };
+  useEffect(() => () => translation?.releaseSource(sourceKey), [sourceKey, isComplete, translation?.releaseSource]);
+  useEffect(() => {
+    if (!translation?.enabled || !isComplete) return;
+    const keydown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || !matchesTranslationShortcut(event, translation.preferences.shortcut) || document.querySelector('dialog[open]')) return;
+      if (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable="true"], .translation-result')) return;
+      const element = proseRef.current, selection = window.getSelection();
+      if (!element || !selection || selection.isCollapsed || !selection.rangeCount) return;
+      const range = selection.getRangeAt(0);
+      if (!element.contains(range.startContainer) || !element.contains(range.endContainer) || !range.toString().trim()) return;
+      const selector = rangeToSelector(range, element);
+      event.preventDefault(); event.stopPropagation();
+      translateSelection({ selector: { start: selector.start, end: selector.end, quote: selector.quote }, rect: range.getBoundingClientRect() });
+    };
+    document.addEventListener('keydown', keydown);
+    return () => document.removeEventListener('keydown', keydown);
+  });
 
   const handleContextMenu = (event: ReactMouseEvent<HTMLDivElement>) => {
     if (!isComplete || (event.target instanceof Element && event.target.closest('input, textarea, [contenteditable="true"]'))) return;
@@ -401,6 +434,7 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
           onClick={(event) => event.stopPropagation()}
         >
           {answerMenu.selection && <>
+            {translation && <button type="button" role="menuitem" disabled={!translation.enabled} onClick={() => translateSelection(answerMenu.selection!)}><Languages size={15} /><span>{t('翻译选中文字')}</span><small>{shortcutLabel(translation.preferences.shortcut)}</small></button>}
             <button type="button" role="menuitem" onClick={() => void copyText(answerMenu.selection!.selector.quote)}><Copy size={15} /><span>{t("复制选中文字")}</span></button>
             <button type="button" role="menuitem" onClick={() => createAnnotation(answerMenu.selection)}><MessageSquarePlus size={15} /><span>{t("为选中文字添加批注")}</span></button>
             {menuAnnotations.length > 0 && <div role="separator" className="annotation-menu-separator" />}

@@ -45,9 +45,12 @@ export class PdfColorProcessor {
     try {
       const source = job.preview ? colorPreview(job.source) : job.source;
       const data = new Uint8ClampedArray(source.data.length);
-      for (let offset = 0; offset < data.length; offset += 262144) {
+      const rows = Math.max(1, Math.floor(65536 / source.width));
+      for (let row = 0; row < source.height; row += rows) {
         if (this.disposed || job.id !== this.revision) { this.finish(source); return; }
-        recolorPagePixels(source.data.subarray(offset, offset + 262144), job.appearance, data.subarray(offset, offset + 262144));
+        const end = Math.min(source.height, row + rows), from = Math.max(0, row - 1), to = Math.min(source.height, end + 1);
+        const colored = recolorPagePixels(source.data.subarray(from * source.width * 4, to * source.width * 4), job.appearance, undefined, source.width);
+        data.set(colored.subarray((row - from) * source.width * 4, (end - from) * source.width * 4), row * source.width * 4);
         await new Promise(resolve => setTimeout(resolve, 0));
       }
       this.finish({ width: source.width, height: source.height, data });

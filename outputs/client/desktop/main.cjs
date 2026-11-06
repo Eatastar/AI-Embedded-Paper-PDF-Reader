@@ -48,7 +48,7 @@ function isLocalPage(url) {
 function openDocumentation(url) {
   try {
     const parsed = new URL(url);
-    if (parsed.protocol === 'https:' && !parsed.username && !parsed.password) void shell.openExternal(parsed.href);
+    if (['https:', 'http:'].includes(parsed.protocol) && !parsed.username && !parsed.password) void shell.openExternal(parsed.href);
   } catch { /* Ignore malformed navigation rather than executing it. */ }
 }
 async function saveSmokeReport(error) {

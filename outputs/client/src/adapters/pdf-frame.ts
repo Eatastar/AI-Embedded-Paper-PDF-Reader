@@ -41,7 +41,7 @@ export function paintPdfFrame(canvas: HTMLCanvasElement, original: ImageData, ap
   let display = original;
   if (!compareOriginal && appearance.preset !== 'original') {
     display = context.createImageData(original.width, original.height);
-    recolorPagePixels(original.data, appearance, display.data);
+    recolorPagePixels(original.data, appearance, display.data, original.width);
   }
   if (canvas.width !== display.width) canvas.width = display.width;
   if (canvas.height !== display.height) canvas.height = display.height;

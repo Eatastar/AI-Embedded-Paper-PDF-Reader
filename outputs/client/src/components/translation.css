@@ -1,0 +1,12 @@
+.translation-trigger { margin-inline-end: 10px; flex: none; }
+.translation-model { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--ls-muted); font-size: 11px; }
+.translation-model span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.translation-result .annotation-card-header { min-height: 42px; padding-inline: 13px 9px; gap: 12px; }
+.translation-result .annotation-card-header-actions { flex: none; }
+.translation-result .annotation-card-scroll { padding: 16px; font-size: 13px; line-height: 1.8; }
+.translation-result .annotation-markdown { color: var(--ls-ink); }
+.translation-settings { width: min(590px, calc(100vw - 32px)); }
+.translation-connection-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 9px 0; }
+.translation-settings .field-label { margin-top: 20px; }
+.translation-shortcut { cursor: pointer; font-family: ui-monospace, monospace; }
+@media (max-width: 600px) { .translation-trigger { margin-inline-end: 5px; padding-inline: 6px; } .reader-toolbar .translation-trigger span { display: none; } }

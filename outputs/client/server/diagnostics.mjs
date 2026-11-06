@@ -49,7 +49,7 @@ export function safeRequestRecord(input) {
   const safe = {};
   if (typeof input.requestId === 'string' && /^[0-9a-f-]{36}$/i.test(input.requestId)) safe.requestId = input.requestId;
   if (typeof input.time === 'string' && /^\d{4}-\d\d-\d\dT[0-9:.]+Z$/.test(input.time)) safe.time = input.time;
-  if (['main', 'annotation'].includes(input.kind)) safe.kind = input.kind;
+  if (['main', 'annotation', 'translation'].includes(input.kind)) safe.kind = input.kind;
   if (['complete', 'error', 'aborted'].includes(input.outcome)) safe.outcome = input.outcome;
   if (['node', 'system-proxy'].includes(input.transport)) safe.transport = input.transport;
   if (['openai-chat', 'openai-responses', 'anthropic-messages'].includes(input.apiFormat)) safe.apiFormat = input.apiFormat;
