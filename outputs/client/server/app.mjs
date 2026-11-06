@@ -6,6 +6,7 @@ import { streamText } from 'ai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { timingSafeEqual, randomUUID } from 'node:crypto';
 import { createProfileManager, ProfileError } from './profiles.mjs';
+import { discoverModels } from './model-discovery.mjs';
 import { streamProtocolReply } from './protocols.mjs';
 import { errorDetails, safeRequestRecord } from './diagnostics.mjs';
 
@@ -82,7 +83,7 @@ export function friendlyModelError(error, timedOut = false) {
   if (error?.code === 'model_incomplete' || error?.code === 'empty_response') return '模型没有正常完成文字回答，请检查所选模型和接口格式后重试原问题。';
   const status = error?.statusCode ?? error?.cause?.statusCode;
   const text = String(error?.message || '') + ' ' + String(error?.responseBody || '');
-  if (status === 413 || /context[_\s-]*(length|window)|maximum context|too many tokens|token limit|context_length_exceeded/i.test(text)) return '完整上下文超过模型的容量。请新建对话，或在设置中选择上下文容量更大的模型；本程序没有截断消息。';
+  if (status === 413 || /context[_\s-]*(length|window)|maximum context|too many tokens|token limit|context_length_exceeded/i.test(text)) return '本次资料和对话超过模型容量。请切换按需引用、新建对话或选择容量更大的模型；本程序未自动截断主对话。';
   if (status === 401 || status === 403) return '模型服务拒绝了认证。请检查 API Key、接口权限和余额。';
   if (status === 429) return '模型服务暂时限制请求，或额度不足。请稍后重试并检查账户额度。';
   if (status === 404) return '未找到模型或 API 接口。请检查 API 地址是否包含 /v1，以及模型名称是否正确。';
@@ -163,6 +164,14 @@ export function createAppServer({ env = process.env, distDir = resolve('dist'), 
         return json(res, 200, profiles.updateSettings(await readJson(req, SETTINGS_BODY_LIMIT)));
       }
       if (pathname === '/api/profiles' && req.method === 'POST') return json(res, 200, profiles.saveProfile(await readJson(req, SETTINGS_BODY_LIMIT)));
+      if (pathname === '/api/models' && req.method === 'POST') {
+        const config = profiles.forDiscovery(await readJson(req, SETTINGS_BODY_LIMIT));
+        const controller = new AbortController();
+        const disconnected = () => controller.abort();
+        res.on('close', disconnected);
+        try { return json(res, 200, await discoverModels(config, { fetch: customFetch || globalThis.fetch, signal: controller.signal })); }
+        finally { res.off('close', disconnected); }
+      }
       if (pathname === '/api/profiles/select' && req.method === 'POST') {
         const body = await readJson(req, SETTINGS_BODY_LIMIT);
         return json(res, 200, profiles.selectProfile(body?.profileId));

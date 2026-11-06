@@ -20,6 +20,9 @@ import { isAnnotationGenerating } from './domain/annotation-state';
 import type { TrashTarget } from './domain/trash';
 import { TrashDialog } from './components/TrashDialog';
 import { ReaderHome } from './components/ReaderHome';
+import { loadDocumentContextMode, saveDocumentContextMode } from './adapters/document-context';
+import type { DocumentContextMode } from './domain/document-context';
+import { freezeContext } from './domain/context-pool';
 import { useLocalLibrary } from './hooks/useLocalLibrary';
 import { conversationFileGroups, fileAnnotationCounter, localDocumentReferences, projectFileAnnotations } from './domain/local-library';
 import type { LocalDocumentGroup, LocalDocumentReference } from './domain/local-library';
@@ -47,6 +50,10 @@ export default function App() {
   const closingRef = useRef(false);
   const closeAttempt = useRef(0);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const [contextMode, setContextMode] = useState(loadDocumentContextMode);
+  const readerLocation = useRef<{ documentId: string; pageNumber: number } | undefined>(undefined);
+  const onReaderLocation = useCallback((location: { documentId: string; pageNumber: number }) => { readerLocation.current = location; }, []);
+  const changeContextMode = (value: DocumentContextMode) => { setContextMode(value); if (!saveDocumentContextMode(value)) notify('资料范围设置仅在本次有效。'); };
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openAnnotationId, setOpenAnnotationId] = useState<string | null>(null);
@@ -54,6 +61,8 @@ export default function App() {
   const [mainBusyId, setMainBusyId] = useState<string | null>(null);
   const [modelSwitchBusy, setModelSwitchBusy] = useState(false);
   const [fileBusy, setFileBusy] = useState(false);
+  const [fileProgress, setFileProgress] = useState<{ page: number; total: number } | null>(null);
+  const fileController = useRef<AbortController | null>(null);
   const [openDocumentId, setOpenDocumentId] = useState<string | null>(null);
   const [readerFocused, setReaderFocused] = useState(true);
   const library = useLocalLibrary(workspace);
@@ -71,6 +80,7 @@ export default function App() {
     closingRef.current = true; setClosing(true);
     try {
       document.dispatchEvent(new Event('learn:save-edits'));
+      fileController.current?.abort();
       mainRequest.current?.controller.abort();
       for (const controller of annotationRequests.current.values()) controller.abort();
       // File parsing and aborted streams must settle before taking the last snapshot.
@@ -195,8 +205,9 @@ export default function App() {
     try {
       const user = createUserMessage(question.trim());
       const base = { ...conversation, messages: [...conversation.messages, user] };
-      const messages = buildMainContext(base, settings.systemPrompt);
+      const messages = buildMainContext(base, settings.systemPrompt, { mode: contextMode, location: readerLocation.current });
       const assistant = createAssistantMessage();
+      assistant.versions[0].context = freezeContext(messages);
       mutateConversation(conversationId, () => ({ ...base, title: conversation.messages.length === 0 ? question.trim().slice(0, 25) : conversation.title, updatedAt: Date.now(), messages: [...base.messages, assistant] }));
       setOpenAnnotationId(null);
       await runMain(conversationId, assistant.id, assistant.activeVersionId, messages);
@@ -209,8 +220,10 @@ export default function App() {
     const index = conversation.messages.findIndex(m => m.id === messageId);
     if (index !== conversation.messages.length - 1) { notify('请在最后一条回答上重新生成。旧回答仍可切换版本和查看批注。'); return; }
     try {
-      const messages = buildMainContext({ ...conversation, messages: conversation.messages.slice(0, index) }, settings.systemPrompt);
+      const previous = activeVersion(conversation.messages[index]);
+      const messages = previous.status !== 'complete' && previous.context ? previous.context.slice() : buildMainContext({ ...conversation, messages: conversation.messages.slice(0, index) }, settings.systemPrompt, { mode: contextMode, location: readerLocation.current });
       const next = addAssistantVersion(conversation.messages[index]);
+      next.versions[next.versions.length - 1].context = freezeContext(messages);
       mutateConversation(conversationId, c => ({ ...c, messages: c.messages.map(m => m.id === messageId ? next : m), updatedAt: Date.now() }));
       setOpenAnnotationId(null);
       await runMain(conversationId, messageId, next.activeVersionId, messages, next.versions.length - 1);
@@ -279,7 +292,7 @@ export default function App() {
     const conversation = current.current?.conversations.find(c => c.id === conversationId);
     if (!conversation) return;
     let prepared;
-    try { prepared = prepareAnnotationRequest(conversation, annotationId, settings.systemPrompt); }
+    try { prepared = prepareAnnotationRequest(conversation, annotationId, settings.systemPrompt, { mode: contextMode }); }
     catch (e) { notify(errorText(e)); return; }
     try { mutateConversation(conversationId, () => prepared.conversation); }
     catch (error) { notify(errorText(error)); return; }
@@ -328,27 +341,31 @@ export default function App() {
     const snapshot = current.current; if (!snapshot) return;
     const conversationId = snapshot.activeConversationId;
     fileOperation.current = true; setFileBusy(true); notify('正在打开本地文件…');
+    const controller = new AbortController(); fileController.current = controller; setFileProgress({ page: 0, total: 0 });
     try {
       const { parseDocumentFile, documentFileKind } = await import('./adapters/documents');
       const kind = documentFileKind(file), bytes = new Uint8Array(await file.arrayBuffer());
+      controller.signal.throwIfAborted();
       const refs = localDocumentReferences(snapshot).filter(ref => intent === 'reader' || ref.conversationId === conversationId).sort((a, b) => Number(b.conversationId === conversationId) - Number(a.conversationId === conversationId));
       const existing = await library.index.find(bytes, kind, refs, getDocumentBytes);
       if (existing) { openReaderReference(existing); notify('已打开本机已有的文件，批注可以继续使用。'); return; }
       const owner = snapshot.conversations.find(c => c.id === conversationId && c.deletedAt === undefined);
       if (!owner) throw Error(t("当前记录不可用，请重新打开。"));
       if (intent === 'chat' && (owner.documents?.length || 0) >= 10) throw Error(t("这个对话已有 10 份文件，请在阅读器中打开文件。"));
-      const parsed = await parseDocumentFile(file, { bytes });
+      const parsed = await parseDocumentFile(file, { bytes, signal: controller.signal, onProgress: (page, total) => setFileProgress({ page, total }) });
+      controller.signal.throwIfAborted();
       const nextOwner = intent === 'reader' ? { ...createConversation(parsed.document.name.slice(0, 80)), documents: [parsed.document] } : null;
       const next = nextOwner ? { ...current.current!, conversations: [nextOwner, ...current.current!.conversations], activeConversationId: nextOwner.id } : updateConversation(current.current!, conversationId, c => ({ ...c, documents: [...(c.documents || []), parsed.document] }));
       assertWorkspaceCapacity(next);
+      setFileProgress(null);
       await saveDocumentBytes(parsed.document.id, parsed.bytes);
       library.index.remember(parsed.document, parsed.bytes);
       if (nextOwner) update(w => ({ ...w, conversations: [nextOwner, ...w.conversations], activeConversationId: nextOwner.id }));
       else mutateConversation(conversationId, c => ({ ...c, title: c.messages.length === 0 && !c.documents?.length ? parsed.document.name.slice(0, 40) : c.title, documents: [...(c.documents || []), parsed.document], updatedAt: Date.now() }));
       openReaderReference({ conversationId: nextOwner?.id || conversationId, document: parsed.document });
       notify('文件已在本机打开，可以直接阅读和批注。');
-    } catch (e) { notify(errorText(e)); }
-    finally { fileOperation.current = false; setFileBusy(false); if (uploadInput.current) uploadInput.current.value = ''; if (readerInput.current) readerInput.current.value = ''; }
+    } catch (e) { notify(controller.signal.aborted ? '已取消打开文件。' : errorText(e)); }
+    finally { fileOperation.current = false; fileController.current = null; setFileBusy(false); setFileProgress(null); if (uploadInput.current) uploadInput.current.value = ''; if (readerInput.current) readerInput.current.value = ''; }
   }
   async function restoreBackup(text: string) {
     if (fileOperation.current || mainRequest.current || annotationRequests.current.size) throw new Error('请先停止回答，等待文件处理完成后再恢复。');
@@ -419,12 +436,13 @@ export default function App() {
       <div className="conversation-pane">
       <ChatView key={active.id} fileGroups={activeFileGroups} filesLoading={library.loading} conversation={active} isRunning={mainBusyId === active.id} globallyBusy={mainBusyId !== null || modelSwitchBusy || fileBusy} modelSwitchDisabled={modelSwitchBusy || mainBusyId !== null || active.annotations.some(isAnnotationGenerating)} onChooseModel={id => { void chooseModel(id).catch(e => notify(errorText(e))); }} onManageModels={() => setSettingsOpen(true)} settings={settings} openAnnotationId={openAnnotationId} onOpen={setOpenAnnotationId} onSend={q => sendMain(active.id, q)} onStop={() => mainRequest.current?.controller.abort()} onRegenerate={id => regenerate(active.id, id)} onVersion={(messageId, versionId) => setVersion(active.id, messageId, versionId)} onCreate={a => addAnnotation(active.id, a)} onUpdate={(id, patch) => editAnnotation(active.id, id, patch)} onAsk={id => askAnnotation(active.id, id)} onReask={(id, action) => reaskAnnotation(active.id, id, action)} onStopAnnotation={id => annotationRequests.current.get(id)?.abort()} onDelete={id => removeAnnotation(active.id, id)} onNotify={notify} onUpload={() => uploadInput.current?.click()} onOpenDocument={id => { const document = active.documents?.find(d => d.id === id); if (document) openReaderReference({ conversationId: active.id, document }); }} fileBusy={fileBusy} />
       </div>
-      {(openDocument || readerFocused) && <div className="document-pane">{openDocument ? <DocumentReader key={openDocument.id} modelLabel={settings.mode === 'demo' ? t("演示模式") : settings.model || t("连接模型")} onOpenModelSettings={() => setSettingsOpen(true)} onBackup={() => void downloadBackup(active.id)} focused={readerFocused} onOpenFile={chooseReaderFile} onToggleFocus={() => setReaderFocused(value => !value)} source={openDocument} conversationId={active.id} annotations={readerAnnotations} reservedColors={active.annotations.map(a => a.color)} openAnnotationId={openAnnotationId} onOpen={setOpenAnnotationId} onCreate={a => addAnnotation(active.id, a)} onUpdate={(id, patch) => editAnnotation(active.id, id, patch)} onAsk={id => askAnnotation(active.id, id)} onReask={(id, action) => reaskAnnotation(active.id, id, action)} onStop={id => annotationRequests.current.get(id)?.abort()} onDelete={id => removeAnnotation(active.id, id)} onNotify={notify} disabled={mainBusyId !== null || fileBusy} onClose={closeReader} /> : <ReaderHome groups={library.groups} conversations={workspace.conversations} busy={fileBusy || mainBusyId !== null || annotationRequests.current.size > 0} loading={library.loading} onOpenFile={chooseReaderFile} onOpenDocument={openLibraryDocument} onChat={() => setReaderFocused(false)} onSettings={() => setSettingsOpen(true)} />}</div>}
+      {(openDocument || readerFocused) && <div className="document-pane">{openDocument ? <DocumentReader contextMode={contextMode} onContextMode={changeContextMode} onLocation={onReaderLocation} key={openDocument.id} modelLabel={settings.mode === 'demo' ? t("演示模式") : settings.model || t("连接模型")} onOpenModelSettings={() => setSettingsOpen(true)} onBackup={() => void downloadBackup(active.id)} focused={readerFocused} onOpenFile={chooseReaderFile} onToggleFocus={() => setReaderFocused(value => !value)} source={openDocument} conversationId={active.id} annotations={readerAnnotations} reservedColors={active.annotations.map(a => a.color)} openAnnotationId={openAnnotationId} onOpen={setOpenAnnotationId} onCreate={a => addAnnotation(active.id, a)} onUpdate={(id, patch) => editAnnotation(active.id, id, patch)} onAsk={id => askAnnotation(active.id, id)} onReask={(id, action) => reaskAnnotation(active.id, id, action)} onStop={id => annotationRequests.current.get(id)?.abort()} onDelete={id => removeAnnotation(active.id, id)} onNotify={notify} disabled={mainBusyId !== null || fileBusy} onClose={closeReader} /> : <ReaderHome settings={settings} onChooseModel={id => { void chooseModel(id).catch(error => notify(errorText(error))); }} groups={library.groups} conversations={workspace.conversations} busy={fileBusy || mainBusyId !== null || annotationRequests.current.size > 0} loading={library.loading} onOpenFile={chooseReaderFile} onOpenDocument={openLibraryDocument} onChat={() => setReaderFocused(false)} onSettings={() => setSettingsOpen(true)} />}</div>}
       </div>
     </main>
     <input ref={fileInput} className="visually-hidden" type="file" accept=".json,application/json" onChange={e => { const file = e.target.files?.[0]; if (file) void importBackup(file); }} aria-label={t("导入聊天备份")} />
     <input ref={readerInput} className="visually-hidden" type="file" accept=".pdf,application/pdf" onChange={e => { const file = e.target.files?.[0]; if (file) void uploadDocument(file, 'reader'); }} aria-label={t("选择本地 PDF")} />
     <input ref={uploadInput} className="visually-hidden" type="file" accept=".pdf,.txt,.md,.markdown,application/pdf,text/plain,text/markdown" onChange={e => { const file = e.target.files?.[0]; if (file) void uploadDocument(file); }} aria-label={t("添加本地 PDF 或文本文件")} />
+    {fileProgress && <div className="file-open-progress" role="status"><span>{fileProgress.total ? t("正在提取文字：{0} / {1} 页", [fileProgress.page, fileProgress.total]) : t("正在读取本地文件…")}</span><progress max={fileProgress.total || 1} value={fileProgress.page} /><button type="button" onClick={() => fileController.current?.abort()}>{t("取消打开")}</button></div>}
     {notice && <div role="status" className="toast">{t(notice)}{notice === "已删除批注与高亮，可撤销。" && latestDeleted && <button className="undo-toast" onClick={undoDelete}>{t("撤销")}</button>}<button className="icon-button" aria-label={t("关闭提示")} onClick={() => setNotice('')}><X size={15} /></button></div>}
     {saveStatus.startsWith("保存失败") && <div className="save-failure" role="alert">{t(saveStatus)}<button onClick={() => void downloadBackup()}>{t("导出备份")}</button></div>}
     {settingsOpen && <SettingsDialog settings={settings} onClose={() => setSettingsOpen(false)} onSaveProfile={storeProfile} onDeleteProfile={removeProfile} onSelectProfile={chooseModel} />}

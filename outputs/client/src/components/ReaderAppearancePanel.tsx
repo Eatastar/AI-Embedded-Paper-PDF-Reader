@@ -1,14 +1,18 @@
 import { t } from '../i18n/locale';
 import { useLocale } from '../i18n/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { isHexColor, READER_PRESETS, readerContrast } from '../domain/reader';
 import type { ReaderAppearance } from '../domain/reader';
 
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (hex: string) => void }) {
   useLocale();
   const [draft, setDraft] = useState(value);
+  const picker = useRef<HTMLInputElement>(null);
   useEffect(() => { setDraft(value); }, [value]);
-  return <label className="reader-color-field"><span>{label}</span><input type="color" aria-label={t("{0}选择器", [label])} value={value} onChange={event => onChange(event.target.value)} /><input type="text" aria-label={t("{0}色值", [label])} value={draft} maxLength={7} spellCheck={false} onChange={event => { setDraft(event.target.value); if (isHexColor(event.target.value)) onChange(event.target.value.toLowerCase()); }} onBlur={() => { if (!isHexColor(draft)) setDraft(value); }} onKeyDown={event => { if (event.key === 'Enter') event.currentTarget.blur(); }} /></label>;
+  useEffect(() => { if (picker.current && document.activeElement !== picker.current) picker.current.value = value; }, [value]);
+  // Do not round-trip RGB values through a controlled native HSV picker while it
+  // is open: that resets its hue/saturation position and causes visible jumps.
+  return <label className="reader-color-field"><span>{label}</span><input ref={picker} type="color" aria-label={t("{0}选择器", [label])} defaultValue={value} onInput={event => { if (event.currentTarget.value !== value) onChange(event.currentTarget.value); }} onChange={event => { if (event.currentTarget.value !== value) onChange(event.currentTarget.value); }} /><input type="text" aria-label={t("{0}色值", [label])} value={draft} maxLength={7} spellCheck={false} onChange={event => { setDraft(event.target.value); if (isHexColor(event.target.value)) onChange(event.target.value.toLowerCase()); }} onBlur={() => { if (!isHexColor(draft)) setDraft(value); }} onKeyDown={event => { if (event.key === 'Enter') event.currentTarget.blur(); }} /></label>;
 }
 export function ReaderAppearancePanel({ appearance, onChange, saved }: { appearance: ReaderAppearance; onChange: (appearance: ReaderAppearance) => void; saved: boolean }) {
   useLocale();

@@ -30,6 +30,8 @@ function fixture(): { workspace: Workspace; bytes: Uint8Array } {
 
 function countFiles() { return auditDatabase.table('documents').count(); }
 
+
+
 test('首次打开会先提交初始记录，再显示为已保存', async () => {
   await auditDatabase.table('workspaces').delete('current');
   const loaded = await loadWorkspace();
@@ -97,8 +99,8 @@ test('附件原文件独立保存，传入和返回字节的修改不会改变�
   first!.fill(42);
   assert.deepEqual(await getDocumentBytes(id), expected);
   assert.equal(await getDocumentBytes(makeId()), undefined);
-  await assert.rejects(saveDocumentBytes('', expected), /25 MB/);
-  await assert.rejects(saveDocumentBytes(makeId(), new Uint8Array(25 * 1024 * 1024 + 1)), /25 MB/);
+  await assert.rejects(saveDocumentBytes('', expected), /150 MB/);
+  await assert.rejects(saveDocumentBytes(makeId(), new Uint8Array(150 * 1024 * 1024 + 1)), /150 MB/);
 });
 
 test('完整备份同时保存 PDF 原字节、页面、普通批注，不混入 API 配置', async () => {
@@ -268,4 +270,13 @@ test('合法的大型 PDF 备份可导入，字节精确保留', async () => {
   const merged = await importWorkspaceWithFiles(backup, workspace());
   const newDocument = merged.conversations[1].documents![0];
   assert.deepEqual(await getDocumentBytes(newDocument.id), bytes);
+});
+
+test('a PDF over the former 25 MB cap survives binary storage, compact backup and restore', async () => {
+  const source = fixture(), document = source.workspace.conversations[0].documents![0];
+  const bytes = new Uint8Array(26 * 1024 * 1024); bytes.set(source.bytes); bytes[bytes.length - 1] = 197; document.size = bytes.length;
+  await saveDocumentBytes(document.id, bytes);
+  const backup = await exportWorkspaceWithFiles(source.workspace, { compact: true });
+  const restored = await restoreWorkspaceWithFiles(backup), restoredDocument = restored.conversations[0].documents![0];
+  assert.equal(restoredDocument.size, bytes.length); assert.deepEqual(await getDocumentBytes(restoredDocument.id), bytes);
 });

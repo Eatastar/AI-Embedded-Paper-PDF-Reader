@@ -52,6 +52,14 @@ export function readerContrast(paper: string, ink: string): number {
   return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
 }
 
+/** Derive the entire reader chrome from the chosen paper, without a dark/light background jump. */
+export function readerTheme(paper: string, ink: string): Record<string, string> {
+  const text = readerContrast(paper, ink) >= 4.5 ? ink : colorLuminance(paper) > .179 ? '#000000' : '#ffffff';
+  const base = rgb(paper), foreground = rgb(text);
+  const mix = (amount: number) => '#' + base.map((value, i) => Math.round(value + (foreground[i] - value) * amount).toString(16).padStart(2, '0')).join('');
+  return { '--reader-paper': paper, '--reader-ink': ink, '--ls-paper': paper, '--ls-panel': paper, '--ls-surface': mix(.035), '--ls-code': mix(.065), '--ls-hover': mix(.09), '--ls-border': mix(.19), '--ls-border-strong': mix(.32), '--ls-text': text, '--ls-ink': text, '--ls-muted': mix(.68), '--ls-accent': mix(.82), '--ls-focus': mix(.82), '--ls-danger': colorLuminance(paper) < .179 ? '#ffb3a9' : '#932c23' };
+}
+
 /** Recolor a display copy only. Preserve saturated colors and all alpha bytes. */
 export function recolorPagePixels(source: Uint8ClampedArray, appearance: ReaderAppearance, destination = new Uint8ClampedArray(source.length)): Uint8ClampedArray {
   if (destination.length !== source.length || source.length % 4 !== 0 || source.buffer === destination.buffer) throw new Error('A separate RGBA display buffer is required');
@@ -62,7 +70,10 @@ export function recolorPagePixels(source: Uint8ClampedArray, appearance: ReaderA
     const chroma = Math.max(r, g, b) - Math.min(r, g, b);
     const weight = appearance.preserveColors ? Math.max(0, Math.min(1, (12 - chroma) / 4)) : 1;
     const tone = (r * .2126 + g * .7152 + b * .0722) / 255;
-    for (let c = 0; c < 3; c++) destination[i + c] = source[i + c] * (1 - weight) + (ink[c] + (paper[c] - ink[c]) * tone) * weight;
+    const originalWeight = 1 - weight;
+    destination[i] = r * originalWeight + (ink[0] + (paper[0] - ink[0]) * tone) * weight;
+    destination[i + 1] = g * originalWeight + (ink[1] + (paper[1] - ink[1]) * tone) * weight;
+    destination[i + 2] = b * originalWeight + (ink[2] + (paper[2] - ink[2]) * tone) * weight;
     destination[i + 3] = source[i + 3];
   }
   return destination;

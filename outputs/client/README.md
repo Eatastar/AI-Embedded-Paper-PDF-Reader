@@ -1,6 +1,6 @@
 # AI-Embedded Paper PDF Reader
 
-**AI 嵌入式论文 PDF 阅读器** · 0.1.12 · 20261106.1
+**AI 嵌入式论文 PDF 阅读器** · 0.1.13 · 20261106.2
 
 本地 PDF 阅读、原文批注和按需 AI 问答。项目介绍、功能、实现分工和复用说明见[项目首页](../../README.md)，历史变化见[版本记录](../../docs/CHANGELOG.md)。
 
@@ -38,9 +38,9 @@ Choose 简体中文 / English on the home screen or in reading/model settings. T
 
 Save your API address, model name and key in Models & settings. Templates include GPT, Claude, DeepSeek, relays and Other, with Kimi, Qwen, Gemini's compatible endpoint, Grok, Ollama, LM Studio and custom addresses. API formats are protocols: Chat Completions, Responses or Anthropic Messages.
 
-保存或切换连接不发送问题。远程服务用 HTTPS，本机未启用鉴权时可留空密钥。桌面版沿用系统代理；API 地址仍填服务商地址。发送问题会发送完整有效主对话和该对话全部附件提取文字，不静默截断。详见[隐私说明](../../docs/PRIVACY.md)。
+保存或切换连接不发送问题。远程服务用 HTTPS，本机未启用鉴权时可留空密钥。桌面版沿用系统代理；API 地址仍填服务商地址。发送问题会发送完整有效主对话；附件默认小文件全文、大文件按需引用，另带选中文字及所在页片段。原文件留在本机。自动模式在超过 25 MiB、300 页或 12 万提取字符时使用本地关键词检索，每份引用片段最多 2.4 万字符；选区和对话另计。阅读设置可切换全文或按需引用，工具栏显示范围。失败重试沿用首次请求的资料；资料不足会明确提示，全文仍受请求与模型容量限制，不静默截断主对话。详见[隐私说明](../../docs/PRIVACY.md)。
 
-Saving or switching sends no question. Use HTTPS for remote services; leave the key empty for local services without authentication. The desktop app follows the system proxy; use the provider's address in the API field. Asking sends the full valid main conversation and extracted text from all its attachments without silent truncation. See [Privacy](../../docs/PRIVACY.md).
+Saving or switching sends no question. Use HTTPS for remote services; leave the key empty for local services without authentication. The desktop app follows the system proxy; use the provider's address in the API field. Asking sends the full valid main conversation. Auto mode sends full extracted text for small files and locally retrieved excerpts for large files, plus the selection and passages from its page. Original files stay local. Above 25 MiB, 300 pages or 120,000 extracted characters, local keyword retrieval selects up to 24,000 excerpt characters per file; the selection and conversation are additional. Reading settings can override this scope, shown in the toolbar. Failed requests retry with their original material. Missing evidence is disclosed; full text remains subject to request and model capacity, without silently truncating the main conversation. See [Privacy](../../docs/PRIVACY.md).
 
 ## 数据与备份 / Data and backups
 
@@ -54,9 +54,9 @@ Backup & restore supports full/current-conversation export, legacy export, autom
 
 ## 限制 / Limits
 
-单文件最多 25 MiB、PDF 300 页、提取文本 100 万字符，每对话最多 10 个附件。扫描页可看和换色，目前无 OCR 或图像理解。目录依赖内嵌结构，搜索使用本机提取文本。
+PDF 最大 150 MiB、5000 页、1000 万提取字符；TXT/Markdown 最大 25 MiB、100 万字符，每对话最多 10 个附件。全工作区含原文件的备份仍受 350 MB 上限保护，超出前拒绝操作并保留旧记录；可分别导出对话。打开时显示提取进度并可取消。扫描页可看和换色，目前无 OCR 或图像理解。目录依赖内嵌结构，搜索使用本机提取文本。
 
-Each file is limited to 25 MiB, 300 PDF pages and 1 million extracted characters; each conversation supports up to 10 attachments. Scanned pages support viewing and recoloring, without OCR or image understanding. Contents depend on embedded outlines; search uses locally extracted text.
+PDFs support up to 150 MiB, 5,000 pages and 10 million extracted characters; TXT/Markdown up to 25 MiB and 1 million characters, with up to 10 attachments per conversation. The full workspace backup, including original files, retains a 350 MB capacity guard; oversized operations are rejected before replacing existing records. Export conversations separately when needed. Opening shows extraction progress and supports cancellation. Scanned pages support viewing and recoloring, without OCR or image understanding. Contents depend on embedded outlines; search uses locally extracted text.
 
 ## 开发 / Development
 
@@ -81,3 +81,12 @@ See [PROJECT](../../docs/PROJECT.md) for modules and [ROADMAP](../../docs/ROADMA
 原创应用代码全部由 GPT 通过 Codex 实现，人类发起者提出想法、确定需求并选择功能。欢迎任何人下载并用 AI agent / vibe coding 修改；发布衍生版时，请链接[上游](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader)。项目自身代码采用 MIT，第三方署名和许可继续保留。见[贡献说明](../../docs/ATTRIBUTION.md)。
 
 All original application code was implemented by GPT through Codex; the human initiator proposed ideas, defined requirements and selected features. Anyone may download and adapt it with AI agents / vibe coding. Please link to [upstream](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader) when publishing a derivative. Original code uses MIT; third-party attribution and licenses remain applicable. See [Attribution](../../docs/ATTRIBUTION.md).
+
+
+## 获取模型 / Model discovery
+
+首页 API 区直接进入配置。先填地址与密钥，再获取并筛选模型，无需先填写模型名。兼容接口读取 `/models`，Claude 支持分页；未提供列表时手动填写，不自动猜测其他地址。列表可能含图像或语音模型，请选择支持文字对话的模型。获取沿用桌面系统代理，不发送论文或聊天，也不保存、启用未提交配置。
+
+Open configuration from the home API card, enter the endpoint/key and fetch/filter models before entering a model name. Compatible APIs use `/models`; Claude supports pagination. Unsupported listing falls back to manual entry, without probing other addresses. Lists may contain image/audio models, so choose a text-chat model. Discovery uses the desktop proxy path, sends no paper/chat content, and does not save or activate unsubmitted settings.
+
+API references: [OpenAI models](https://developers.openai.com/api/reference/resources/models/methods/list), [Claude models](https://platform.claude.com/docs/en/api/models/list), [Ollama compatibility](https://docs.ollama.com/api/openai-compatibility).

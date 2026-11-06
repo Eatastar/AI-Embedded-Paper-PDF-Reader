@@ -35,6 +35,7 @@ export interface AnnotatedAnswerProps {
   content?: ReactNode;
   contentReadyKey?: string | number;
   contentClassName?: string;
+  readerStyle?: CSSProperties;
 }
 
 interface SavedAnchor { selectors: TextSelector[] }
@@ -77,7 +78,7 @@ function popupPosition(rect: DOMRect | null, height = 440, preferredWidth = 390)
   return { width, maxHeight, left, top: Math.max(16, Math.min(idealTop, window.innerHeight - Math.min(height, maxHeight) - 16)) };
 }
 
-export function AnnotatedAnswer({ conversationId, messageId, version, annotations, reservedColors = [], openAnnotationId, onOpen, onCreate, onUpdate, onAsk, onStop, onReask, onDelete, onNotify, disabled, plainText = false, content, contentReadyKey, contentClassName = '' }: AnnotatedAnswerProps) {
+export function AnnotatedAnswer({ conversationId, messageId, version, annotations, reservedColors = [], openAnnotationId, onOpen, onCreate, onUpdate, onAsk, onStop, onReask, onDelete, onNotify, disabled, plainText = false, content, contentReadyKey, contentClassName = '', readerStyle }: AnnotatedAnswerProps) {
   useLocale();
   const proseRef = useRef<HTMLDivElement>(null);
   const annotatorRef = useRef<TextAnnotator<TextAnnotation, TextAnnotation> | null>(null);
@@ -352,7 +353,7 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
           type="button"
           className="annotation-selection-button"
           data-testid="create-annotation"
-          style={{ left: Math.max(12, Math.min(window.innerWidth - 146, selectionDraft.rect.left + selectionDraft.rect.width / 2 - 67)), top: Math.max(12, selectionDraft.rect.top - 45) }}
+          style={{ ...readerStyle, left: Math.max(12, Math.min(window.innerWidth - 146, selectionDraft.rect.left + selectionDraft.rect.width / 2 - 67)), top: Math.max(12, selectionDraft.rect.top - 45) }}
           onPointerDown={(event) => event.preventDefault()}
           onClick={() => createAnnotation()}
         ><MessageSquarePlus size={15} />{t("添加批注")}</button>, document.body,
@@ -364,7 +365,7 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
           role="dialog"
           aria-label={t("选择批注")}
           data-testid="annotation-chooser"
-          style={{ ...popupPosition(annotationChoice.rect, Math.min(360, choices.length * 58 + 50), 310), maxHeight: Math.min(360, window.innerHeight - 32) }}
+          style={{ ...readerStyle, ...popupPosition(annotationChoice.rect, Math.min(360, choices.length * 58 + 50), 310), maxHeight: Math.min(360, window.innerHeight - 32) }}
           onKeyDown={(event) => {
             if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); setAnnotationChoice(null); }
           }}
@@ -393,7 +394,7 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
           role="menu"
           aria-label={t("回答与批注操作")}
           data-testid="annotation-context-menu"
-          style={menuStyle}
+          style={{ ...readerStyle, ...menuStyle }}
           onKeyDown={handleMenuKeyDown}
           onContextMenu={(event) => event.preventDefault()}
           onPointerDown={(event) => event.stopPropagation()}
@@ -441,7 +442,7 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
         </div>, document.body,
       )}
       {openAnnotation && createPortal(
-        <MovableAnnotationPopup key={openAnnotation.id} popupRef={popupRef} style={popupStyle}>
+        <MovableAnnotationPopup key={openAnnotation.id} popupRef={popupRef} style={{ ...readerStyle, ...popupStyle }}>
           <AnnotationCard key={openAnnotation.id} annotation={openAnnotation} onClose={() => onOpen(null)} onUpdate={(patch) => onUpdate(openAnnotation.id, patch)} onAsk={() => onAsk(openAnnotation.id)} onStop={() => onStop(openAnnotation.id)} onReask={action => onReask(openAnnotation.id, action)} onDelete={() => onDelete(openAnnotation.id)} disabled={disabled} />
         </MovableAnnotationPopup>, document.body,
       )}

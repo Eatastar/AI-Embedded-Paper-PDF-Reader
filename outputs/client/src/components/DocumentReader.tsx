@@ -1,7 +1,7 @@
 import { t } from '../i18n/locale';
 import { useLocale } from '../i18n/react';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { CSSProperties } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import type { DocumentAttachment, MessageVersion } from '../domain/types';
 import { loadPdfDocument } from '../adapters/documents';
@@ -11,11 +11,12 @@ import { markReaderSearch } from '../adapters/reader-search';
 import { readerAnnotationRange } from '../adapters/reader-location';
 import { getDocumentBytes } from '../adapters/storage';
 import { loadReaderAppearance, loadReaderPosition, saveReaderAppearance, saveReaderPosition } from '../adapters/reader';
-import { colorLuminance } from '../domain/reader';
+import { colorLuminance, readerTheme } from '../domain/reader';
+import { usesRelevantContext, type DocumentContextMode } from '../domain/document-context';
 import { clampPdfZoom, pdfAnchorScrollDelta, pdfPageSize, pdfZoomAnchor } from '../domain/pdf-zoom';
 import type { PdfZoomAnchor } from '../domain/pdf-zoom';
 import type { ReaderPosition } from '../domain/reader';
-import { activeReaderPage } from '../domain/reader-navigation';
+import { readerPageAtFocus } from '../domain/reader-navigation';
 import type { OutlineEntry, SearchFocus, SearchHit } from '../domain/reader-navigation';
 import { ReaderToolbar } from './ReaderToolbar';
 import { ReaderNavigation } from './ReaderNavigation';
@@ -27,11 +28,17 @@ import './documents.css';
 export interface DocumentReaderProps extends Omit<AnnotatedAnswerProps, 'messageId' | 'version' | 'plainText' | 'content' | 'contentReadyKey' | 'contentClassName'> {
   source: DocumentAttachment; onClose: () => void; focused: boolean; onToggleFocus: () => void;
   modelLabel?: string; onOpenModelSettings?: () => void; onBackup?: () => void; onOpenFile?: () => void;
+  contextMode: DocumentContextMode; onContextMode: (value: DocumentContextMode) => void;
+  onLocation: (location: { documentId: string; pageNumber: number }) => void;
 }
 const sameSet = (a: Set<number>, b: Set<number>) => a.size === b.size && [...a].every(value => b.has(value));
 type PageGeometry = Record<number, { width: number; height: number }>;
+const ReaderPageSlot = memo(function ReaderPageSlot({ index, number, width, height, empty, register, children }: { index: number; number: number; width: number; height: number; empty: boolean; register: (index: number, element: HTMLDivElement | null) => void; children?: ReactNode }) {
+  useLocale();
+  return <div ref={element => register(index, element)} data-reader-page={index} className="reader-page-slot" style={{ width }}><p className="reader-page-label">{t('第 {0} 页', [number])}{empty ? t(' · 无可提取文字，暂不支持 OCR') : ''}</p><div className="reader-page-body" style={{ width, height }}>{children || <div className="reader-page-placeholder" aria-label={t('第 {0} 页，滚动到此处时显示', [number])} />}</div></div>;
+});
 
-export function DocumentReader({ source, onClose, focused, onToggleFocus, modelLabel, onOpenModelSettings, onBackup, onOpenFile, ...annotationProps }: DocumentReaderProps) {
+export function DocumentReader({ source, onClose, focused, onToggleFocus, modelLabel, onOpenModelSettings, onBackup, onOpenFile, contextMode, onContextMode, onLocation, ...annotationProps }: DocumentReaderProps) {
   useLocale();
   const [initial] = useState(() => loadReaderPosition(source.id, source.pages.length, source.kind));
   const [pageIndex, setPageIndex] = useState(initial.pageIndex), [pageInput, setPageInput] = useState(String(initial.pageIndex + 1));
@@ -45,12 +52,14 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
   const [outline, setOutline] = useState<OutlineEntry[]>([]), [outlineLoading, setOutlineLoading] = useState(false);
   const [outlineError, setOutlineError] = useState(false), [outlineTruncated, setOutlineTruncated] = useState(false);
   const [geometry, setGeometry] = useState<PageGeometry>({});
+  const geometryRef = useRef(geometry); geometryRef.current = geometry;
   const [nearPages, setNearPages] = useState(() => new Set([initial.pageIndex]));
   const [forcedPage, setForcedPage] = useState<number | null>(initial.pageIndex);
   const [search, setSearch] = useState<SearchFocus | null>(null), [navigationRevision, setNavigationRevision] = useState(0);
   const [queue] = useState(() => new PdfRenderQueue());
   const rootRef = useRef<HTMLElement>(null), viewportRef = useRef<HTMLDivElement>(null), textRef = useRef<HTMLElement>(null);
   const pageInputRef = useRef<HTMLInputElement>(null), slots = useRef(new Map<number, HTMLDivElement>());
+  const registerSlot = useCallback((index: number, element: HTMLDivElement | null) => { if (element) slots.current.set(index, element); else slots.current.delete(index); }, []);
   const position = useRef<ReaderPosition>(initial), pendingPosition = useRef<ReaderPosition | null>(initial);
   const anchor = useRef<{ pageIndex: number; point: PdfZoomAnchor } | null>(null), restoring = useRef(true);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined), scrollFrame = useRef(0);
@@ -69,8 +78,7 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
     const next = { ...position.current, scrollY: element.scrollTop / Math.max(1, element.scrollHeight - element.clientHeight), scrollX: element.scrollLeft / Math.max(1, element.scrollWidth - element.clientWidth) };
     if (continuous && slots.current.size) {
       const focus = element.getBoundingClientRect().top + focusY(element);
-      const rects = [...slots.current].map(([i, slot]) => ({ pageIndex: i, ...slot.querySelector<HTMLElement>('.reader-page-body')!.getBoundingClientRect().toJSON() }));
-      next.pageIndex = activeReaderPage(rects, focus);
+      next.pageIndex = readerPageAtFocus(source.pages.length, i => pageBody(i)?.getBoundingClientRect() || { top: Infinity, bottom: Infinity }, focus);
       const rect = pageBody(next.pageIndex)?.getBoundingClientRect();
       next.pageOffset = rect ? Math.max(0, Math.min(1, (focus - rect.top) / rect.height)) : 0;
     }
@@ -93,7 +101,7 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
     if (pendingPosition.current && restoring.current) return;
     const bounds = element.getBoundingClientRect(), x = point?.x ?? bounds.left + element.clientWidth / 2, y = point?.y ?? bounds.top + focusY(element);
     let index = position.current.pageIndex;
-    if (continuous) index = activeReaderPage([...slots.current].map(([i, slot]) => ({ pageIndex: i, ...slot.getBoundingClientRect().toJSON() })), y);
+    if (continuous) index = readerPageAtFocus(source.pages.length, i => pageBody(i)?.getBoundingClientRect() || { top: Infinity, bottom: Infinity }, y);
     const body = pageBody(index); if (!body) return;
     if (!continuous && !body.querySelector('canvas[data-page-ready="true"]')) return;
     anchor.current = { pageIndex: index, point: pdfZoomAnchor(body.getBoundingClientRect(), bounds, x, y) }; restoring.current = true;
@@ -193,7 +201,17 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
     pendingPosition.current = { ...position.current }; anchor.current = null; restoring.current = true;
     setView(value); annotationProps.onOpen(null);
   };
-  useEffect(() => { setAppearanceSaved(saveReaderAppearance(appearance)); }, [appearance]);
+  const appearanceRef = useRef(appearance); appearanceRef.current = appearance;
+  useEffect(() => {
+    const timer = setTimeout(() => setAppearanceSaved(saveReaderAppearance(appearance)), 180);
+    return () => clearTimeout(timer);
+  }, [appearance]);
+  useEffect(() => {
+    const save = () => { setAppearanceSaved(saveReaderAppearance(appearanceRef.current)); };
+    document.addEventListener('learn:save-edits', save); window.addEventListener('pagehide', save);
+    return () => { saveReaderAppearance(appearanceRef.current); document.removeEventListener('learn:save-edits', save); window.removeEventListener('pagehide', save); };
+  }, []);
+  useEffect(() => { onLocation({ documentId: source.id, pageNumber: pageIndex + 1 }); }, [source.id, pageIndex, onLocation]);
   useEffect(() => { setPositionSaved(saveReaderPosition(source.id, position.current)); }, [source.id, pageIndex, view, zoom, layout]);
   useLayoutEffect(() => () => flushRef.current(), [source.id]);
   useEffect(() => {
@@ -231,7 +249,9 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
   useEffect(() => {
     if (!pdf || !continuous) return;
     let cancelled = false;
-    const order = [...new Set([position.current.pageIndex, 0, ...source.pages.map((_, i) => i)])].filter(i => !geometry[i]);
+    // Read geometry only around the viewport. Opening a long PDF must not load
+    // every PDFPageProxy or reflow the whole document in hundreds of batches.
+    const order = [...new Set([position.current.pageIndex, 0, ...nearPages])].filter(i => !geometryRef.current[i]);
     const load = async () => {
       for (let i = 0; i < order.length; i += 3) {
         const batch = await Promise.all(order.slice(i, i + 3).map(async index => {
@@ -241,7 +261,7 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
         captureRef.current(); setGeometry(current => ({ ...current, ...Object.fromEntries(batch.filter(item => item !== null)) }));
       }
     }; void load(); return () => { cancelled = true; };
-  }, [pdf, continuous, source.pages]);
+  }, [pdf, continuous, source.pages, nearPages, pageIndex]);
   useEffect(() => {
     const root = viewportRef.current; if (!root || !continuous || !pdf) return;
     const visible = new Set<number>();
@@ -260,8 +280,13 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
   const ready = (index: number) => { restore(); setForcedPage(current => current === index ? null : current); locateNoteRef.current(); };
   const page = source.pages[pageIndex], hasText = Boolean(page?.text.trim());
   const version = (index: number): MessageVersion => ({ id: source.pages[index].versionId, content: source.pages[index].text, status: 'complete', createdAt: source.createdAt });
-  const annotationsByPage = useMemo(() => new Map(source.pages.map((p, i) => [i, annotationProps.annotations.filter(a => a.messageId === p.messageId && a.versionId === p.versionId)])), [source.pages, annotationProps.annotations]);
-  const renderPage = (index: number) => <PdfAnnotatedPage {...annotationProps} annotations={annotationsByPage.get(index) || []} messageId={source.pages[index].messageId} version={version(index)} pdf={pdf!} pageNumber={source.pages[index].pageNumber} availableWidth={availableWidth} zoom={zoom} appearance={appearance} compareOriginal={compareOriginal} onPageReady={() => ready(index)} queue={queue} maxPixels={continuous ? 8_000_000 : 16_000_000} search={search?.pageIndex === index ? search : null} onSearchLocated={locateSearch} />;
+  const annotationsByPage = useMemo(() => {
+    const pages = new Map(source.pages.map((p, index) => [p.messageId, { index, versionId: p.versionId }]));
+    const groups = new Map<number, typeof annotationProps.annotations>();
+    for (const annotation of annotationProps.annotations) { const page = pages.get(annotation.messageId); if (page?.versionId !== annotation.versionId) continue; const group = groups.get(page.index) || []; group.push(annotation); groups.set(page.index, group); }
+    return groups;
+  }, [source.pages, annotationProps.annotations]);
+  const renderPage = (index: number) => <PdfAnnotatedPage {...annotationProps} readerStyle={palette} annotations={annotationsByPage.get(index) || []} messageId={source.pages[index].messageId} version={version(index)} pdf={pdf!} pageNumber={source.pages[index].pageNumber} availableWidth={availableWidth} zoom={zoom} appearance={appearance} compareOriginal={compareOriginal} onPageReady={() => ready(index)} queue={queue} maxPixels={continuous ? 8_000_000 : 16_000_000} search={search?.pageIndex === index ? search : null} onSearchLocated={locateSearch} />;
   const commitPage = () => {
     if (!/^\d+$/u.test(pageInput)) { setPageInput(String(position.current.pageIndex + 1)); return; }
     const index = Math.max(0, Math.min(source.pages.length - 1, Number(pageInput) - 1));
@@ -269,8 +294,9 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
     selectPage(index);
   };
   const original = compareOriginal || appearance.preset === 'original', paper = original ? '#ffffff' : appearance.paper, ink = original ? '#000000' : appearance.ink;
-  return <section ref={rootRef} className="document-reader" role="region" aria-label={t("文档阅读：{0}", [source.name])} data-testid="document-reader" data-reader-focused={focused} data-reader-dark={colorLuminance(paper) < .25 ? 'true' : 'false'} data-reader-narrow={narrow} data-reader-layout={continuous ? 'continuous' : 'paged'} style={{ '--reader-paper': paper, '--reader-ink': ink } as CSSProperties}>
-    <ReaderToolbar onOpenFile={onOpenFile} name={source.name} kind={source.kind} pageCount={source.pages.length} pageIndex={pageIndex} pageInput={pageInput} pageInputRef={pageInputRef} onPageInput={setPageInput} onCommitPage={commitPage} onPage={selectPage} zoom={zoom} onZoom={changeZoom} view={view} onView={switchView} layout={layout} onLayout={switchLayout} appearance={appearance} onAppearance={value => { setCompareOriginal(false); setAppearance(value); }} saved={appearanceSaved && positionSaved} compareOriginal={compareOriginal} onCompareOriginal={() => setCompareOriginal(value => !value)} navigationOpen={navigationOpen} onToggleNavigation={() => setNavigationOpen(value => !value)} focused={focused} onToggleFocus={() => { flush(); onToggleFocus(); }} onClose={() => { flush(); onClose(); }} modelLabel={modelLabel} onOpenModelSettings={onOpenModelSettings} onBackup={onBackup} />
+  const palette = readerTheme(paper, ink) as CSSProperties;
+  return <section ref={rootRef} className="document-reader" role="region" aria-label={t("文档阅读：{0}", [source.name])} data-testid="document-reader" data-reader-focused={focused} data-reader-dark={colorLuminance(paper) < .25 ? 'true' : 'false'} data-reader-narrow={narrow} data-reader-layout={continuous ? 'continuous' : 'paged'} style={palette}>
+    <ReaderToolbar contextMode={contextMode} onContextMode={onContextMode} relevantContext={usesRelevantContext(source, contextMode)} onOpenFile={onOpenFile} name={source.name} kind={source.kind} pageCount={source.pages.length} pageIndex={pageIndex} pageInput={pageInput} pageInputRef={pageInputRef} onPageInput={setPageInput} onCommitPage={commitPage} onPage={selectPage} zoom={zoom} onZoom={changeZoom} view={view} onView={switchView} layout={layout} onLayout={switchLayout} appearance={appearance} onAppearance={value => { setCompareOriginal(false); setAppearance(value); }} saved={appearanceSaved && positionSaved} compareOriginal={compareOriginal} onCompareOriginal={() => setCompareOriginal(value => !value)} navigationOpen={navigationOpen} onToggleNavigation={() => setNavigationOpen(value => !value)} focused={focused} onToggleFocus={() => { flush(); onToggleFocus(); }} onClose={() => { flush(); onClose(); }} modelLabel={modelLabel} onOpenModelSettings={onOpenModelSettings} onBackup={onBackup} />
     <div className="document-reader-body">
       <ReaderNavigation open={navigationOpen} source={source} annotations={annotationProps.annotations} pageIndex={pageIndex} outline={outline} outlineLoading={loading || outlineLoading} outlineError={outlineError || Boolean(fileError)} outlineTruncated={outlineTruncated} onClose={() => setNavigationOpen(false)} onPage={selectPage} onSearch={selectSearch} onClearSearch={clearSearch} onAnnotation={selectAnnotation} />
       <div ref={viewportRef} className={`document-reader-viewport ${view === 'text' ? 'document-reader-text-viewport' : ''}`} onScroll={scroll}>
@@ -280,9 +306,9 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
         {view === 'original' && pdf && (continuous ? <div className="reader-continuous-pages">{source.pages.map((p, index) => {
           const size = pdfPageSize(geometry[index] || geometry[0] || { width: 612, height: 792 }, availableWidth, zoom);
           const active = nearPages.has(index) || forcedPage === index || openedPage === index;
-          return <div key={p.versionId} ref={element => { if (element) slots.current.set(index, element); else slots.current.delete(index); }} data-reader-page={index} className="reader-page-slot" style={{ width: size.width }}><p className="reader-page-label">{t("第 {0} 页", [p.pageNumber])}{!p.text.trim() ? t(" · 无可提取文字，暂不支持 OCR") : ''}</p><div className="reader-page-body" style={{ width: size.width, height: size.height }}>{active ? renderPage(index) : <div className="reader-page-placeholder" aria-label={t("第 {0} 页，滚动到此处时显示", [p.pageNumber])} />}</div></div>;
+          return <ReaderPageSlot key={p.versionId} index={index} number={p.pageNumber} width={size.width} height={size.height} empty={!p.text.trim()} register={registerSlot}>{active ? renderPage(index) : null}</ReaderPageSlot>;
         })}</div> : <div key={`${source.id}:${pageIndex}:pdf`}>{renderPage(pageIndex)}</div>)}
-        {page && view === 'text' && hasText && <article ref={textRef} className="document-page-text" key={`${source.id}:${pageIndex}:text`}><p className="document-text-page-label">{t("第 {0} 页 · 提取文字", [page.pageNumber])}</p><AnnotatedAnswer {...annotationProps} annotations={annotationsByPage.get(pageIndex) || []} messageId={page.messageId} version={version(pageIndex)} plainText /></article>}
+        {page && view === 'text' && hasText && <article ref={textRef} className="document-page-text" key={`${source.id}:${pageIndex}:text`}><p className="document-text-page-label">{t("第 {0} 页 · 提取文字", [page.pageNumber])}</p><AnnotatedAnswer {...annotationProps} readerStyle={palette} annotations={annotationsByPage.get(pageIndex) || []} messageId={page.messageId} version={version(pageIndex)} plainText /></article>}
       </div>
     </div>
   </section>;

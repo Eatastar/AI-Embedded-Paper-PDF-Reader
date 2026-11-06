@@ -1,6 +1,7 @@
 import type { Workspace } from './types';
 import { isAnnotationGenerating } from './annotation-state';
 import { WorkspaceCodec } from './workspace-codec';
+import { MAX_DOCUMENT_PAGES, documentByteLimit, documentTextLimit } from './document-limits';
 
 export const WORKSPACE_LIMITS = Object.freeze({ conversations: 1000, messages: 10000, versions: 1000, annotations: 10000, context: 10012, text: 2_000_000, backupBytes: 350_000_000 });
 const sizes = new WeakMap<object, number>();
@@ -40,6 +41,7 @@ export function assertWorkspaceCapacity(workspace: Workspace): void {
       count(conversation.documents?.length || 0, 10, '每个对话的附件');
       for (const message of conversation.messages) if (!checked.has(message)) {
         count(message.versions.length, WORKSPACE_LIMITS.versions, '每条回答的版本');
+        for (const version of message.versions) count(version.context?.length || 0, WORKSPACE_LIMITS.context, '回答上下文');
         checked.add(message);
       }
       for (const annotation of conversation.annotations) if (!checked.has(annotation)) {
@@ -48,8 +50,8 @@ export function assertWorkspaceCapacity(workspace: Workspace): void {
         checked.add(annotation);
       }
       for (const document of conversation.documents || []) if (!checked.has(document)) {
-        count(document.pages.length, 300, '单份附件的页数');
-        if (document.size > 25 * 1024 * 1024 || document.pages.reduce((sum, page) => sum + page.text.length, 0) > 1_000_000) throw new Error('单份附件最多 25 MB、100 万字符。');
+        count(document.pages.length, MAX_DOCUMENT_PAGES, '单份附件的页数');
+        if (document.size > documentByteLimit(document.kind) || document.pages.reduce((sum, page) => sum + page.text.length, 0) > documentTextLimit(document.kind)) throw new Error('附件超过支持范围：PDF 最多 150 MB、5000 页、1000 万字符；文字文件最多 25 MB、100 万字符。');
         checked.add(document);
       }
       checked.add(conversation);

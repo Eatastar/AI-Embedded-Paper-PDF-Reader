@@ -1,5 +1,35 @@
 # 版本记录 / Changelog
 
+## 0.1.13 · 20261106.2 · 2026-11-06
+
+- 首页直接显示当前 API 与配置入口；填写地址和密钥后可获取、筛选上游模型，不必先查模型名。兼容接口与 Claude 列表分页已用模拟服务验证；服务未提供列表时仍可手动填写。
+  The home screen exposes API status/setup. Enter an endpoint/key to fetch and filter models before choosing a name. Compatible endpoints and Claude pagination were verified with mocks; manual entry remains available when listing is unsupported.
+- PDF 上限提高到 **150 MiB、5000 页、1000 万提取字符**。打开时显示提取进度并可取消；按需读取页面几何、绘制附近页面，减少长文档的启动与滚动负担。
+  PDFs now support **150 MiB, 5,000 pages and 10 million extracted characters**. Opening shows cancellable extraction progress; page geometry and nearby canvases are prepared on demand.
+- 默认“小文件全文，大文件按需引用”。超过 25 MiB、300 页或 12 万字符时，在本机按问题查找相关段落，再带上选区、所在页片段和完整有效主对话。每份检索片段最多 2.4 万字符，选区和对话另计；可在阅读设置中改为全文或按需引用，界面显示当前范围。扫描图片仍不做 OCR。
+  Auto sends full small files and locally retrieved excerpts for large files (above 25 MiB, 300 pages or 120,000 characters), along with the selection, its page passages and full valid main conversation. Retrieved excerpts are capped at 24,000 characters per file; the selection/conversation are additional. Reading settings can override the visible scope. Scanned images still have no OCR.
+- 主聊天和批注失败重试固定首次请求资料；切换范围或随后新增对话不会悄悄改变该次重试。全文超过本机请求或模型容量时明确提示，不静默截断。
+  Failed main/annotation requests retry with their original material, even after scope or conversation changes. Full text exceeding request/model capacity produces an explicit error instead of silent truncation.
+- 纸张色同步到工具栏、阅读区边缘、设置、导航与批注框。调色移入后台，拖动快速预览、停下恢复清晰；原生选色器不再被色值回写打断，过期结果不覆盖新颜色。
+  Paper colors extend to the toolbar, margins, settings, navigation and annotation panels. Background recoloring uses fast previews then full-resolution refinement; the native picker is no longer reset by controlled RGB updates, and stale jobs cannot overwrite newer colors.
+
+验证使用合成 PDF、隔离数据库和模拟 API，不使用个人论文、聊天或真实密钥。实际检查约 34 MB / 321 页 PDF 的打开、远页与末页导航、中英切换、连续调色，以及小文件自动全文和失败重试资料一致性。服务商真实模型权限与物理选色手感仍以实际使用为准。
+
+Validation used synthetic PDFs, isolated storage and mocked APIs, with no personal papers, conversations or real keys. UI checks covered a roughly 34 MB / 321-page PDF, distant/final-page navigation, both languages, rapid color changes, small-file full text and identical retry material. Actual provider permissions and physical picker feel remain subject to real usage.
+
+更新前正常退出旧版，完整解压新 ZIP 并保留同目录全部文件。沿用原数据位置与数据库；原有聊天、密钥、批注和阅读记录继续使用。备份格式仍可读取旧版；新增大文件和主请求快照建议用新版恢复。全工作区备份继续受 350 MB 容量保护，可分别导出对话。已发布的旧 Release 与附件保持原样。
+
+Exit the old app normally, fully extract the new ZIP and keep all files together. Existing data identity/database remain in use. Older backups remain readable; restore new large-file/main-request snapshots with the new version. Full-workspace backups retain the 350 MB guard; export conversations separately as needed. Previously published releases/assets remain unchanged.
+
+原创应用代码全部由 GPT 通过 Codex 实现；人类发起者负责想法、需求与功能取舍。欢迎下载、fork，使用 AI agent / vibe coding 改造为自己的版本；发布衍生版本时请链接 [上游项目](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader)。MIT 与第三方许可继续适用。
+
+GPT through Codex implemented all original application code; the human initiator supplied ideas, requirements and feature trade-offs. Download, fork and adapt with AI agents / vibe coding; please link [upstream](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader) when publishing derivatives. MIT and third-party licenses continue to apply.
+
+
+验证：239 项自动检查、555 项交付包核对通过。隔离界面验证首页 API 入口、未填模型名获取并筛选模型、约 34 MB / 321 页 PDF 打开及远页/末页导航、快速连续换色、中英文切换与刷新恢复，以及小文件自动全文。模拟失败后切换资料范围，重试的实际请求资料哈希保持一致。打包目录与交付目录均实际启动、保存、备份并正常退出，界面无错误。未使用个人资料或真实 API。真实服务商权限和物理选色手感仍待使用体验。
+
+Validation: 239 automated tests and 555 package checks passed. Isolated UI checks covered the home API entry, fetching/filtering models without a model name, opening a roughly 34 MB / 321-page PDF, distant/final-page navigation, rapid color changes, both languages with reload persistence and small-file full text. After a simulated failure and scope change, the actual retry material retained the same hash. Both packaged and delivered executables passed startup, save, backup and normal exit with no renderer errors. No personal data or real API calls were used; actual provider permissions and physical picker feel remain subject to usage.
+
 ## 0.1.12 · 20261106.1 · 2026-11-06
 
 更名为 **AI-Embedded Paper PDF Reader**（AI 嵌入式论文 PDF 阅读器）。应用、介绍、使用说明及本条发布记录支持中英文；首页、阅读设置和模型设置可切换简体中文 / English，并在本机记住。切换不改写论文、聊天、笔记、已保存连接名称或回答偏好。

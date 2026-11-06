@@ -15,7 +15,7 @@ AI-Embedded Paper PDF Reader 在本机保存阅读资料、聊天和批注。项
 
 打开、翻页、换色、搜索、写普通批注、保存模型配置和切换模型均不调用 AI。
 
-发送主聊天问题或创建 AI 询问批注时，会向用户所选服务发送完整有效对话、该对话所有附件的提取文字，以及本次问题；批注请求另包含选中文段。原 PDF 和页面图片不会作为文件上传。接口密钥用于对应服务的请求授权。
+发送问题会发送完整有效主对话；附件默认小文件全文、大文件按需引用，另带选中文字及所在页片段。原文件留在本机。自动模式在超过 25 MiB、300 页或 12 万提取字符时使用本地关键词检索，每份引用片段最多 2.4 万字符；选区和对话另计。阅读设置可切换全文或按需引用，工具栏显示范围。失败重试沿用首次请求的资料；资料不足会明确提示，全文仍受请求与模型容量限制，不静默截断主对话。原 PDF 和页面图片不会作为文件上传。点击“获取上游模型列表”会向所填地址发送模型列表请求及对应密钥授权，不发送论文或聊天；获取本身不保存或启用新配置，修改地址或协议后不沿用旧密钥。接口密钥用于对应服务的请求授权。
 
 因此，“文件保存在本机”不代表提取文字不会发送给模型。处理私密资料前，请确认选择的服务和问题范围。服务商如何保存请求数据，以服务商规则为准。
 
@@ -39,7 +39,7 @@ Windows 桌面版通过 Electron / Chromium 网络组件读取系统代理设置
 
 The app stores original document bytes, extracted text, conversations, annotations and reading position locally. Model connections and credentials are separate from the conversation database. Windows encrypts desktop API keys with the operating system; when encryption is unavailable, keys last only for the session. Conversation backups include original attachments and notes, but no model keys. Interface language is an independent local preference and is not included in these backups.
 
-Reading, turning pages, recoloring, searching, writing personal notes and saving/switching connections make no AI requests. Asking sends the full valid main conversation, extracted text from all its attachments and your question to the selected service; annotation questions also include the selected passage. Original PDFs and page images are not uploaded as files. The provider determines its own data-processing rules.
+Reading, turning pages, recoloring, searching, writing personal notes and saving/switching connections make no AI requests. Asking sends the full valid main conversation. Auto mode sends full extracted text for small files and locally retrieved excerpts for large files, plus the selection and passages from its page. Original files stay local. Above 25 MiB, 300 pages or 120,000 extracted characters, local keyword retrieval selects up to 24,000 excerpt characters per file; the selection and conversation are additional. Reading settings can override this scope, shown in the toolbar. Failed requests retry with their original material. Missing evidence is disclosed; full text remains subject to request and model capacity, without silently truncating the main conversation. Original PDFs and page images are not uploaded as files. Clicking Get available models sends a list request and the corresponding authentication to the entered endpoint, without paper or chat content. Discovery does not save or activate a new connection, and an old key is not reused after changing its endpoint or protocol. The provider determines its own data-processing rules.
 
 The Windows desktop app uses Electron/Chromium to refresh and read system proxy settings before model requests. The app contains no proxy subscriptions, proxy credentials, fixed nodes or fixed public IP. Proxy rules may route a request through a node or directly. A provider normally sees the proxy exit IP for proxied requests and the network exit IP for direct requests. Local loopback model services usually connect directly. The browser version uses a different Node networking path and should not be assumed to inherit Windows system proxy settings.
 

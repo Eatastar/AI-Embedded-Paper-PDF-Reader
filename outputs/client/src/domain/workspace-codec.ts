@@ -1,5 +1,6 @@
 import type { Annotation, AnnotationAttempt, ChatMessage, Conversation, DocumentAttachment, DocumentPage, InputMessage, MessageVersion, Workspace } from './types';
 import { contentHash, contextMessageId, freezeContext, internMessage } from './context-pool';
+import { MAX_DOCUMENT_PAGES } from './document-limits';
 
 export const RECORD_PREFIX = '$ls2:';
 export type RecordKind = 'conversation' | 'message' | 'version' | 'annotation' | 'document' | 'page' | 'input' | 'context';
@@ -48,7 +49,10 @@ export class WorkspaceCodec {
     this.contextCache.set(messages, result); return result;
   }
   private version(value: MessageVersion): Group {
-    return this.memo(value, () => this.group('version', value.id, { ...pick(value, ['id', 'content', 'createdAt', 'modelLabel', 'error']), status: value.status === 'streaming' ? 'interrupted' : value.status }));
+    return this.memo(value, () => {
+      const context = value.context === undefined ? undefined : this.context(value.context);
+      return this.group('version', value.id, { ...pick(value, ['id', 'content', 'createdAt', 'modelLabel', 'error']), status: value.status === 'streaming' ? 'interrupted' : value.status, ...(context ? { contextRef: context.reference } : {}) }, context?.children);
+    });
   }
   private message(value: ChatMessage): Group {
     return this.memo(value, () => this.group('message', value.id, { ...pick(value, ['id', 'role', 'activeVersionId']), versionIds: value.versions.map(v => v.id) }, value.versions.map(v => this.version(v))));
@@ -150,11 +154,11 @@ export function unpackWorkspace(input: unknown): unknown {
     const data = read('conversation', id);
     const messages = ids(data.messageIds, 10000).map(messageId => {
       const m = read('message', messageId);
-      return { ...pick(m, ['id', 'role', 'activeVersionId']), versions: ids(m.versionIds, 1000).map(versionId => pick(read('version', versionId), ['id', 'content', 'status', 'createdAt', 'modelLabel', 'error'])) };
+      return { ...pick(m, ['id', 'role', 'activeVersionId']), versions: ids(m.versionIds, 1000).map(versionId => withContext(read('version', versionId), ['id', 'content', 'status', 'createdAt', 'modelLabel', 'error'])) };
     });
     const documents = data.documentIds === undefined ? undefined : ids(data.documentIds, 10).map(documentId => {
       const d = read('document', documentId);
-      return { ...pick(d, ['id', 'name', 'kind', 'mimeType', 'size', 'createdAt']), pages: ids(d.pageIds, 300).map(pageId => pick(read('page', pageId), ['pageNumber', 'text', 'messageId', 'versionId'])) };
+      return { ...pick(d, ['id', 'name', 'kind', 'mimeType', 'size', 'createdAt']), pages: ids(d.pageIds, MAX_DOCUMENT_PAGES).map(pageId => pick(read('page', pageId), ['pageNumber', 'text', 'messageId', 'versionId'])) };
     });
     const annotations = ids(data.annotationIds, 10000).map(annotationId => {
       const a = read('annotation', annotationId);

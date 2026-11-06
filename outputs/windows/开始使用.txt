@@ -1,5 +1,5 @@
 AI-Embedded Paper PDF Reader
-AI 嵌入式论文 PDF 阅读器 · 0.1.12 · 20261106.1
+AI 嵌入式论文 PDF 阅读器 · 0.1.13 · 20261106.2
 
 一、运行 / Run
 完整解压 ZIP，运行 AI-Embedded-Paper-PDF-Reader.exe，保留所有同目录文件。
@@ -30,22 +30,22 @@ Regeneration creates a separate answer version; old annotations stay on the orig
 四、阅读配色 / Reading colors
 阅读设置可选择原色、暖黄、浅灰、深色或自定义纸张/文字色。可保留彩图及临时对照原色。
 Reading settings offer original, warm yellow, light gray, dark or custom paper/text colors. Preserve colored areas or temporarily compare original colors.
-换色只改变显示，不改写 PDF。支持连续/单页、双指捏合或 Ctrl + 滚轮缩放及续读。
-Recoloring changes the display only. The reader supports continuous/single pages, trackpad pinch or Ctrl + wheel zoom, and reading position memory.
+工具栏、阅读区边缘、设置与批注框随纸张色变化，拖动先快速预览，停下后恢复清晰。换色只改变显示，不改写 PDF。支持连续/单页、双指捏合或 Ctrl + 滚轮缩放及续读。
+The toolbar, reader margins, settings and annotations follow the paper color. Dragging uses a fast preview and restores full clarity when settled. Recoloring changes the display only. The reader supports continuous/single pages, trackpad pinch or Ctrl + wheel zoom, and reading position memory.
 扫描页可查看及换色，暂不支持 OCR 或图像理解。目录依赖文件内嵌结构，搜索使用提取文字。
 Scanned pages support viewing and recoloring, without OCR or image understanding. Contents depend on embedded outlines; search uses extracted text.
 
 五、模型与网络 / Models and networking
-在“模型与设置”保存自己的 API 地址、模型名称和密钥。可用中转站、GPT、Claude、DeepSeek 或“其他”服务模板。
-Save your API address, model name and key in Models & settings. Choose relay, GPT, Claude, DeepSeek or Other service templates.
+首页直接显示 API 连接。打开配置，填写地址和密钥后点击“获取上游模型列表”，筛选选择模型再保存；不支持列表的服务仍可手动填写。可用中转站、GPT、Claude、DeepSeek 或“其他”服务模板。
+The home screen shows API setup. Enter the address and key, fetch available models, filter/select a model and save. Manual entry remains available when listing is unsupported. Choose relay, GPT, Claude, DeepSeek or Other service templates.
 其他服务包含 Kimi、千问、Gemini 兼容入口、Grok、Ollama、LM Studio 和自定义 API。
 Other services include Kimi, Qwen, Gemini's compatible endpoint, Grok, Ollama, LM Studio and custom APIs.
 接口格式是通信协议：Chat Completions、Responses、Anthropic Messages。模型名称和可用性由服务商决定。
 API formats are protocols: Chat Completions, Responses and Anthropic Messages. Model names and availability depend on the provider.
 保存或切换连接不发送问题。普通阅读、搜索和笔记不调用 AI。
 Saving/switching connections sends no questions. Reading, searching and personal notes make no AI requests.
-发送问题会向所选服务发送完整有效主对话及该对话全部附件的提取文字。原 PDF 不作为文件上传，但提取文字会发送。
-Asking sends the full valid main conversation and extracted text from all its attachments to the selected service. The original PDF is not uploaded as a file, but extracted text is sent.
+发送问题会发送完整有效主对话；附件默认小文件全文、大文件按需引用，另带选中文字及所在页片段。原文件留在本机。自动模式在超过 25 MiB、300 页或 12 万提取字符时使用本地关键词检索，每份引用片段最多 2.4 万字符；选区和对话另计。阅读设置可切换全文或按需引用，工具栏显示范围。失败重试沿用首次请求的资料；资料不足会明确提示，全文仍受请求与模型容量限制，不静默截断主对话。
+Asking sends the full valid main conversation. Auto mode sends full extracted text for small files and locally retrieved excerpts for large files, plus the selection and passages from its page. Original files stay local. Above 25 MiB, 300 pages or 120,000 extracted characters, local keyword retrieval selects up to 24,000 excerpt characters per file; the selection and conversation are additional. Reading settings can override this scope, shown in the toolbar. Failed requests retry with their original material. Missing evidence is disclosed; full text remains subject to request and model capacity, without silently truncating the main conversation.
 桌面版沿用系统代理，不含代理节点或密钥。使用代理时保持代理工具运行并开启系统代理；API 地址仍填服务商地址。
 The desktop app follows the system proxy and includes no proxy nodes or keys. Keep your proxy app and system proxy enabled when needed, and keep the provider's address in the API field.
 
@@ -73,3 +73,7 @@ Anyone may download and adapt this project with AI agents / vibe coding. Please 
 To notify the maintainer, mention @Eatastar in a relevant issue, pull request or discussion. Credit the project with a repository link.
 项目自身代码采用 MIT。来源链接是友好请求，不增加许可证限制。第三方组件保留各自作者署名和许可，发行目录内附许可文件。
 Original code uses MIT. Linking upstream is a courtesy request, not an extra license restriction. Third-party components keep their own authorship and licenses, included in the distribution.
+
+大文件 / Large files
+PDF 最大 150 MiB、5000 页、1000 万提取字符；文字文件最大 25 MiB、100 万字符。打开时可查看提取进度并取消。全工作区备份仍以 350 MB 为限，超出时分别导出对话。
+PDF: up to 150 MiB, 5,000 pages and 10 million extracted characters. Text files: up to 25 MiB and 1 million characters. Opening shows progress and supports cancellation. Full-workspace backups retain a 350 MB limit; export conversations separately when needed.

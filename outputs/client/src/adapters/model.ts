@@ -30,6 +30,14 @@ export const saveProfile = (profile: ProfileInput) => profileAction('/api/profil
 export const selectProfile = (profileId: string | null) => profileAction('/api/profiles/select', { profileId });
 export const deleteProfile = (profileId: string) => profileAction('/api/profiles/delete', { profileId });
 
+export interface DiscoveredModel { id: string; label?: string }
+export async function discoverModels(input: ProfileInput, signal?: AbortSignal): Promise<DiscoveredModel[]> {
+  const response = await fetch('/api/models', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input), signal });
+  if (!response.ok) throw new Error(await readFailure(response));
+  const result = await response.json() as { models: DiscoveredModel[] };
+  return result.models;
+}
+
 export async function streamReply(request: ReplyRequest, onDelta: (text: string) => void, signal?: AbortSignal): Promise<{ modelLabel: string }> {
   signal?.throwIfAborted();
   const response = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId: crypto.randomUUID(), ...request }), signal });

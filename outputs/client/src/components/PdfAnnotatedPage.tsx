@@ -5,6 +5,7 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { loadPdfJs } from '../adapters/documents';
 import { bindPdfTextSelection } from '../adapters/pdf-selection';
 import { paintPdfFrame, startPdfFrame } from '../adapters/pdf-frame';
+import { PdfColorProcessor } from '../adapters/pdf-color';
 import { PdfRenderQueue } from '../adapters/pdf-navigation';
 import { markReaderSearch } from '../adapters/reader-search';
 import { pdfPageSize } from '../domain/pdf-zoom';
@@ -37,6 +38,9 @@ export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appear
   const [renderError, setRenderError] = useState('');
   const [colorError, setColorError] = useState(false);
   const originalRef = useRef<ImageData | null>(null);
+  const colorProcessor = useRef<PdfColorProcessor | null>(null);
+  const colorRevision = useRef(0);
+  useEffect(() => () => { colorRevision.current++; colorProcessor.current?.dispose(); colorProcessor.current = null; }, []);
   const pageSize = useRef<{ width: number; height: number } | null>(null);
   const publishedScale = useRef<number | null>(null);
   const requested = useRef({ availableWidth, zoom });
@@ -56,13 +60,35 @@ export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appear
     const canvas = canvasRef.current;
     if (!original || !canvas) return false;
     try {
+      colorRevision.current++; colorProcessor.current?.cancel();
       paintPdfFrame(canvas, original, appearance, compareOriginal);
       canvas.style.visibility = 'visible';
       setColorError(false);
       return true;
     } catch { canvas.style.visibility = 'hidden'; setColorError(true); return false; }
   };
-  useLayoutEffect(() => { paintRef.current(); }, [appearance.paper, appearance.ink, appearance.preserveColors, appearance.preset, compareOriginal]);
+  useEffect(() => {
+    const original = originalRef.current; if (!original) return;
+    const revision = ++colorRevision.current;
+    const processor = colorProcessor.current ??= new PdfColorProcessor();
+    const nextAppearance = compareOriginal ? { ...appearance, preset: 'original' as const } : appearance;
+    const paint = async (fast: boolean) => {
+      try {
+        const frame = await processor.prepare(original, nextAppearance, fast);
+        const canvas = canvasRef.current;
+        if (!frame || !canvas || revision !== colorRevision.current || original !== originalRef.current) return;
+        const display = new ImageData(new Uint8ClampedArray(frame.data), frame.width, frame.height);
+        const context = canvas.getContext('2d', { alpha: true, willReadFrequently: true }); if (!context) throw new Error('Canvas unavailable');
+        // Prepared offscreen. Resizing and publishing remain one synchronous commit.
+        if (canvas.width !== frame.width) canvas.width = frame.width;
+        if (canvas.height !== frame.height) canvas.height = frame.height;
+        context.putImageData(display, 0, 0); canvas.style.visibility = 'visible'; setColorError(false);
+      } catch { if (revision === colorRevision.current) setColorError(true); }
+    };
+    const request = requestAnimationFrame(() => { void paint(true); });
+    const refine = setTimeout(() => { void paint(false); }, 160);
+    return () => { colorRevision.current++; processor.cancel(); cancelAnimationFrame(request); clearTimeout(refine); };
+  }, [appearance.paper, appearance.ink, appearance.preserveColors, appearance.preset, compareOriginal]);
 
   useEffect(() => {
     let cancelled = false;
@@ -120,7 +146,7 @@ export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appear
 
   return <div className="document-pdf-wrap">
     {!readyKey && !renderError && <div className="document-render-status" role="status">{t("正在显示原页面…")}</div>}
-    {renderError && <div className="document-reader-warning" role="alert">{renderError}</div>}
+    {renderError && <div className="document-reader-warning" role="alert">{t(renderError)}</div>}
     {colorError && <div className="document-reader-warning" role="status">{t("这一页暂时无法换色，可切换“可批注文本”，或主动选择“原色对照”查看。")}</div>}
     <div ref={presentationRef} className="document-page-presentation"><AnnotatedAnswer {...annotationProps} contentReadyKey={readyKey} contentClassName="document-page-annotator" content={
       <div ref={stageRef} className="document-page-stage">

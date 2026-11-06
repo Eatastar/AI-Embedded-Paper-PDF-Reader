@@ -5,6 +5,7 @@ import { assertWorkspaceCapacity } from '../domain/capacity';
 import { WorkspaceRecordStore } from './record-store';
 import type { SavedMetadata, SavedDocument } from './record-store';
 import { unpackWorkspace, WorkspaceCodec } from '../domain/workspace-codec';
+import { MAX_PDF_BYTES, documentByteLimit } from '../domain/document-limits';
 
 const database = new Dexie('margin-chat-workspace') as Dexie & { workspaces: EntityTable<SavedMetadata, 'id'>; documents: EntityTable<SavedDocument, 'id'> };
 database.version(1).stores({ workspaces: 'id' });
@@ -13,7 +14,7 @@ const records = new WorkspaceRecordStore(database);
 const backupCodec = new WorkspaceCodec();
 
 export async function saveDocumentBytes(id: string, bytes: Uint8Array): Promise<void> {
-  if (!id || bytes.byteLength > 25 * 1024 * 1024) throw new Error('附件大小不得超过 25 MB。');
+  if (!id || bytes.byteLength > MAX_PDF_BYTES) throw new Error('附件大小不得超过 150 MB。');
   await database.documents.put({ id, bytes: new Uint8Array(bytes) });
 }
 
@@ -88,13 +89,19 @@ async function decodeWorkspaceWithFiles(text: string) {
   for (const file of files) {
     if (!file || typeof file !== 'object' || typeof file.documentId !== 'string' || typeof file.data !== 'string' || decoded.has(file.documentId)) throw new Error('备份附件格式无效。');
     const document = documents.find(d => d.id === file.documentId);
-    if (!document || file.data.length !== Math.ceil(document.size / 3) * 4 || file.data.length > 35_000_000) throw new Error('备份附件格式无效。');
+    if (!document || file.data.length !== Math.ceil(document.size / 3) * 4 || file.data.length > Math.ceil(MAX_PDF_BYTES / 3) * 4) throw new Error('备份附件格式无效。');
     const padding = document.size % 3 === 0 ? '' : document.size % 3 === 1 ? '==' : '=';
     const contentLength = file.data.length - padding.length;
     if ((padding && !file.data.endsWith(padding)) || /[^A-Za-z0-9+/]/.test(file.data.slice(0, contentLength))) throw new Error('备份附件格式无效。');
     let bytes: Uint8Array;
-    try { bytes = Uint8Array.from(atob(file.data), char => char.charCodeAt(0)); } catch { throw new Error('备份附件数据无法读取。'); }
-    if (bytes.length !== document.size || bytes.length > 25 * 1024 * 1024) throw new Error('备份附件大小与记录不一致。');
+    try {
+      bytes = new Uint8Array(document.size);
+      for (let offset = 0, target = 0; offset < file.data.length; offset += 131072) {
+        const part = atob(file.data.slice(offset, offset + 131072));
+        for (let i = 0; i < part.length; i++) bytes[target++] = part.charCodeAt(i);
+      }
+    } catch { throw new Error('备份附件数据无法读取。'); }
+    if (bytes.length !== document.size || bytes.length > documentByteLimit(document.kind)) throw new Error('备份附件大小与记录不一致。');
     if (document.kind === 'pdf' && !new TextDecoder().decode(bytes.subarray(0, 1024)).includes('%PDF-')) throw new Error('备份中的 PDF 原文件无效。');
     decoded.set(document.id, bytes);
   }

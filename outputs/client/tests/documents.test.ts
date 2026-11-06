@@ -21,10 +21,17 @@ test('local UTF-8 text import preserves source and creates an independent annota
 
 test('extension and real PDF header validation reject renamed or unsupported files', async () => {
   assert.equal(documentFileKind({ name: 'paper.PDF', type: 'application/octet-stream', size: 42 }), 'pdf');
+  assert.equal(documentFileKind({ name: 'large.pdf', type: 'application/pdf', size: 40 * 1024 * 1024 }), 'pdf');
+  assert.throws(() => documentFileKind({ name: 'large.txt', type: 'text/plain', size: 26 * 1024 * 1024 }), /25 MB/);
   assert.throws(() => documentFileKind({ name: 'script.html', type: 'text/plain', size: 42 }), /目前支持/);
   assert.throws(() => documentFileKind({ name: 'empty.txt', type: 'text/plain', size: 0 }), /文件是空的/);
-  assert.throws(() => documentFileKind({ name: 'large.pdf', type: 'application/pdf', size: MAX_DOCUMENT_BYTES + 1 }), /25 MB/);
+  assert.throws(() => documentFileKind({ name: 'large.pdf', type: 'application/pdf', size: MAX_DOCUMENT_BYTES + 1 }), /150 MB/);
   await assert.rejects(parseDocumentFile(new File(['not a real PDF'], 'paper.pdf')), /不是有效的 PDF/);
+});
+
+test('cancelled document parsing does not produce a partial attachment', async () => {
+  const controller = new AbortController(); controller.abort();
+  await assert.rejects(parseDocumentFile(new File(['synthetic text'], 'cancelled.txt'), { signal: controller.signal }), { name: 'AbortError' });
 });
 
 test('binary and non-UTF-8 text receive useful local errors', async () => {

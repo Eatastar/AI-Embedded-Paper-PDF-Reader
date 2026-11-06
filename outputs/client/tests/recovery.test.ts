@@ -215,12 +215,12 @@ test('附件导入拒绝不连续页号、重复 ID、过大文件和文本，�
     w => { w.conversations[0].documents![0].pages[1].pageNumber = 3; },
     w => { w.conversations[0].documents![0].pages[1].messageId = 'page-message-1'; },
     w => { w.conversations[0].documents![0].pages[0].versionId = w.conversations[0].messages[1].activeVersionId; },
-    w => { w.conversations[0].documents![0].size = 25 * 1024 * 1024 + 1; },
+    w => { w.conversations[0].documents![0].size = 150 * 1024 * 1024 + 1; },
     w => { w.conversations[0].documents![0].pages = []; },
-    w => { w.conversations[0].documents![0].pages[0].text = 'a'.repeat(1_000_001); },
+    w => { w.conversations[0].documents![0].pages = Array.from({ length: 6 }, (_, i) => ({ pageNumber: i + 1, text: 'a'.repeat(1_800_000), messageId: `large-page-${i}`, versionId: `large-version-${i}` })); },
     w => { w.conversations[0].documents![0].kind = 'docx' as any; },
     w => { w.conversations[0].documents = Array(11).fill(w.conversations[0].documents![0]); },
-    w => { w.conversations[0].documents![0].pages = Array.from({ length: 301 }, (_, i) => ({ pageNumber: i + 1, text: '', messageId: `page-${i}`, versionId: `version-${i}` })); },
+    w => { w.conversations[0].documents![0].pages = Array.from({ length: 5001 }, (_, i) => ({ pageNumber: i + 1, text: '', messageId: `page-${i}`, versionId: `version-${i}` })); },
   ];
   for (const mutate of invalids) {
     const invalid = workspace(withDocument());

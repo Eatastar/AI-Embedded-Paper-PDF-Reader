@@ -159,7 +159,7 @@ export function AnnotationCard({ annotation, onClose, onUpdate, onAsk, onStop, o
               }}
             />
             <div className="annotation-draft-footer">
-              <span>{t("包含完整主对话上下文")}</span>
+              <span>{t("主对话完整，资料按阅读设置引用")}</span>
               <button type="button" className="annotation-primary-button" disabled={!annotation.question.trim() || disabled} onClick={onAsk}><Send size={14} />{t("提问")}</button>
             </div>
             <p className="annotation-shortcut"><CornerDownLeft size={11} />{t("Ctrl / ⌘ + Enter 发送 · 草稿自动保存")}</p>
@@ -171,7 +171,7 @@ export function AnnotationCard({ annotation, onClose, onUpdate, onAsk, onStop, o
               <label htmlFor={`annotation-reask-${annotation.id}`}>{t("关于这段原文，你想重新问什么？")}</label>
               <textarea ref={questionRef} id={`annotation-reask-${annotation.id}`} className="annotation-textarea" rows={4} value={reask.question} disabled={disabled} onChange={event => onUpdate({ reask: { ...reask, question: event.target.value } })} onKeyDown={event => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && reask.question.trim() && !disabled) { event.preventDefault(); onAsk(); } }} />
               <div className="annotation-edit-actions"><button className="annotation-text-button" onClick={() => onReask('cancel')}>{t("取消重新提问")}</button><button className="annotation-primary-button" disabled={disabled || !reask.question.trim()} onClick={onAsk}><Send size={14} />{t("发送并替换")}</button></div>
-              <p className="annotation-footnote">{t("使用当前完整主对话和附件，不附加旧批注问答。")}</p>
+              <p className="annotation-footnote">{t("使用完整主对话，附件按阅读设置引用，不附加旧批注问答。")}</p>
             </div> : <div className="annotation-response">
               <div className="annotation-section-label">{t("新的问题")}</div><p className="annotation-question-text">{reask.question}</p>
               <div className="annotation-section-label annotation-answer-label">{isGenerating ? <><LoaderCircle size={13} className="annotation-spin" />{t("正在重新回答")}</> : t("新的回答未完成")}</div>

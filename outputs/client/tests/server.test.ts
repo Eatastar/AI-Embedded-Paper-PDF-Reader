@@ -256,7 +256,7 @@ test('provider failures are safe, readable and never retried', async () => {
   try {
     await post(app.base, '/api/settings', { mode: 'api', model: 'test-model', apiKey: 'secret-test-key' });
     const text = await (await post(app.base, '/api/chat', { kind: 'main', messages: [{ role: 'user', content: 'hello' }] })).text();
-    assert.match(text, /完整上下文超过模型的容量/);
+    assert.match(text, /本次资料和对话超过模型容量/);
     assert.doesNotMatch(text, /secret-test-key/);
     assert.doesNotMatch(text, /"type":"done"/);
     assert.equal(calls, 1);

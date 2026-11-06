@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type SelectHTMLAttributes } from 'react';
 import { Check, ChevronDown, KeyRound, Pencil, PlugZap, Plus, Trash2, X } from 'lucide-react';
 import type { ModelProfile, ModelSettings, ProfileInput } from '../domain/types';
 import { apiFormatOptions, connectionPresets, otherConnectionPresets, profileFromPreset } from '../domain/model-presets';
+import { discoverModels, type DiscoveredModel } from '../adapters/model';
 
 function editProfile(profile: ModelProfile): ProfileInput {
   return {
@@ -40,6 +41,11 @@ export function SettingsDialog({ settings, onClose, onSaveProfile, onDeleteProfi
   const [busy, setBusy] = useState<'save' | 'delete' | 'select' | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [models, setModels] = useState<DiscoveredModel[]>([]);
+  const [modelFilter, setModelFilter] = useState('');
+  const [discovering, setDiscovering] = useState(false);
+  const [discoveryError, setDiscoveryError] = useState('');
+  const discovery = useRef<AbortController | null>(null);
   const currentProfile = settings.profiles.find(profile => profile.id === form.id);
   const retainedKey = Boolean(currentProfile?.hasApiKey && !clearApiKey);
   const otherPreset = otherConnectionPresets.find(item => item.id === otherPresetId);
@@ -47,6 +53,22 @@ export function SettingsDialog({ settings, onClose, onSaveProfile, onDeleteProfi
   const format = apiFormatOptions.find(item => item.value === form.apiFormat);
 
   useEffect(() => { dialog.current?.showModal(); }, []);
+  useEffect(() => {
+    discovery.current?.abort(); setModels([]); setModelFilter(''); setDiscoveryError(''); setDiscovering(false);
+    return () => { discovery.current?.abort(); };
+  }, [form.id, form.baseURL, form.apiFormat, apiKey, clearApiKey]);
+
+  async function fetchModels() {
+    discovery.current?.abort();
+    const controller = new AbortController(); discovery.current = controller;
+    setDiscovering(true); setDiscoveryError(''); setModels([]);
+    try {
+      const result = await discoverModels({ ...form, apiKey: apiKey.trim() || undefined, clearApiKey: clearApiKey && !apiKey.trim() }, controller.signal);
+      if (!controller.signal.aborted) setModels(result);
+    } catch (error) {
+      if (!controller.signal.aborted) setDiscoveryError(error instanceof Error ? error.message : '无法获取模型列表。');
+    } finally { if (!controller.signal.aborted) setDiscovering(false); }
+  }
 
   function choosePreset(id: string) {
     const next = connectionPresets.find(item => item.id === id);
@@ -72,6 +94,7 @@ export function SettingsDialog({ settings, onClose, onSaveProfile, onDeleteProfi
   }
   async function submit(event: React.FormEvent) {
     event.preventDefault(); setError(''); setBusy('save');
+    discovery.current?.abort(); setDiscovering(false);
     try {
       await onSaveProfile({ ...form, apiKey: apiKey.trim() || undefined, clearApiKey: clearApiKey && !apiKey.trim(), activate: true });
       onClose();
@@ -146,6 +169,12 @@ export function SettingsDialog({ settings, onClose, onSaveProfile, onDeleteProfi
           <span className="password-field"><KeyRound size={16} /><input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} autoComplete="off" placeholder={retainedKey ? t("留空保留此连接的密钥") : t("输入此服务的 API Key，也可先留空")} /></span>
         </label>
         {clearApiKey && currentProfile?.hasApiKey && <p className="profile-key-notice">{t("接口地址或格式已修改，原密钥不会沿用。请填写新密钥，或留空稍后补充。")}</p>}
+        <div className="model-discovery">
+          <div className="model-discovery-action"><button type="button" className="document-tool-button" disabled={discovering || !form.baseURL.trim()} onClick={() => void fetchModels()}>{discovering ? t("正在获取模型…") : t("获取上游模型列表")}</button>{discovering && <button type="button" className="profile-text-button" onClick={() => { discovery.current?.abort(); setDiscovering(false); }}>{t("取消")}</button>}</div>
+          <p className="field-help">{t("填写地址和密钥后获取，无需先填模型名；本机无鉴权服务可留空密钥。此操作只读取模型列表，不发送问题。")}</p>
+          {models.length > 0 && <><label className="field-label">{t("筛选模型")}<input className="field-input" value={modelFilter} onChange={event => setModelFilter(event.target.value)} placeholder={t("输入名称筛选")} /></label><label className="field-label">{t("上游模型（{0}）", [models.length])}<SettingsSelect value={models.some(model => model.id === form.model) ? form.model : ''} onChange={event => setForm({ ...form, model: event.target.value })}><option value="" disabled>{t("请选择模型")}</option>{models.filter(model => model.id === form.model || `${model.id} ${model.label || ''}`.toLowerCase().includes(modelFilter.toLowerCase())).map(model => <option key={model.id} value={model.id}>{model.label ? `${model.label} · ${model.id}` : model.id}</option>)}</SettingsSelect></label><p className="field-help">{t("列表可能包含图像、语音等模型，请选择支持文字对话的模型；未列出的模型仍可手动填写。")}</p></>}
+          {discoveryError && <p className="form-error" role="alert">{t(discoveryError)}</p>}
+        </div>
         <p className="field-help profile-storage-help">{settings.persistence === 'encrypted' ? t("密钥使用本机系统加密保存，重启后可继续使用。") : settings.persistence === 'configuration' ? t("连接配置会保存在本机；密钥仅本次运行有效，重启后需重新填写。") : t("当前只能在本次运行中保留连接和密钥，退出后需重新填写。")}{t("密钥不会进入聊天记录或聊天备份。")}</p>
         {settings.storageWarning && <p className="profile-key-notice">{t(settings.storageWarning)}</p>}
         <label className="field-label">{t("回答偏好")}<textarea className="field-input" rows={3} value={form.systemPrompt} onChange={e => setForm({ ...form, systemPrompt: e.target.value })} placeholder={t("例如：用中文回答，解释清楚，适当举例。")} /></label>

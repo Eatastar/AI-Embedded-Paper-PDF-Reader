@@ -10,6 +10,7 @@ export interface MessageVersion {
   createdAt: number;
   modelLabel?: string;
   error?: string;
+  context?: InputMessage[];
 }
 
 export interface ChatMessage {

@@ -133,6 +133,11 @@ export function createProfileManager({ initialSettings, store } = {}) {
 
   return {
     publicSettings,
+    forDiscovery(input) {
+      object(input);
+      const previous = input.id === undefined ? { apiFormat: 'openai-chat', baseURL: 'https://api.openai.com/v1', model: '', systemPrompt: '', apiKey: '' } : find(input.id);
+      return normalizeFields(input, previous, { requireKey: true, requireModel: false });
+    },
     updateSettings(input) {
       object(input);
       const mode = input.mode === undefined ? state.mode : text(input.mode, '模式', 20);

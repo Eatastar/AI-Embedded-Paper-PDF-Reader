@@ -8,9 +8,9 @@ A local paper reader with optional AI conversations. Select text in a PDF or an 
 
 [下载 / Downloads](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases) · [隐私 / Privacy](docs/PRIVACY.md) · [版本记录 / Changelog](docs/CHANGELOG.md) · [项目总纲 / Project outline](docs/PROJECT.md)
 
-当前源码版本为 **0.1.12**，首个公开正式版为 **v0.1.11**。请以 Releases 中实际发布的附件为准。项目采用 [MIT 许可证](LICENSE)。仓库已更名为 AI-Embedded-Paper-PDF-Reader；原 Learn-Something 地址会跳转到新仓库，已有下载和引用链接继续有效。
+当前源码版本为 **0.1.13**，首个公开正式版为 **v0.1.11**。请以 Releases 中实际发布的附件为准。项目采用 [MIT 许可证](LICENSE)。仓库已更名为 AI-Embedded-Paper-PDF-Reader；原 Learn-Something 地址会跳转到新仓库，已有下载和引用链接继续有效。
 
-The current source version is **0.1.12**; **v0.1.11** was the first public release. Download the assets actually available on the Releases page. The project uses the [MIT license](LICENSE). The repository is now named AI-Embedded-Paper-PDF-Reader. The former Learn-Something address redirects to it, preserving existing download and reference links.
+The current source version is **0.1.13**; **v0.1.11** was the first public release. Download the assets actually available on the Releases page. The project uses the [MIT license](LICENSE). The repository is now named AI-Embedded-Paper-PDF-Reader. The former Learn-Something address redirects to it, preserving existing download and reference links.
 
 ## 开始使用 / Getting started
 
@@ -20,12 +20,12 @@ The current source version is **0.1.12**; **v0.1.11** was the first public relea
    Open a local PDF from the home screen. Choose Chinese / English on the home screen or in reading/model settings. Customize paper and text colors in Reading settings.
 3. 划选原文，选择询问 AI 或只写批注。在批注框的“高亮颜色”中选择预设色、自定义颜色或十六进制颜色。
    Select text to ask AI or write a note. Highlight color in the annotation panel offers presets, custom colors and hexadecimal input.
-4. 需要 AI 时，在“模型与设置”填写自己的 API 地址、模型名和密钥，从聊天输入框左下角切换已保存连接。
-   To use AI, add your API address, model name and key in Models & settings. Switch saved connections from the lower left of the chat input.
+4. 首页直接显示 API 连接。填写地址和密钥，点击“获取上游模型列表”并选择模型；也可手动填写，从首页或聊天输入框切换已保存连接。
+   The home screen shows your API connection. Enter its address and key, fetch available models and choose one, or enter a name manually. Switch saved connections on the home screen or at the lower left of chat.
 
-普通阅读、搜索和笔记不调用 AI。发送问题会将完整有效主对话及该对话所有附件的提取文字发给所选服务，原文件留在本机。桌面版沿用系统代理，不附带代理节点或 API 密钥。详见[隐私说明](docs/PRIVACY.md)。
+普通阅读、搜索和笔记不调用 AI。发送问题会发送完整有效主对话；附件默认小文件全文、大文件按需引用，另带选中文字及所在页片段。原文件留在本机。自动模式在超过 25 MiB、300 页或 12 万提取字符时使用本地关键词检索，每份引用片段最多 2.4 万字符；选区和对话另计。阅读设置可切换全文或按需引用，工具栏显示范围。失败重试沿用首次请求的资料；资料不足会明确提示，全文仍受请求与模型容量限制，不静默截断主对话。桌面版沿用系统代理，不附带代理节点或 API 密钥。详见[隐私说明](docs/PRIVACY.md)。
 
-Reading, search and personal notes make no AI requests. Asking sends the full valid main conversation and extracted text from all attachments in that conversation to your selected service. Original files remain local. The desktop app follows your system proxy and includes no proxy nodes or API keys. See [Privacy](docs/PRIVACY.md).
+Reading, search and personal notes make no AI requests. Asking sends the full valid main conversation. Auto mode sends full extracted text for small files and locally retrieved excerpts for large files, plus the selection and passages from its page. Original files stay local. Above 25 MiB, 300 pages or 120,000 extracted characters, local keyword retrieval selects up to 24,000 excerpt characters per file; the selection and conversation are additional. Reading settings can override this scope, shown in the toolbar. Failed requests retry with their original material. Missing evidence is disclosed; full text remains subject to request and model capacity, without silently truncating the main conversation. The desktop app follows your system proxy and includes no proxy nodes or API keys. See [Privacy](docs/PRIVACY.md).
 
 ## 功能 / Features
 
@@ -33,13 +33,15 @@ Reading, search and personal notes make no AI requests. Asking sends the full va
 | --- | --- |
 | 本地阅读优先，重复内容只显示一次，聊天按需打开 | Local reading first, duplicate content displayed once, optional chat |
 | PDF 原排版、单页/连续阅读、手势缩放与续读 | Original PDF layout, single/continuous pages, pinch zoom and reading position memory |
-| 纸张/文字配色、保留彩图、原色对照 | Custom paper/text colors, preserved colored areas and original-color comparison |
+| 整套阅读器随纸张换色、后台快速预览、保留彩图和原色对照 | Reader-wide paper colors, background previews, preserved colored areas and original-color comparison |
 | 自选高亮颜色、可拖动批注框、框外点击收起 | Custom highlight colors, movable panels and outside-click dismissal |
 | 原文提问、普通笔记、成功后才覆盖的重新提问 | Questions about text, personal notes and replace-on-success questions |
 | 回答版本独立，旧批注跟随原回答 | Separate answer versions; annotations stay with the original answer |
 | PDF 目录、全文搜索、批注筛选定位 | PDF contents, full-text search and filtered annotation navigation |
 | 中英文界面切换并记忆，不改写原文和聊天 | Remembered Chinese/English interface, without rewriting documents or chats |
+| 首页 API 入口、上游模型获取与筛选、手动填写兜底 | Home API setup, model discovery/filtering and manual fallback |
 | 多模型预载、三种接口格式及本地模型 | Saved connections, three API formats and local models |
+| PDF 最大 150 MiB / 5000 页、本地按需引用、固定资料重试 | PDFs up to 150 MiB / 5,000 pages, local excerpt retrieval and fixed-context retries |
 | 回收站恢复/永久删除、完整备份与追加导入 | Trash restore/permanent deletion, full backups and additive import |
 
 支持 Chat Completions、Responses、Anthropic Messages。模板包括 GPT、Claude、DeepSeek、中转站、Kimi、千问、Gemini 兼容入口、Grok、Ollama、LM Studio 及自定义服务。可用模型由服务商决定。扫描页支持查看和换色，目前不含 OCR 或图片理解。

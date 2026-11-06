@@ -57,3 +57,13 @@ export function activeReaderPage(rects: { pageIndex: number; top: number; bottom
   const containing = rects.find(rect => rect.top <= focus && rect.bottom >= focus);
   return (containing || rects.reduce((best, next) => Math.min(Math.abs(next.top - focus), Math.abs(next.bottom - focus)) < Math.min(Math.abs(best.top - focus), Math.abs(best.bottom - focus)) ? next : best)).pageIndex;
 }
+
+/** Sorted page slots allow scroll tracking without measuring thousands of DOM nodes every frame. */
+export function readerPageAtFocus(count: number, rectAt: (index: number) => { top: number; bottom: number }, focus: number): number {
+  if (!count) return 0;
+  let low = 0, high = count - 1;
+  while (low < high) { const middle = (low + high) >>> 1; if (rectAt(middle).bottom < focus) low = middle + 1; else high = middle; }
+  if (!low) return 0;
+  const current = rectAt(low), previous = rectAt(low - 1);
+  return current.top <= focus || Math.abs(current.top - focus) < Math.abs(previous.bottom - focus) ? low : low - 1;
+}

@@ -1,10 +1,10 @@
 # AI-Embedded Paper PDF Reader 项目总纲 / Project outline
 
-当前版本：客户端 0.1.12，构建 20261106.1，2026年11月6日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
+当前版本：客户端 0.1.13，构建 20261106.2，2026年11月6日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
 
 首个公开正式版沿用 v0.1.11 和现有构建，使用 MIT 许可证。公开范围包括已核对的源码及通用 Windows 发行包；历史检查范围见 [公开发布说明](OPEN_SOURCE_RELEASE.md)，本地数据和请求边界见 [隐私说明](PRIVACY.md)。
 
-Current source: **0.1.12 / 20261106.1**. A local paper reader with optional AI questions and personal notes. Public introductions and release notes are bilingual. Users can select Chinese or English in the app; interface language never rewrites their documents, messages, notes or answer preferences.
+Current source: **0.1.13 / 20261106.2**. A local paper reader with optional AI questions and personal notes. Public introductions and release notes are bilingual. Users can select Chinese or English in the app; interface language never rewrites their documents, messages, notes or answer preferences.
 
 Original application code was implemented entirely by GPT through Codex; the human initiator proposed ideas, defined requirements and selected features/trade-offs. Everyone may download and adapt it with AI agents or vibe coding. Please link to the upstream repository when publishing a derivative; MIT and third-party notices remain applicable. See [Attribution](ATTRIBUTION.md).
 
@@ -22,7 +22,7 @@ Keep questions beside their source. Select, ask and take notes directly in AI an
 4. 平时只保留不同颜色的高亮，点击打开弹框。× 或框外点击收起，内容继续保存；独立的“停止回答”可中断生成并重试原问题。
 5. 批注框可拖动，正文和高亮保持文字光标。编辑时关闭会保存修改，取消编辑则放弃本次修改。
 6. 重新生成主回答得到独立版本，旧批注留在原版本，新版本不继承旧批注。
-7. 默认发送全部有效主对话和全部附件提取文字，不静默截断；失败残文不作为成功回答加入上下文。
+7. 发送问题会发送完整有效主对话；附件默认小文件全文、大文件按需引用，另带选中文字及所在页片段。原文件留在本机。自动模式在超过 25 MiB、300 页或 12 万提取字符时使用本地关键词检索，每份引用片段最多 2.4 万字符；选区和对话另计。阅读设置可切换全文或按需引用，工具栏显示范围。失败重试沿用首次请求的资料；资料不足会明确提示，全文仍受请求与模型容量限制，不静默截断主对话。失败残文不作为成功回答加入上下文。
 8. 文件原字节保存在本机。阅读配色只改变显示，不改写 PDF。
 9. 普通删除移入回收站；回收站支持恢复、单条永久删除和清空，永久删除对话时原子移除记录与附件原字节，正在排队的旧保存不能复活记录。历史自动备份和导出文件不随当前记录删除而改写。JSON 备份包含文档原字节和批注，追加导入不覆盖已有记录。
 10. 模型配置与聊天分别存储，桌面凭证使用系统加密，不进入聊天备份或源码仓库。
@@ -34,10 +34,20 @@ Keep questions beside their source. Select, ask and take notes directly in AI an
 
 English: Each highlight may use a preset or custom color. Color changes preserve the source anchor/version, current Q&A and in-flight replacement request, and survive save/backup/restore. Chinese is the default UI; the Chinese/English selector remembers a separate local preference, without changing paper or conversation content, model preferences or backup formats. Native editing menus and exit prompts follow the chosen language. Existing profile and app identities stay stable across the rename.
 
+15. 首页显示当前 API 与配置入口；模型列表通过用户填写的地址获取，支持兼容接口与 Claude 分页、筛选及手动兜底。获取不生成回答、不保存或启用配置，也不把旧密钥带到新地址。
+16. PDF 上限调整为 150 MiB / 5000 页 / 1000 万提取字符；读取显示进度并可取消。画布和页面几何按需准备，滚动用二分定位，关闭仍等待保存。
+17. 阅读器控件、边缘与批注浮框随纸张色变化。拖动颜色采用后台低分辨率预览，停下后恢复原分辨率；过期颜色任务不覆盖新结果，原 PDF 不改写。
+
+English: The home screen exposes API setup and model discovery. PDFs support up to 150 MiB / 5,000 pages with cancellable extraction. Auto mode sends full small documents and locally retrieved excerpts for large ones while preserving the complete valid conversation. Retries keep their original request material. Reader-wide colors use background previews followed by full-resolution refinement.
+
 ## 模块职责 / Modules
 
 | 模块 | 实现位置 | 职责 |
 | --- | --- | --- |
+| 模型列表 / Model discovery | `server/model-discovery.mjs`、`server/profiles.mjs`、`src/components/SettingsDialog.tsx` | 限时列表请求、认证隔离、分页和筛选 / Bounded listing, isolated authentication, pagination and filtering |
+| 资料范围 / Document scope | `src/domain/document-context.ts`、`src/adapters/document-context.ts` | 本地检索、范围说明、全文兜底与固定请求 / Local retrieval, scope disclosure, full text option and frozen requests |
+| 大文件限制 / Large-file limits | `src/domain/document-limits.ts` | 解析、保存、恢复共用限制 / Shared parsing, storage and recovery limits |
+| 后台配色 / Background colors | `src/adapters/pdf-color.ts`、`src/adapters/pdf-color.worker.ts`、`src/domain/pdf-color.ts` | 合并过期请求、预览、清晰重绘和降级 / Latest-job scheduling, previews, refinement and fallback |
 | 界面语言 / Interface language | `src/i18n/`、`src/components/LanguageSelector.tsx` | 独立本机偏好、字典、动态提示与菜单翻译 / Local preference, catalog and UI/native-menu translation |
 | 批注颜色 / Highlight colors | `src/domain/highlight-colors.ts`、`src/components/HighlightColorPicker.tsx` | 预设与自定义颜色、输入校验及原批注完整性 / Presets, custom colors, validation and annotation integrity |
 | 对话与回答版本 | `src/domain/workspace.ts`、`src/App.tsx` | 对话、版本切换、失败续聊与上下文 |
@@ -133,3 +143,10 @@ PDF 默认连续滚动，旧版单页偏好首次升级也采用连续阅读；�
 214 项自动检查通过。隔离界面验证真实本地文件选择器、首次阅读首页、续读、重复打开与改名复用、同名不同内容区分、对话文件折叠及窄窗口聊天后仍保留第 20 页。实际旧构建创建 6 份相同 PDF 和两条批注，升级后只显示一份且两条均可打开，旧问答重新提问成功；升级前后导出的原文件字节、批注 ID、来源版本与锚点逐项一致。界面零错误，未读取个人资料或调用真实 API。
 
 本构建另通过 551 项交付包核对，打包目录和原交付目录均实际启动、保存、生成完整备份并正常退出；原 0.1.11 文件夹和完整 ZIP 已同步更新，仅保留当前可用版。
+
+
+## 0.1.13 验收 / Validation
+
+验证：239 项自动检查、555 项交付包核对通过。隔离界面验证首页 API 入口、未填模型名获取并筛选模型、约 34 MB / 321 页 PDF 打开及远页/末页导航、快速连续换色、中英文切换与刷新恢复，以及小文件自动全文。模拟失败后切换资料范围，重试的实际请求资料哈希保持一致。打包目录与交付目录均实际启动、保存、备份并正常退出，界面无错误。未使用个人资料或真实 API。真实服务商权限和物理选色手感仍待使用体验。
+
+Validation: 239 automated tests and 555 package checks passed. Isolated UI checks covered the home API entry, fetching/filtering models without a model name, opening a roughly 34 MB / 321-page PDF, distant/final-page navigation, rapid color changes, both languages with reload persistence and small-file full text. After a simulated failure and scope change, the actual retry material retained the same hash. Both packaged and delivered executables passed startup, save, backup and normal exit with no renderer errors. No personal data or real API calls were used; actual provider permissions and physical picker feel remain subject to usage.
