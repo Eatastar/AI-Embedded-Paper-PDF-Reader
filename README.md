@@ -2,13 +2,13 @@
 
 **AI 嵌入式论文 PDF 阅读器**
 
-**接入自己的 API，在论文原文的批注中直接向 AI 提问。**
+**接入自己的 API，在论文原文中批注提问、划词翻译。**
 
-这是一个以本地 PDF 阅读为主的桌面阅读器。你可以连接自选的 AI 服务、中转 API，或自行部署的本地模型服务；遇到不懂的内容，划选原文，在批注框里提问、查看回答，再回到原处继续阅读。纸张颜色可以自由调整，需要展开讨论时再打开聊天模式。
+这是一个以本地 PDF 阅读为主的桌面阅读器。你可以连接自选的 AI 服务、中转 API，或自行部署的本地模型服务；遇到不懂的内容，划选原文，在批注框里提问、查看回答，也可以直接翻译选中的单词或段落，在原文旁阅读译文。纸张颜色可以自由调整，需要展开讨论时再打开聊天模式。
 
-**Connect your own API and ask AI questions directly in annotations on a paper.**
+**Connect your own API to ask AI in annotations and translate selected text beside a paper.**
 
-A desktop reader built around local PDFs. Connect your preferred AI provider, relay API or self-hosted local model service. Select a passage, ask a question in its annotation panel and read the answer beside the source. Adjust the paper colors to your preference, and open chat when you want a longer discussion.
+A desktop reader built around local PDFs. Connect your preferred AI provider, relay API or self-hosted local model service. Select a passage to ask a question in its annotation panel, or translate a selected word or paragraph and read the result beside the source. Adjust the paper colors to your preference, and open chat when you want a longer discussion.
 
 [下载 / Downloads](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases) · [本版发布说明 / Release notes](docs/RELEASE_NOTES.md) · [隐私 / Privacy](docs/PRIVACY.md) · [版本记录 / Changelog](docs/CHANGELOG.md) · [项目总纲 / Project outline](docs/PROJECT.md)
 
@@ -23,6 +23,7 @@ Current source version: **0.1.19**. Download the complete Windows x64 ZIP actual
 | **阅读本地 PDF**：保留论文原排版，支持连续滚动、单页阅读、目录、全文搜索、手势缩放和阅读位置记忆。 | **Read local PDFs** with their original layout, continuous or single-page reading, contents, full-text search, pinch zoom and reading position memory. |
 | **自定义纸张颜色**：调节 PDF 纸张和文字颜色，阅读区及工具栏随之配色；保留彩图并可切回原色对照。减少刺眼白底，方便畏光或对明亮屏幕敏感的读者按个人感受调整。 | **Customize paper colors**: adjust PDF paper and text colors, with matching reader controls and margins. Preserve colored figures and compare with original colors. Reduce bright white backgrounds and tailor the display for readers with light sensitivity, including photophobia. |
 | **在批注中询问 AI**：划选原文就地提问，问答与来源文字绑定；收起后保留高亮，点击即可重开。支持自选高亮颜色、重新提问，也可只写普通笔记。 | **Ask AI in annotations**: select a passage and ask in place, keeping the Q&A attached to its source. Close the panel and click the highlight to reopen it. Choose highlight colors, ask again or write a plain note. |
+| **划词翻译**：选中单词或段落，右键或按 Alt+1 即可翻译，在原文旁查看译文。可独立选择 API、自定义提示词与快捷键；只发送选段及翻译提示词，译文可保留为普通批注。 | **Translate selected text**: select a word or passage and right-click or press Alt+1 to see its translation beside the source. Choose an independent API, customize the prompt and shortcut, and optionally keep the result as a plain note. Only the selection and translation prompt are sent. |
 | **按需打开聊天模式**：需要进一步讨论时展开聊天，收起后继续阅读，保留当前文档、位置和缩放。聊天回答中的文字也可添加批注。 | **Open chat when needed** for a longer discussion, then return to the same document, position and zoom. Text in AI answers can also be annotated. |
 
 ## 自选 API，本地保存配置 / Your API, locally stored settings
@@ -45,12 +46,14 @@ Reading, search, recoloring and plain notes make no AI requests. **Asking a ques
    To use AI, open API setup on the home screen, enter the endpoint/key and discover upstream models. Choose the actual model and Save and use, or enter its name manually if listing is unavailable.
 4. 划选原文，选择“询问 AI”或“只写批注”。点击高亮重开批注；需要更长的讨论时，从阅读器工具栏打开聊天。
    Select text to ask AI or write a note. Click a highlight to reopen its panel, or open chat from the reader toolbar for a longer discussion.
+5. 需要翻译时，选中文字后右键或按 **Alt+1**。右上角独立“翻译”按钮可设置翻译 API、目标语言、提示词及快捷键；译文临时显示在原文旁，点击保留可转为普通批注。
+   To translate, select text and right-click or press **Alt+1**. The separate Translate button configures the API, target language, prompt and shortcut. Results appear temporarily beside the source; Keep turns a translation into a plain note.
 
 ## 划词翻译与 PDF 链接 / Translation and PDF links
 
-选中文字后右键翻译或按默认 Alt+1；右上角独立“翻译”按钮可设置目标语言、提示词、独立 API 及自定义快捷键。连接列表共用，翻译选择不切换聊天。只发送选段和翻译提示词，不发送全文、所在页或聊天历史。临时面板显示译文和模型，框外点击、Esc 或 × 关闭并丢弃；点击保留后才创建普通批注。翻译设置单独记在本机，不进入聊天备份。
+选中文字后右键翻译或按默认 Alt+1；右上角独立“翻译”按钮可设置目标语言、提示词、独立 API 及自定义快捷键。连接列表共用，翻译选择不切换聊天。只发送选段和翻译提示词，不发送全文、所在页或聊天历史。临时面板显示译文和模型，滚动和跨页时仍保留，可拖动位置；框外点击、Esc 或 × 关闭并丢弃，点击保留后才创建普通批注。翻译设置单独记在本机，不进入聊天备份。
 
-Select text and right-click to translate or press Alt+1. The separate Translate button configures the target language, prompt, independent API and shortcut. Connections are shared without switching chat. Only the selection and translation prompt are sent, without full text, page or history. Outside click, Esc or × discards temporary text/model results; Keep creates a plain note. Settings stay local outside conversation backups.
+Select text and right-click to translate or press Alt+1. The separate Translate button configures the target language, prompt, independent API and shortcut. Connections are shared without switching chat. Only the selection and translation prompt are sent, without full text, page or history. The movable temporary text/model panel stays open during scrolling and cross-page reading. Outside click, Esc or × discards it; Keep creates a plain note. Settings stay local outside conversation backups.
 
 PDF 自带的参考文献和图号链接支持文内精确跳转，并可返回跳转前位置。HTTP/HTTPS 网页链接交由系统浏览器打开，不执行脚本或文件动作；没有原生链接的文字不猜测跳转。深色配色修正彩色字边缘的白色残影，原 PDF 不改写。
 

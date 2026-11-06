@@ -2,6 +2,10 @@
 
 **AI 嵌入式论文 PDF 阅读器** · 0.1.19 · 20261106.8
 
+主要功能：本地 PDF 阅读、自定义纸张配色、AI 问答批注、划词翻译及可选聊天模式。划选单词或段落后右键翻译或按 Alt+1，在原文旁查看译文；可配置独立 API、翻译提示词和快捷键，只发送选段与翻译提示词，并可将译文保留为普通批注。
+
+Main features: local PDF reading, custom paper colors, AI Q&A annotations, selection translation and optional chat. Select a word or passage and right-click or press Alt+1 to read its translation beside the source. Configure an independent API, prompt and shortcut; only the selection and translation prompt are sent. Results can be kept as plain notes.
+
 连接自己的 API 或自行部署的模型服务，在 PDF 原文的批注中直接询问 AI。以本地阅读为主，支持自定义纸张配色，聊天按需打开。项目介绍、功能、实现分工和复用说明见[项目首页](../../README.md)，历史变化见[版本记录](../../docs/CHANGELOG.md)。
 
 Connect your own API or self-hosted model and ask AI directly in PDF annotations. Local reading comes first, with adjustable paper colors and optional chat. See the [project README](../../README.md) for features, implementation credits and adaptation, and the [changelog](../../docs/CHANGELOG.md) for history.

@@ -1,8 +1,21 @@
 # AI-Embedded Paper PDF Reader v0.1.19
 
-放大后自动为可视区域补上高清绘制，改善高倍阅读时文字偏软的问题。
+本版汇总 v0.1.15 之后的改进：新增划词翻译，恢复 PDF 引用跳转，并改善深色引用配色及高倍阅读清晰度。
 
-Visible areas receive a high-resolution redraw after zooming to improve enlarged PDF text.
+This release collects improvements since v0.1.15: selection translation, restored PDF reference navigation, adapted dark citation colors and sharper enlarged reading.
+
+## 划词翻译与阅读体验 / Selection translation and reading
+
+- 选中单词或段落，右键翻译或按默认 Alt+1，在原文旁直接查看译文和所用模型。滚动、跨页时面板仍保留，可拖动位置；点击框外、Esc 或 × 关闭临时结果。
+  Select a word or passage and right-click or press Alt+1 to see the translation and model beside the source. The movable panel stays open during scrolling and cross-page reading. Outside click, Esc or × closes temporary results.
+- 翻译可独立选择已保存的 API，也可新建共用连接；支持目标语言、自定义提示词与快捷键。仅发送选中文字和翻译提示词，不附带整篇文档、所在页或聊天历史。需要长期保存时，可将译文转为普通批注。
+  Translation can use its own saved API or a new shared connection, with configurable target language, prompt and shortcut. Only the selected text and translation prompt are sent, without the full document, page or chat history. Keep a result as a plain note when needed.
+- 恢复 PDF 自带的参考文献与图号链接，支持文内精确跳转及返回原位置。深色纸张下，链接文字与抗锯齿边缘一起调整为柔和浅蓝色，减少白色重影。
+  Embedded PDF reference and figure links navigate to their exact page positions and support returning to the source. On dark paper, link glyphs and their antialiased edges share a soft light-blue foreground to reduce white halos.
+- README 将划词翻译与 PDF 阅读、纸张调色、AI 问答批注和聊天模式一同列为主打功能，介绍与发布说明保持中英双语。
+  The README features selection translation alongside PDF reading, adjustable paper colors, AI Q&A annotations and chat. Introductions and release notes remain bilingual.
+
+## 放大后更清晰 / Sharper enlarged reading
 
 - 整页底图保留原有像素上限，可视区域使用独立高清层，避免为了放大一小块而提高整张大页面的内存占用。
   A bounded whole-page bitmap remains available, while an independent detail layer redraws the visible area without raising the resolution of the entire enlarged page.

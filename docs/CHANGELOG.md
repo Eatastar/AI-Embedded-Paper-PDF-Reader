@@ -2,6 +2,10 @@
 
 ## 0.1.19 · 20261106.8 · 2026-11-06
 
+正式发布说明汇总 v0.1.15 之后的划词翻译、滚动保留译文、PDF 引用跳转、深色链接配色和高清阅读更新；README 的主要功能与开始使用新增中英双语划词翻译介绍。此次发布文档整理保留已验证的客户端与 ZIP 字节。
+
+Release notes collect selection translation, retained translation panels, PDF reference navigation, dark link colors and sharper reading since v0.1.15. The README now highlights translation in its bilingual main features and getting-started steps. Release documentation leaves the verified application and ZIP bytes unchanged.
+
 新增可视区域高清重绘，改善整页像素上限导致的高倍放大发虚。整页底图继续限制内存，可视区域单独按屏幕密度绘制，每页高清缓冲最多 800 万像素；滚动复用边缘，过期任务丢弃，移出视野后释放缓存和 Worker。高清层不拦截鼠标，配色及原色对照同步，文字选取、引用跳转和批注层沿用原位置。
 
 Adds high-resolution visible-area redrawing to improve enlarged text softened by the whole-page pixel limit. The bounded base bitmap remains, while visible regions render separately at screen-aware density with at most eight million detail pixels per page. Scrolling reuses margins, discards stale work and releases offscreen caches/workers. The detail layer does not intercept pointer events; colors and original comparison stay synchronized, and selection, reference navigation and annotations retain their original geometry.
