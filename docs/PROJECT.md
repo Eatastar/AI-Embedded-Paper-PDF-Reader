@@ -1,10 +1,10 @@
 # AI-Embedded Paper PDF Reader 项目总纲 / Project outline
 
-当前版本：客户端 0.1.14，构建 20261106.3，2026年11月6日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
+当前版本：客户端 0.1.15，构建 20261106.4，2026年11月6日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
 
 首个公开正式版沿用 v0.1.11 和现有构建，使用 MIT 许可证。公开范围包括已核对的源码及通用 Windows 发行包；历史检查范围见 [公开发布说明](OPEN_SOURCE_RELEASE.md)，本地数据和请求边界见 [隐私说明](PRIVACY.md)。
 
-Current source: **0.1.14 / 20261106.3**. A local paper reader with optional AI questions and personal notes. Public introductions and release notes are bilingual. Users can select Chinese or English in the app; interface language never rewrites their documents, messages, notes or answer preferences.
+Current source: **0.1.15 / 20261106.4**. A local paper reader with optional AI questions and personal notes. Public introductions and release notes are bilingual. Users can select Chinese or English in the app; interface language never rewrites their documents, messages, notes or answer preferences.
 
 Original application code was implemented entirely by GPT through Codex; the human initiator proposed ideas, defined requirements and selected features/trade-offs. Everyone may download and adapt it with AI agents or vibe coding. Please link to the upstream repository when publishing a derivative; MIT and third-party notices remain applicable. See [Attribution](ATTRIBUTION.md).
 
@@ -162,3 +162,19 @@ The shared model endpoint helper derives the sibling list API from full inferenc
 验证：241 项自动检查、555 项交付包核对通过。严格模拟服务只接受 /v1/models，实际界面验证保存的完整 /v1/responses 地址可直接探测、筛选选择并保存；空模型名获取、本机空密钥、错误路径与 HTTP 404 的中英提示均通过。点击首页箭头区域展开原生列表，36px 箭头区中心差为 0、文字留白 48px。两次实际 EXE 启动、保存、完整备份和退出通过，界面无错误。未读取个人配置或调用真实 API；真实服务商是否开放模型列表仍需其服务确认。
 
 Validation: 241 tests and 555 package checks passed. A strict mock accepted only /v1/models; the UI fetched from a saved full /v1/responses address, filtered/selected and saved models. Blank model names, keyless local services and bilingual path/HTTP 404 feedback were checked. Clicking the home arrow opened the native list; its 36px arrow area had zero center offset and 48px text clearance. Two real EXE startup/save/full-backup/exit checks passed with no renderer errors. No personal settings or real API calls were used; actual provider list availability remains service-dependent.
+
+
+## 模型选择 / Model selection
+
+连接名称只作本地备注；在上游模型下拉框中选择实际调用模型，保存并使用后生效。模型按名称及自然数字顺序排列，手动输入按需展开，保留未列出的自定义模型。
+
+Connection names are local labels. Choose the actual API model in the upstream list and Save and use. Models sort by name with natural numbers; manual entry expands on demand and preserves unlisted custom models.
+
+
+验证：243 项自动检查、555 项交付核对及两次实际 EXE 启动、保存、备份和退出通过。隔离界面验证名称自然排序、默认隐藏重复输入、手动未列出 ID 保留、重新从列表选择后收起输入，以及中英提示。从列表选择 model-2 后，实际模拟聊天请求中的 model 为 model-2，而非显示别名或本地连接名称。未使用个人配置或真实 API。
+
+Validation: 243 tests, 555 package checks and two real EXE startup/save/backup/exit checks passed. Isolated UI testing covered natural sorting, hidden duplicate input, retained manual unlisted IDs, returning to list selection and both languages. Selecting model-2 produced model-2 in the actual mocked chat request, rather than its friendly label or local connection name. No personal settings or real API calls were used.
+
+本机清理：核对原 ZIP 哈希及旧程序逐文件内容后，移除 0.1.12–0.1.14 程序、ZIP、校验和旧说明，以及临时构建和明确隔离的测试副本，共 19 处、2,052,401,296 字节。发行目录只保留 0.1.15，真实个人数据、源码/Git 历史及已公开 Release 资产保留。
+
+Local cleanup removed 19 verified old release/build/test targets (2,052,401,296 bytes). The release directory retains only 0.1.15. Personal data, source/Git history and published GitHub assets remain intact.

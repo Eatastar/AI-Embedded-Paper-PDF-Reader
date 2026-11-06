@@ -8,9 +8,9 @@ A local paper reader with optional AI conversations. Select text in a PDF or an 
 
 [下载 / Downloads](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases) · [隐私 / Privacy](docs/PRIVACY.md) · [版本记录 / Changelog](docs/CHANGELOG.md) · [项目总纲 / Project outline](docs/PROJECT.md)
 
-当前源码版本为 **0.1.14**，首个公开正式版为 **v0.1.11**。请以 Releases 中实际发布的附件为准。项目采用 [MIT 许可证](LICENSE)。仓库已更名为 AI-Embedded-Paper-PDF-Reader；原 Learn-Something 地址会跳转到新仓库，已有下载和引用链接继续有效。
+当前源码版本为 **0.1.15**，首个公开正式版为 **v0.1.11**。请以 Releases 中实际发布的附件为准。项目采用 [MIT 许可证](LICENSE)。仓库已更名为 AI-Embedded-Paper-PDF-Reader；原 Learn-Something 地址会跳转到新仓库，已有下载和引用链接继续有效。
 
-The current source version is **0.1.14**; **v0.1.11** was the first public release. Download the assets actually available on the Releases page. The project uses the [MIT license](LICENSE). The repository is now named AI-Embedded-Paper-PDF-Reader. The former Learn-Something address redirects to it, preserving existing download and reference links.
+The current source version is **0.1.15**; **v0.1.11** was the first public release. Download the assets actually available on the Releases page. The project uses the [MIT license](LICENSE). The repository is now named AI-Embedded-Paper-PDF-Reader. The former Learn-Something address redirects to it, preserving existing download and reference links.
 
 ## 开始使用 / Getting started
 
@@ -89,3 +89,10 @@ Only source, tests, dependency manifests, generic branding assets and documentat
 项目自身代码采用 [MIT](LICENSE)，第三方许可继续保留。首次公开前检查范围见 [OPEN_SOURCE_RELEASE](docs/OPEN_SOURCE_RELEASE.md)，提交规则见 [REPOSITORY_POLICY](docs/REPOSITORY_POLICY.md)。Windows 包保留 Electron、Chromium 及依赖许可文件。
 
 Original project code uses [MIT](LICENSE), with third-party licenses retained. See [OPEN_SOURCE_RELEASE](docs/OPEN_SOURCE_RELEASE.md) for the first public release audit and [REPOSITORY_POLICY](docs/REPOSITORY_POLICY.md) for commit rules. Windows packages keep Electron, Chromium and dependency license files.
+
+
+## 模型选择 / Model selection
+
+连接名称只作本地备注；在上游模型下拉框中选择实际调用模型，保存并使用后生效。模型按名称及自然数字顺序排列，手动输入按需展开，保留未列出的自定义模型。
+
+Connection names are local labels. Choose the actual API model in the upstream list and Save and use. Models sort by name with natural numbers; manual entry expands on demand and preserves unlisted custom models.

@@ -1,4 +1,6 @@
 import type { InputMessage, ModelSettings, ProfileInput } from '../domain/types';
+import { sortDiscoveredModels, type DiscoveredModel } from '../domain/model-list';
+export type { DiscoveredModel } from '../domain/model-list';
 
 export type SettingsUpdate = Partial<Omit<ModelSettings, 'hasApiKey'>> & { apiKey?: string; clearApiKey?: boolean };
 export interface ReplyRequest { messages: InputMessage[]; kind: 'main' | 'annotation'; quote?: string; variant?: number; profileId?: string | null }
@@ -30,12 +32,11 @@ export const saveProfile = (profile: ProfileInput) => profileAction('/api/profil
 export const selectProfile = (profileId: string | null) => profileAction('/api/profiles/select', { profileId });
 export const deleteProfile = (profileId: string) => profileAction('/api/profiles/delete', { profileId });
 
-export interface DiscoveredModel { id: string; label?: string }
 export async function discoverModels(input: ProfileInput, signal?: AbortSignal): Promise<DiscoveredModel[]> {
   const response = await fetch('/api/models', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input), signal });
   if (!response.ok) throw new Error(await readFailure(response));
   const result = await response.json() as { models: DiscoveredModel[] };
-  return result.models;
+  return sortDiscoveredModels(result.models);
 }
 
 export async function streamReply(request: ReplyRequest, onDelta: (text: string) => void, signal?: AbortSignal): Promise<{ modelLabel: string }> {

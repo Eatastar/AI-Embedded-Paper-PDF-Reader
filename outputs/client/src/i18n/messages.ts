@@ -1,5 +1,14 @@
 // UI-owned text only. User messages, paper text and annotations are never passed through this catalog.
 export const english: Record<string, string> = {
+  "当前调用：{0}（未在列表中）": "Current API model: {0} (not listed)",
+  "请选择调用模型": "Choose the API model",
+  "这里选择的就是实际调用模型，点击“保存并使用”后生效。列表已按模型名称排序。": "This selects the actual API model. Save and use applies it. Models are sorted by name.",
+  "收起手动输入": "Hide manual entry",
+  "手动填写模型名称": "Enter a model manually",
+  "调用模型（手动填写）": "API model (manual entry)",
+  "填写服务商提供的准确模型 ID": "Enter the exact model ID provided by the service",
+  "这是 API 接受的模型名称，不是本地显示名称。": "This is the model name accepted by the API, not a local display name.",
+  "连接名称只作本地备注，不影响调用模型。": "The connection name is a local label and does not affect the API model.",
   "模型列表接口未找到或未开放（HTTP {0}），请检查地址与权限，也可手动填写模型名称。": "The model list endpoint was not found or is unavailable (HTTP {0}). Check the address and permissions, or enter a model name manually.",
   "配置 API": "API setup",
   "探测上游模型": "Discover models",

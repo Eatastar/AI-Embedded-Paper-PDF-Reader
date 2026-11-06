@@ -1,5 +1,32 @@
 # 版本记录 / Changelog
 
+## 0.1.15 · 20261106.4 · 2026-11-06
+
+“连接名称”是本地备注；模型 ID 是实际发给 API 的调用名称。获取列表后，直接在“上游模型”中选择，点击“保存并使用”生效。默认收起重复的手动输入框，保留“手动填写模型名称”入口；手动填写的未列出模型会明确显示，不会被列表静默覆盖。
+
+The connection name is a local label; the model ID is the actual API identifier. After discovery, select the upstream model and Save and use. The duplicate text field is hidden by default, with a manual-entry option retained. An unlisted manually entered model remains explicitly visible and is not silently replaced.
+
+列表按实际模型 ID 的名称顺序排列，忽略大小写并按自然数字排序，例如 model-2 排在 model-10 前。可读别名放在 ID 后面，排序和显示不改写实际调用 ID。
+
+Models are sorted by their actual IDs, case-insensitively with natural numeric order: model-2 precedes model-10. Friendly labels follow the ID; sorting/display never changes the identifier sent to the API.
+
+界面验证使用模拟连接与模型：从列表选择后发出真实的本机模拟聊天请求，核对请求中的 model 为所选 ID，未读取个人配置或调用真实 API。正常退出旧版后运行新版，继续沿用原聊天、批注、阅读设置和模型连接。已公开的历史 Release 与附件保持原样。
+
+Isolated UI validation selects a model and verifies the model ID in an actual local mocked chat request. No personal settings or real API calls are used. Exit the old app normally before running the new version; existing conversations, annotations, reading settings and connections remain in use. Published historical releases/assets are unchanged.
+
+原创应用代码全部由 GPT 通过 Codex 实现；人类发起者负责想法、需求与功能取舍。欢迎下载、fork 和使用 AI agent / vibe coding 改造；发布衍生版时请链接[上游项目](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader)。MIT 与第三方许可继续适用。
+
+GPT through Codex implemented all original application code; the human initiator supplied ideas, requirements and feature trade-offs. Download, fork and adapt with AI agents / vibe coding; please link [upstream](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader) when publishing derivatives. MIT and third-party licenses continue to apply.
+
+
+验证：243 项自动检查、555 项交付核对及两次实际 EXE 启动、保存、备份和退出通过。隔离界面验证名称自然排序、默认隐藏重复输入、手动未列出 ID 保留、重新从列表选择后收起输入，以及中英提示。从列表选择 model-2 后，实际模拟聊天请求中的 model 为 model-2，而非显示别名或本地连接名称。未使用个人配置或真实 API。
+
+Validation: 243 tests, 555 package checks and two real EXE startup/save/backup/exit checks passed. Isolated UI testing covered natural sorting, hidden duplicate input, retained manual unlisted IDs, returning to list selection and both languages. Selecting model-2 produced model-2 in the actual mocked chat request, rather than its friendly label or local connection name. No personal settings or real API calls were used.
+
+本机清理：核对原 ZIP 哈希及旧程序逐文件内容后，移除 0.1.12–0.1.14 程序、ZIP、校验和旧说明，以及临时构建和明确隔离的测试副本，共 19 处、2,052,401,296 字节。发行目录只保留 0.1.15，真实个人数据、源码/Git 历史及已公开 Release 资产保留。
+
+Local cleanup removed 19 verified old release/build/test targets (2,052,401,296 bytes). The release directory retains only 0.1.15. Personal data, source/Git history and published GitHub assets remain intact.
+
 ## 0.1.14 · 20261106.3 · 2026-11-06
 
 修复填写完整 `/v1/responses` 地址后，模型列表被误拼为 `/v1/responses/models` 的问题。现在兼容基础地址及以 `/responses`、`/chat/completions`、`/messages` 或 `/models` 结尾的完整地址，保留服务商原有前缀和主机。只推导列表请求地址，不修改已保存连接，也不会因此清除原密钥。
