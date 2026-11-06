@@ -2,9 +2,9 @@
 
 **AI 嵌入式论文 PDF 阅读器** · 0.1.15 · 20261106.4
 
-本地 PDF 阅读、原文批注和按需 AI 问答。项目介绍、功能、实现分工和复用说明见[项目首页](../../README.md)，历史变化见[版本记录](../../docs/CHANGELOG.md)。
+连接自己的 API 或自行部署的模型服务，在 PDF 原文的批注中直接询问 AI。以本地阅读为主，支持自定义纸张配色，聊天按需打开。项目介绍、功能、实现分工和复用说明见[项目首页](../../README.md)，历史变化见[版本记录](../../docs/CHANGELOG.md)。
 
-Local PDF reading, annotations and optional AI questions. See the [project README](../../README.md) for features, implementation credits and adaptation, and the [changelog](../../docs/CHANGELOG.md) for history.
+Connect your own API or self-hosted model and ask AI directly in PDF annotations. Local reading comes first, with adjustable paper colors and optional chat. See the [project README](../../README.md) for features, implementation credits and adaptation, and the [changelog](../../docs/CHANGELOG.md) for history.
 
 ## 桌面版 / Desktop
 

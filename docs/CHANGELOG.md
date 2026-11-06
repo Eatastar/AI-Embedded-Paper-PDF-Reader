@@ -2,6 +2,10 @@
 
 ## 0.1.15 · 20261106.4 · 2026-11-06
 
+发布文档：重写双语 README，突出自选 API / 自部署模型服务、PDF 阅读、可调纸张配色、AI 问答批注和可选聊天；隐私说明区分本地密钥存储与发往所选服务的请求认证。新增[本版发布说明](RELEASE_NOTES.md)，汇总自公开 v0.1.12 以来的更新。此次文档整理不改动已验证的 0.1.15 程序和 ZIP 字节。
+
+Release documentation: the bilingual README now foregrounds your own API / self-hosted model service, PDF reading, adjustable paper colors, AI Q&A annotations and optional chat. Privacy wording distinguishes local credential storage from authentication sent to the chosen service. [Release notes](RELEASE_NOTES.md) collect updates since public v0.1.12. This documentation update leaves the verified 0.1.15 application and ZIP bytes unchanged.
+
 “连接名称”是本地备注；模型 ID 是实际发给 API 的调用名称。获取列表后，直接在“上游模型”中选择，点击“保存并使用”生效。默认收起重复的手动输入框，保留“手动填写模型名称”入口；手动填写的未列出模型会明确显示，不会被列表静默覆盖。
 
 The connection name is a local label; the model ID is the actual API identifier. After discovery, select the upstream model and Save and use. The duplicate text field is hidden by default, with a manual-entry option retained. An unlisted manually entered model remains explicitly visible and is not silently replaced.
