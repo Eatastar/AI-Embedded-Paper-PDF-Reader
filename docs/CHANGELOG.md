@@ -1,5 +1,11 @@
 # 版本记录 / Changelog
 
+## 0.1.18 · 20261106.7 · 2026-11-06
+
+深色纸张下，PDF 自带引用、图号等文字链接统一使用柔和浅蓝色，并根据纸张颜色保持可读对比度。链接字形与全部抗锯齿边缘一并换色，避免仅修补邻接像素时遗漏白色残影。范围限定为链接与提取文字的交集，图片链接不会整块变色；原色对照与浅色纸张保留原有显示。缩放、快速配色预览和后台换色使用相同的文字范围，PDF 跳转及个人批注颜色保留。
+
+On dark paper, embedded PDF text links such as citations and figure references use a soft light blue with readable contrast against the selected paper. Glyphs and all antialiased edges change together, avoiding white halos missed by neighboring-pixel repairs. Recoloring is limited to the intersection of links and extracted text, so image links are not recolored as a whole. Original comparison and light paper retain their existing rendering. Zooming, quick color previews and background recoloring share the same text regions; PDF navigation and personal highlight colors remain available.
+
 ## 0.1.17 · 20261106.6 · 2026-11-06
 
 移除翻译框的滚动关闭行为，暂留当前翻译的来源页，保证跨页阅读后仍能保存回原位置。框外点击与滚动/拖动区分，Esc 和 × 继续关闭。默认 Alt+1 与选段请求范围不变。

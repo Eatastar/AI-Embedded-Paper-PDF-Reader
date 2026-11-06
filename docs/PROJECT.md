@@ -1,10 +1,10 @@
 # AI-Embedded Paper PDF Reader 项目总纲 / Project outline
 
-当前版本：客户端 0.1.17，构建 20261106.6，2026年11月6日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
+当前版本：客户端 0.1.18，构建 20261106.7，2026年11月6日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
 
 首个公开正式版沿用 v0.1.11 和现有构建，使用 MIT 许可证。公开范围包括已核对的源码及通用 Windows 发行包；历史检查范围见 [公开发布说明](OPEN_SOURCE_RELEASE.md)，本地数据和请求边界见 [隐私说明](PRIVACY.md)。
 
-Current source: **0.1.17 / 20261106.6**. A local paper reader with optional AI questions and personal notes. Public introductions and release notes are bilingual. Users can select Chinese or English in the app; interface language never rewrites their documents, messages, notes or answer preferences.
+Current source: **0.1.18 / 20261106.7**. A local paper reader with optional AI questions and personal notes. Public introductions and release notes are bilingual. Users can select Chinese or English in the app; interface language never rewrites their documents, messages, notes or answer preferences.
 
 Original application code was implemented entirely by GPT through Codex; the human initiator proposed ideas, defined requirements and selected features/trade-offs. Everyone may download and adapt it with AI agents or vibe coding. Please link to the upstream repository when publishing a derivative; MIT and third-party notices remain applicable. See [Attribution](ATTRIBUTION.md).
 

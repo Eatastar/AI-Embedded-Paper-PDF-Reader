@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { PDFPageProxy, PageViewport } from 'pdfjs-dist';
 import { bindPdfZoom } from '../src/adapters/pdf-zoom';
-import { paintPdfFrame, startPdfFrame } from '../src/adapters/pdf-frame';
+import { paintPdfFrame, pdfTextBounds, startPdfFrame } from '../src/adapters/pdf-frame';
 import { DEFAULT_READER_APPEARANCE, readerAppearance } from '../src/domain/reader';
 import { pdfAnchorScrollDelta, pdfPageSize, pdfWheelZoom, pdfZoomAnchor } from '../src/domain/pdf-zoom';
 
@@ -55,6 +55,25 @@ test('等待时切换深色，发布时使用最新配色；原色仅在明确�
   paintPdfFrame(canvas as any, original, dark, true); assert.deepEqual([...canvas.data], [255,255,255,255]);
   paintPdfFrame(canvas as any, original, DEFAULT_READER_APPEARANCE, false); assert.deepEqual([...canvas.data], [255,244,214,255]);
   assert.deepEqual([...original.data], [255,255,255,255]);
+});
+
+test('PDF text regions follow font ascent, scaling and rotation rather than linked images', () => {
+  const content = { items: [{ str: '[3–5]', transform: [10, 0, 0, 10, 20, 30], width: 50, height: 10, fontName: 'citation' }, { str: ' ', transform: [10, 0, 0, 10, 20, 30] }, { type: 'beginMarkedContent' }], styles: { citation: { ascent: .8 } } } as any;
+  const normal = pdfTextBounds(content, { transform: [2, 0, 0, -2, 0, 1600] } as PageViewport);
+  assert.deepEqual(normal, [{ left: 39, top: 1523, width: 102, height: 22 }]);
+  const rotated = pdfTextBounds(content, { transform: [0, 2, 2, 0, 0, 0] } as PageViewport);
+  for (const [key, value] of Object.entries({ left: 55, top: 39, width: 22, height: 102 })) assert.ok(Math.abs(rotated[0][key as keyof typeof rotated[0]] - value) < 1e-10);
+  content.styles.citation = { ascent: NaN, descent: NaN };
+  assert.deepEqual(pdfTextBounds(content, { transform: [2, 0, 0, -2, 0, 1600] } as PageViewport), normal, 'PDF standard fonts may omit finite ascent/descent metrics');
+});
+
+test('first published dark frame and subsequent recoloring use the same link colors, with exact original comparison', () => {
+  const canvas = new Canvas(), original = image(2, 1, new Uint8ClampedArray([0,0,255,255, 180,180,255,255]));
+  const dark = readerAppearance({ ...DEFAULT_READER_APPEARANCE, preset: 'dark' }), links = [{ left: 0, top: 0, width: 2, height: 1 }];
+  paintPdfFrame(canvas as any, original, dark, false, links);
+  assert.deepEqual([...canvas.data.slice(0, 4)], [168,199,250,255]);
+  assert.deepEqual([...canvas.data.slice(4)], [76,87,105,255]);
+  paintPdfFrame(canvas as any, original, dark, true, links); assert.deepEqual(canvas.data, original.data);
 });
 
 test('换色缓冲分配失败不会先清空或改写当前显示页', () => {

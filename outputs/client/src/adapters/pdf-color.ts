@@ -35,7 +35,7 @@ export class PdfColorProcessor {
       }
       if (this.sentSource !== job.source) {
         const data = job.source.data.slice();
-        this.worker.postMessage({ source: { width: job.source.width, height: job.source.height, data } }, [data.buffer]); this.sentSource = job.source;
+        this.worker.postMessage({ source: { width: job.source.width, height: job.source.height, data, linkText: job.source.linkText } }, [data.buffer]); this.sentSource = job.source;
       }
       this.worker.postMessage({ id: job.id, appearance: job.appearance, preview: job.preview });
     } catch { void this.fallback(); }
@@ -49,7 +49,8 @@ export class PdfColorProcessor {
       for (let row = 0; row < source.height; row += rows) {
         if (this.disposed || job.id !== this.revision) { this.finish(source); return; }
         const end = Math.min(source.height, row + rows), from = Math.max(0, row - 1), to = Math.min(source.height, end + 1);
-        const colored = recolorPagePixels(source.data.subarray(from * source.width * 4, to * source.width * 4), job.appearance, undefined, source.width);
+        const linkText = source.linkText?.map(rect => ({ ...rect, top: rect.top - from }));
+        const colored = recolorPagePixels(source.data.subarray(from * source.width * 4, to * source.width * 4), job.appearance, undefined, source.width, linkText);
         data.set(colored.subarray((row - from) * source.width * 4, (end - from) * source.width * 4), row * source.width * 4);
         await new Promise(resolve => setTimeout(resolve, 0));
       }

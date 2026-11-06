@@ -60,8 +60,10 @@ export function readerTheme(paper: string, ink: string): Record<string, string> 
   return { '--reader-paper': paper, '--reader-ink': ink, '--ls-paper': paper, '--ls-panel': paper, '--ls-surface': mix(.035), '--ls-code': mix(.065), '--ls-hover': mix(.09), '--ls-border': mix(.19), '--ls-border-strong': mix(.32), '--ls-text': text, '--ls-ink': text, '--ls-muted': mix(.68), '--ls-accent': mix(.82), '--ls-focus': mix(.82), '--ls-danger': colorLuminance(paper) < .179 ? '#ffb3a9' : '#932c23' };
 }
 
-/** Recolor a display copy only. Preserve saturated colors and all alpha bytes. */
-export function recolorPagePixels(source: Uint8ClampedArray, appearance: ReaderAppearance, destination = new Uint8ClampedArray(source.length), width = 0): Uint8ClampedArray {
+export interface PdfColorRegion { left: number; top: number; width: number; height: number }
+
+/** Recolor a display copy only. Preserve figure colors and all alpha bytes. */
+export function recolorPagePixels(source: Uint8ClampedArray, appearance: ReaderAppearance, destination = new Uint8ClampedArray(source.length), width = 0, linkText: readonly PdfColorRegion[] = []): Uint8ClampedArray {
   if (destination.length !== source.length || source.length % 4 !== 0 || source.buffer === destination.buffer) throw new Error('A separate RGBA display buffer is required');
   if (appearance.preset === 'original') { destination.set(source); return destination; }
   const paper = rgb(appearance.paper), ink = rgb(appearance.ink);
@@ -102,6 +104,29 @@ export function recolorPagePixels(source: Uint8ClampedArray, appearance: ReaderA
       destination[i] = r + (paper[0] - 255) * whiteCoverage;
       destination[i + 1] = g + (paper[1] - 255) * whiteCoverage;
       destination[i + 2] = b + (paper[2] - 255) * whiteCoverage;
+    }
+    // A PDF hyperlink's text and antialiasing must share one foreground. The
+    // white-matted source's minimum RGB channel gives glyph coverage, including
+    // thin strokes with no fully saturated neighbor. Restrict this to the
+    // intersection of real link annotations and extracted text, never images.
+    if (linkText.length && colorLuminance(appearance.paper) < .25) {
+      const readableInk = readerContrast(appearance.paper, appearance.ink) >= 4.5 ? ink : colorLuminance(appearance.paper) > .179 ? [0, 0, 0] : [255, 255, 255];
+      let linkInk = [168, 199, 250];
+      for (let step = 0; step <= 10; step++) {
+        linkInk = [168, 199, 250].map((value, channel) => Math.round(value + (readableInk[channel] - value) * step / 10));
+        const hex = '#' + linkInk.map(value => value.toString(16).padStart(2, '0')).join('');
+        if (readerContrast(appearance.paper, hex) >= 4.5) break;
+      }
+      for (const rect of linkText) {
+        const left = Math.max(0, Math.floor(rect.left)), right = Math.min(width, Math.ceil(rect.left + rect.width));
+        const top = Math.max(0, Math.floor(rect.top)), bottom = Math.min(height, Math.ceil(rect.top + rect.height));
+        for (let y = top; y < bottom; y++) for (let x = left; x < right; x++) {
+          const i = (y * width + x) * 4, coverage = 1 - Math.min(source[i], source[i + 1], source[i + 2]) / 255;
+          destination[i] = paper[0] + (linkInk[0] - paper[0]) * coverage;
+          destination[i + 1] = paper[1] + (linkInk[1] - paper[1]) * coverage;
+          destination[i + 2] = paper[2] + (linkInk[2] - paper[2]) * coverage;
+        }
+      }
     }
   }
   return destination;

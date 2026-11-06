@@ -9,6 +9,7 @@ import { PdfColorProcessor } from '../adapters/pdf-color';
 import { PdfRenderQueue } from '../adapters/pdf-navigation';
 import { markReaderSearch } from '../adapters/reader-search';
 import { pdfPageSize } from '../domain/pdf-zoom';
+import { pdfLinkTextRegions, type PixelFrame } from '../domain/pdf-color';
 import type { ReaderAppearance } from '../domain/reader';
 import type { SearchFocus } from '../domain/reader-navigation';
 import { pdfLinkAt, readPdfLinks, type PdfLink } from '../adapters/pdf-links';
@@ -42,6 +43,7 @@ export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appear
   const [renderError, setRenderError] = useState('');
   const [colorError, setColorError] = useState(false);
   const originalRef = useRef<ImageData | null>(null);
+  const colorSourceRef = useRef<PixelFrame | null>(null);
   const colorProcessor = useRef<PdfColorProcessor | null>(null);
   const colorRevision = useRef(0);
   useEffect(() => () => { colorRevision.current++; colorProcessor.current?.dispose(); colorProcessor.current = null; }, []);
@@ -59,26 +61,26 @@ export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appear
   useLayoutEffect(preview, [availableWidth, zoom]);
   const readyRef = useRef(onPageReady);
   readyRef.current = onPageReady;
-  const paintRef = useRef((original?: ImageData | null) => Boolean(original));
-  paintRef.current = (original = originalRef.current) => {
+  const paintRef = useRef((original?: ImageData | null, source?: PixelFrame | null) => Boolean(original));
+  paintRef.current = (original = originalRef.current, source = colorSourceRef.current) => {
     const canvas = canvasRef.current;
     if (!original || !canvas) return false;
     try {
       colorRevision.current++; colorProcessor.current?.cancel();
-      paintPdfFrame(canvas, original, appearance, compareOriginal);
+      paintPdfFrame(canvas, original, appearance, compareOriginal, source?.linkText);
       canvas.style.visibility = 'visible';
       setColorError(false);
       return true;
     } catch { canvas.style.visibility = 'hidden'; setColorError(true); return false; }
   };
   useEffect(() => {
-    const original = originalRef.current; if (!original) return;
+    const original = originalRef.current, source = colorSourceRef.current; if (!original || !source) return;
     const revision = ++colorRevision.current;
     const processor = colorProcessor.current ??= new PdfColorProcessor();
     const nextAppearance = compareOriginal ? { ...appearance, preset: 'original' as const } : appearance;
     const paint = async (fast: boolean) => {
       try {
-        const frame = await processor.prepare(original, nextAppearance, fast);
+        const frame = await processor.prepare(source, nextAppearance, fast);
         const canvas = canvasRef.current;
         if (!frame || !canvas || revision !== colorRevision.current || original !== originalRef.current) return;
         const display = new ImageData(new Uint8ClampedArray(frame.data), frame.width, frame.height);
@@ -120,10 +122,12 @@ export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appear
       let nextLinks: PdfLink[] = [];
       try { nextLinks = await readPdfLinks(page, viewport, controller.signal); } catch { controller.signal.throwIfAborted(); }
       if (!cancelled && requested.current.zoom === zoom && requested.current.availableWidth === availableWidth) {
-        if (!paintRef.current(frame.original)) throw new Error('Page color preparation failed');
+        const colorSource: PixelFrame = { width: frame.original.width, height: frame.original.height, data: frame.original.data, linkText: pdfLinkTextRegions(nextLinks, frame.textBounds, frame.original.width / viewport.width, frame.original.height / viewport.height) };
+        if (!paintRef.current(frame.original, colorSource)) throw new Error('Page color preparation failed');
         // This whole commit is synchronous. The white source bitmap never enters
         // the visible canvas, and the new text and geometry arrive together.
         originalRef.current = frame.original;
+        colorSourceRef.current = colorSource;
         stage.style.width = canvas.style.width = `${width}px`;
         stage.style.height = canvas.style.height = `${height}px`;
         stage.style.setProperty('--total-scale-factor', String(viewport.scale * viewport.userUnit));
