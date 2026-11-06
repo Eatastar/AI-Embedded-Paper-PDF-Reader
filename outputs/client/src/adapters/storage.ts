@@ -1,6 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type { Workspace } from '../domain/types';
-import { validateImport, mergeImportedWorkspace } from '../domain/workspace';
+import { compactRequestCaches, validateImport, mergeImportedWorkspace } from '../domain/workspace';
 import { assertWorkspaceCapacity } from '../domain/capacity';
 import { WorkspaceRecordStore } from './record-store';
 import type { SavedMetadata, SavedDocument } from './record-store';
@@ -52,7 +52,7 @@ function parseBackupData(text: string): unknown {
   return data;
 }
 function unpackBackup(raw: unknown): Workspace {
-  return validateImport(raw && typeof raw === 'object' && (raw as { schemaVersion?: unknown }).schemaVersion === 2 ? unpackWorkspace(raw) : raw);
+  return compactRequestCaches(validateImport(raw && typeof raw === 'object' && (raw as { schemaVersion?: unknown }).schemaVersion === 2 ? unpackWorkspace(raw) : raw));
 }
 export function parseWorkspace(text: string): Workspace { return unpackBackup(parseBackupData(text)); }
 

@@ -223,7 +223,8 @@ test('client system preference is sent once and annotation retries keep the froz
     const retry = calls[1].messages;
     assert.equal(retry.filter(message => message.content === '原来的回答偏好').length, 1);
     assert.equal(retry.some(message => message.content.includes('后来修改的回答偏好')), false);
-    assert.ok(retry.some(message => message.role === 'system' && message.content.includes('一次性批注解释')));
+    assert.ok(retry.some(message => message.role === 'system' && message.content.includes('独立批注')));
+    assert.equal(retry.some(message => message.content.includes('结合完整主对话')), false);
     // An empty preference is also part of the frozen context, not permission to add a new one.
     await (await post(app.base, '/api/chat', { kind: 'annotation', quote: '时空曲率', messages: snapshot.slice(1) })).text();
     assert.equal(calls[2].messages.some(message => message.content.includes('后来修改的回答偏好')), false);

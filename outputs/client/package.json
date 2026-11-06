@@ -1,7 +1,7 @@
 {
   "name": "ai-embedded-paper-pdf-reader-client",
-  "version": "0.1.19",
-  "buildId": "20261106.8",
+  "version": "0.1.20",
+  "buildId": "20261106.9",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -43,5 +43,5 @@
     "typescript": "7.0.2",
     "vite": "8.3.4"
   },
-  "buildTime": "2026-11-06T09:36:44.460Z"
+  "buildTime": "2026-11-06T15:55:04.455Z"
 }

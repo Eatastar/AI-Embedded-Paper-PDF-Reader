@@ -1,43 +1,39 @@
-# AI-Embedded Paper PDF Reader v0.1.19
+# AI-Embedded Paper PDF Reader v0.1.20
 
-本版汇总 v0.1.15 之后的改进：新增划词翻译，恢复 PDF 引用跳转，并改善深色引用配色及高倍阅读清晰度。
+批注与聊天独立提问，保留论文背景，并支持手动引用批注和逐轮删除聊天。
 
-This release collects improvements since v0.1.15: selection translation, restored PDF reference navigation, adapted dark citation colors and sharper enlarged reading.
+Independent annotation and chat requests with paper context, explicit annotation references and per-round chat deletion.
 
-## 划词翻译与阅读体验 / Selection translation and reading
+## 请求范围 / Request scope
 
-- 选中单词或段落，右键翻译或按默认 Alt+1，在原文旁直接查看译文和所用模型。滚动、跨页时面板仍保留，可拖动位置；点击框外、Esc 或 × 关闭临时结果。
-  Select a word or passage and right-click or press Alt+1 to see the translation and model beside the source. The movable panel stays open during scrolling and cross-page reading. Outside click, Esc or × closes temporary results.
-- 翻译可独立选择已保存的 API，也可新建共用连接；支持目标语言、自定义提示词与快捷键。仅发送选中文字和翻译提示词，不附带整篇文档、所在页或聊天历史。需要长期保存时，可将译文转为普通批注。
-  Translation can use its own saved API or a new shared connection, with configurable target language, prompt and shortcut. Only the selected text and translation prompt are sent, without the full document, page or chat history. Keep a result as a plain note when needed.
-- 恢复 PDF 自带的参考文献与图号链接，支持文内精确跳转及返回原位置。深色纸张下，链接文字与抗锯齿边缘一起调整为柔和浅蓝色，减少白色重影。
-  Embedded PDF reference and figure links navigate to their exact page positions and support returning to the source. On dark paper, link glyphs and their antialiased edges share a soft light-blue foreground to reduce white halos.
-- README 将划词翻译与 PDF 阅读、纸张调色、AI 问答批注和聊天模式一同列为主打功能，介绍与发布说明保持中英双语。
-  The README features selection translation alongside PDF reading, adjustable paper colors, AI Q&A annotations and chat. Introductions and release notes remain bilingual.
+聊天发送尚未删除的有效主对话及所选文档资料，默认不读取批注；点击输入框上方“引用批注”后，只把手动选择的问答或笔记加入该次问题。PDF 批注只引用所属文档、选段和本次问题，不带聊天及其他批注；在 AI 回答上提问时，仅引用批注绑定的那一版原回答。
 
-## 放大后更清晰 / Sharper enlarged reading
+Chat sends the remaining valid main conversation and document material, without automatically reading annotations. Reference annotations above the composer adds only the Q&A or notes you select to that question. A PDF annotation uses only its own document, selection and current question, without chat or other annotations. An annotation on an AI answer uses only its bound original answer version.
 
-- 整页底图保留原有像素上限，可视区域使用独立高清层，避免为了放大一小块而提高整张大页面的内存占用。
-  A bounded whole-page bitmap remains available, while an independent detail layer redraws the visible area without raising the resolution of the entire enlarged page.
-- 按屏幕像素密度绘制，普通屏幕至少以两倍采样为目标；高清缓冲最多 800 万像素，极大窗口仍按预算调整精度。
-  Detail rendering follows display pixel density, targeting at least double sampling on standard-density screens. Detail buffers are capped at eight million pixels; exceptionally large viewports still adjust density to fit that budget.
-- 滚动时复用边缘缓存，停下后补上新区域。过期渲染会取消；页面移出视野或关闭时释放高清缓冲与 Worker。
-  Scrolling reuses cached margins and redraws newly visible areas. Stale renders are cancelled, and offscreen pages or unmounting release detail buffers and workers.
-- 高清层不接收鼠标事件，文字选择、引用跳转、批注和划词翻译继续使用原文字层；暖黄、深色、自定义配色及原色对照同步处理。
-  The detail layer receives no pointer events. Selection, reference navigation, annotations and selection translation continue to use the original text layer, while warm, dark, custom colors and original comparison stay synchronized.
+文档范围继续支持自动、全文或按需引用：自动模式下，小文件发送全文提取文字，超过 25 MiB、300 页或 12 万提取字符时在本机检索，每份文档最多引用 2.4 万片段字符，选段和问题另计。原 PDF 和页面图片不作为文件上传。资料不足时明确提示，全文仍受请求和模型容量限制。批注失败重试保留本次问题、回答偏好和文档范围，从同一份不可变来源重新组装请求，不保存整段聊天快照。
 
-先正常退出旧版，完整解压 ZIP，再运行 AI-Embedded-Paper-PDF-Reader.exe。原数据位置、数据库和备份格式兼容。
+Document scope still supports Auto, Full text and Relevant excerpts. Auto sends full extracted text for small files; above 25 MiB, 300 pages or 120,000 extracted characters, local retrieval sends at most 24,000 excerpt characters per document, with the selection and question additional. Original PDFs and page images are not uploaded as files. Missing evidence is disclosed, and full text remains subject to request/model limits. Failed annotation retries retain the question, answer preference and document scope and rebuild from the same immutable source, without storing a full-chat snapshot.
 
-Exit the old version normally, fully extract the ZIP and run AI-Embedded-Paper-PDF-Reader.exe. Existing data locations, database and backup formats remain compatible.
+## 聊天操作 / Chat controls
 
-源码采用 MIT，第三方许可与署名保留。原创应用代码由 GPT 通过 Codex 实现，人类发起者负责想法、需求和功能取舍。已公开的历史 Release 与附件保留。
+点击输入框上方“引用批注”，搜索并选择当前阅读记录/对话中已保存的问答或笔记，每次最多 10 条；只有发送时才带入模型。问题下方可展开查看当时的内容副本。之后修改原批注不改写已发送聊天，需要更新时可在新问题中重新选择。
 
-Original code remains under MIT with third-party notices retained. GPT through Codex implemented the original application code; the human initiator supplied ideas, requirements and feature trade-offs. Published historical releases and assets are preserved.
+Use Reference annotations above the composer to search/select saved Q&A or notes in the current reading record/conversation, up to ten per question. Contents reach the model only when sent and can be expanded below that question. Editing the source later does not rewrite an existing discussion; select it again in a new question for an updated copy.
 
-## 验证 / Validation
+每轮回答下方的“删除本轮”会直接删除本轮问题、全部回答版本及这些回答上的批注，不进入回收站；PDF 原文批注和文件保留。同时清除剩余失败回答的旧请求快照，后续聊天中对被删回答批注的手动引用也会移除，重试不会通过这些缓存带回已删内容。以前的自动备份、迁移存档和导出文件可能仍含旧内容。
 
-259 项自动检查、574 项交付核对和两次实际 EXE 启动、保存、完整备份及正常退出通过。合成 PDF 在 200%–250% 放大、普通/分数/高密度屏幕及暖黄/深色配色下，验证可视区域从约 1 倍提升至 2–2.5 倍采样，缓冲保持在像素预算内。实际阅读组件验证缩放重建、深色引用颜色、原色对照和卸载；滚动验证选区保留、引用命中、过期任务丢弃及移出视野后的释放。未读取个人文档或调用真实模型 API。
+Delete round under each answer permanently removes that question, all answer versions and annotations attached to those answers, without Trash. PDF annotations and files remain. Remaining failed-answer snapshots and later manual references to the removed answer annotations are also cleared, so retries cannot restore deleted content through these caches. Earlier automatic backups, migration archives and exports may still contain old content.
 
-259 automated tests, 574 delivery checks and two real EXE startup/save/full-backup/normal-exit checks passed. Synthetic PDFs at 200%–250% zoom on standard, fractional and high-density displays with warm/dark colors verified visible-area sampling increasing from approximately 1× to 2–2.5× within the pixel budget. The actual reader component verified zoom rebuilding, dark citation colors, original comparison and unmounting. Scrolling covered retained selection, reference hit testing, stale-work rejection and offscreen release. No personal documents or real model APIs were used.
+## 保存与升级 / Saving and upgrading
 
-ZIP SHA-256: `f6cae2ef092bac0c256200e9b9df722308a453c69bdee0d3e86839b36001a94c`
+已完成回答不再保存重复的请求快照，批注仅保存失败重试所需的小型设置。旧数据升级保留可见聊天、问答、高亮、原文和模型连接，清理重复上下文；读取旧版备份继续支持。含新增引用或重试字段的备份请用 0.1.20 或更新版本恢复，旧程序可能无法完整读取。
+
+Completed answers no longer retain duplicate request snapshots. Annotation retries store only small settings. Upgrading preserves visible chat, Q&A, highlights, sources and model connections while pruning redundant contexts, and older backups remain readable. Restore backups containing new references/retry fields with v0.1.20 or newer; earlier apps may not read them fully.
+
+完整解压 Windows x64 ZIP，更新前正常退出旧版，再运行新目录中的 AI-Embedded-Paper-PDF-Reader.exe。个人数据目录与 API 密钥存储方式沿用原设置。历史 Release、标签及附件保留。
+
+Fully extract the Windows x64 ZIP, exit the old app normally and run AI-Embedded-Paper-PDF-Reader.exe from the new folder. The user-data directory and API credential storage remain the same. Historical releases, tags and assets are preserved.
+
+验证：269 项自动检查及 21 项实际界面检查通过，覆盖全文背景保留、请求隔离、主动引用、失败重试、删除事务失败回滚、旧缓存升级与备份往返。使用虚构资料、隔离数据库和本机模拟接口，未读取个人资料或调用真实 API。
+
+Validation: 269 automated tests and 21 real UI checks passed, covering full-paper background, request isolation, explicit references, retries, deletion transaction rollback, legacy-cache migration and backup round trips. Tests used synthetic material, isolated databases and local mock services, without personal data or real APIs.

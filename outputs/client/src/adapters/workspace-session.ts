@@ -38,7 +38,7 @@ export class WorkspaceSession {
   }
   /** Commit irreversible removals through the same queue as ordinary saves, so an
    * older in-flight snapshot can never resurrect removed records or attachments. */
-  async commit(change: (previous: Workspace) => Workspace, write: (next: Workspace, previous: Workspace) => Promise<void>): Promise<Workspace> {
+  async commit(change: (previous: Workspace) => Workspace, write: (next: Workspace, previous: Workspace) => Promise<void>, pendingStatus = '正在清理回收站…'): Promise<Workspace> {
     if (!this.value || this.committing) throw new Error('本机记录尚未就绪，请稍候。');
     this.committing = true;
     this.flushing = undefined; // A later flush must also wait for this commit.
@@ -47,7 +47,7 @@ export class WorkspaceSession {
       const previous = this.value!;
       const next = change(previous);
       assertWorkspaceCapacity(next);
-      this.options.onStatus('正在清理回收站…');
+      this.options.onStatus(pendingStatus);
       await write(next, previous);
       this.value = next; this.revision += 1; this.savedRevision = this.revision;
       this.options.onChange(next); this.options.onStatus('已保存在本机');

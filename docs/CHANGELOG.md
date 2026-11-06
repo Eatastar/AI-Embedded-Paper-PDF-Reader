@@ -1,5 +1,19 @@
 # 版本记录 / Changelog
 
+## 0.1.20 · 20261106.9 · 2026-11-06
+
+聊天发送尚未删除的有效主对话及所选文档资料，默认不读取批注；点击输入框上方“引用批注”后，只把手动选择的问答或笔记加入该次问题。PDF 批注只引用所属文档、选段和本次问题，不带聊天及其他批注；在 AI 回答上提问时，仅引用批注绑定的那一版原回答。
+
+Chat sends the remaining valid main conversation and document material, without automatically reading annotations. Reference annotations above the composer adds only the Q&A or notes you select to that question. A PDF annotation uses only its own document, selection and current question, without chat or other annotations. An annotation on an AI answer uses only its bound original answer version.
+
+每轮回答下方的“删除本轮”会直接删除本轮问题、全部回答版本及这些回答上的批注，不进入回收站；PDF 原文批注和文件保留。同时清除剩余失败回答的旧请求快照，后续聊天中对被删回答批注的手动引用也会移除，重试不会通过这些缓存带回已删内容。以前的自动备份、迁移存档和导出文件可能仍含旧内容。
+
+Delete round under each answer permanently removes that question, all answer versions and annotations attached to those answers, without Trash. PDF annotations and files remain. Remaining failed-answer snapshots and later manual references to the removed answer annotations are also cleared, so retries cannot restore deleted content through these caches. Earlier automatic backups, migration archives and exports may still contain old content.
+
+已完成回答清理请求快照，批注失败重试只保存偏好和文档范围；旧缓存自动转换，保留可见结果。聊天新增可搜索批注选择器，发送时固定所选副本，每次最多 10 条。269 项自动检查、21 项实际界面检查通过；原文全文/按需范围及旧数据恢复规则见[本版说明](RELEASE_NOTES.md)。
+
+Completed responses discard request snapshots. Annotation retries store preference/scope only; legacy caches are converted without losing visible results. Chat adds a searchable annotation picker with a sending-time copy of up to ten selections. 269 automated tests and 21 real UI checks passed. See [release notes](RELEASE_NOTES.md) for full/relevant source scope and backup compatibility.
+
 ## 0.1.19 · 20261106.8 · 2026-11-06
 
 正式发布说明汇总 v0.1.15 之后的划词翻译、滚动保留译文、PDF 引用跳转、深色链接配色和高清阅读更新；README 的主要功能与开始使用新增中英双语划词翻译介绍。此次发布文档整理保留已验证的客户端与 ZIP 字节。

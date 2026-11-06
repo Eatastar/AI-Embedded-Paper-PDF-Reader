@@ -28,16 +28,16 @@ test('重新提问保留高亮和原问答，只有新回答成功后才替换',
   for (const key of ['id', 'messageId', 'versionId', 'quote', 'anchor', 'color', 'createdAt'] as const) assert.deepEqual(a[key], c.annotations[0][key]);
   assert.equal(a.question, '新的问题是什么？'); assert.equal(a.originalQuestion, a.question);
   assert.equal(a.answer, '新的完整回答'); assert.equal(a.originalAnswer, a.answer); assert.equal(a.edited, false);
-  assert.equal(a.reask, undefined); assert.deepEqual(a.context, prepared.messages);
+  assert.equal(a.reask, undefined); assert.equal(a.context, undefined); assert.equal(a.requestPreference, undefined);
   assert.deepEqual(validateImport(workspace(next)), workspace(next));
 });
 
-test('新提问采用当前完整主对话，不附带旧批注问答；每次尝试独立冻结上下文', () => {
+test('新提问只采用绑定原文，不附带主聊天或旧批注问答；每次尝试独立冻结设置', () => {
   const { c, id } = fixture();
   const current = { ...c, messages: [...c.messages, createUserMessage('后续主问题'), createAssistantMessage('后续主回答', 'complete')] };
   let draft = changeAnnotationReask(current, id, 'start'); draft = changeAnnotationReask(draft, id, 'edit', '换一个问题');
   const first = prepareAnnotationRequest(draft, id, '新偏好');
-  assert.ok(first.messages.some(m => m.content === '后续主问题')); assert.ok(first.messages.some(m => m.content === '后续主回答'));
+  assert.doesNotMatch(JSON.stringify(first.messages), /后续主问题|后续主回答/);
   assert.ok(first.messages.at(-1)!.content.includes('换一个问题'));
   assert.equal(first.messages.some(m => m.content.includes('第一次完整回答') || m.content.includes('第一次问题')), false);
   const failed = updateAnnotationRequest(first.conversation, id, '残文', { error: '连接中断', interrupted: false });
@@ -47,7 +47,7 @@ test('新提问采用当前完整主对话，不附带旧批注问答；每次�
   const stopped = updateAnnotationRequest(retry.conversation, id, '', { error: '停止', interrupted: true });
   const editing = changeAnnotationReask(stopped, id, 'edit');
   const fresh = prepareAnnotationRequest(editing, id, '再次改偏好');
-  assert.ok(fresh.messages.some(m => m.content === '重试前新增的主问题'));
+  assert.doesNotMatch(JSON.stringify(fresh.messages), /重试前新增的主问题/);
   assert.equal(fresh.messages[0].content, '再次改偏好');
 });
 

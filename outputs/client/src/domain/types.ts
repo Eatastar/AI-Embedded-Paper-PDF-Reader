@@ -18,6 +18,18 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   versions: MessageVersion[];
   activeVersionId: string;
+  annotationReferences?: AnnotationReference[];
+}
+
+/** A user-selected copy of an annotation, attached to one chat question. */
+export interface AnnotationReference {
+  annotationId: string;
+  label: string;
+  quote: string;
+  mode: 'ask' | 'note';
+  question: string;
+  answer: string;
+  note?: string;
 }
 
 export interface Annotation {
@@ -39,6 +51,8 @@ export interface Annotation {
   createdAt: number;
   updatedAt: number;
   context?: InputMessage[];
+  requestPreference?: string;
+  documentContextMode?: 'auto' | 'full' | 'relevant';
   error?: string;
   deletedAt?: number;
   reask?: AnnotationAttempt;
@@ -50,6 +64,8 @@ export interface AnnotationAttempt {
   answer: string;
   status: 'draft' | 'generating' | 'error' | 'interrupted';
   context?: InputMessage[];
+  requestPreference?: string;
+  documentContextMode?: 'auto' | 'full' | 'relevant';
   error?: string;
 }
 

@@ -76,16 +76,17 @@ test('欢迎工作区含明确标记的中文演示', () => {
   assert.deepEqual(validateImport(w), w);
 });
 
-test('批注上下文使用全部主对话，并排除其他批注', () => {
+test('主聊天保留聊天历史，批注只引用绑定原回答并排除其他批注', () => {
   const c = fixture();
   c.annotations.push({ ...c.annotations[0], id: 'sibling', question: '不应出现的兄弟问题', answer: '不应出现的兄弟回答' });
   const main = buildMainContext(c, '系统指令');
   assert.deepEqual(main.map(m => m.content), ['系统指令', '原问题', '原始回答包括测地线。', '接着问', '后续完整回答。']);
   const context = buildAnnotationContext(c, c.annotations[0], '系统指令');
-  assert.equal(context.length, 6);
+  assert.equal(context.length, 3);
   assert.match(context.at(-1)!.content, /测地线/);
   assert.match(context.at(-1)!.content, /什么是测地线/);
   assert.doesNotMatch(JSON.stringify(context), /不应出现/);
+  assert.doesNotMatch(JSON.stringify(context), /原问题|接着问|后续完整回答/);
 });
 
 test('重新生成保留旧版本，新版本不继承批注，批注问题固定来源版本', () => {
@@ -98,7 +99,7 @@ test('重新生成保留旧版本，新版本不继承批注，批注问题固�
   assert.equal(c.annotations.filter(a => a.versionId === c.messages[1].activeVersionId).length, 0);
   assert.equal(c.annotations.filter(a => a.versionId === oldVersion.id).length, 1);
   assert.equal(buildMainContext(c)[1].content, '重生成的新回答');
-  assert.equal(buildAnnotationContext(c, c.annotations[0])[1].content, oldVersion.content);
+  assert.ok(buildAnnotationContext(c, c.annotations[0])[0].content.endsWith(oldVersion.content));
 });
 
 test('已成功问答不能直接重发，编辑副本不触发模型请求', () => {

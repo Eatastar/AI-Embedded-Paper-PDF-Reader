@@ -1,7 +1,7 @@
 import type Dexie from 'dexie';
 import type { EntityTable } from 'dexie';
 import type { Workspace } from '../domain/types';
-import { createWorkspace, ImportValidationCache, validateImport } from '../domain/workspace';
+import { compactRequestCaches, createWorkspace, ImportValidationCache, validateImport } from '../domain/workspace';
 import { contentHash } from '../domain/context-pool';
 import { RECORD_PREFIX, unpackWorkspace, WorkspaceCodec } from '../domain/workspace-codec';
 import type { CompactHeader, PackedWorkspace, WorkspaceRecord } from '../domain/workspace-codec';
@@ -55,7 +55,9 @@ export class WorkspaceRecordStore {
       if (isHeader(saved.current.workspace)) {
         const clean = validateImport(unpackWorkspace({ ...saved.current.workspace, records: saved.rows }));
         this.previous = this.codec.pack(clean); this.revision = saved.current.workspace.revision;
-        return clean;
+        const compact = compactRequestCaches(clean);
+        if (compact !== clean) await this.write(compact, { trusted: true });
+        return compact;
       }
       const clean = validateImport(saved.current.workspace);
       const fingerprint = contentHash(JSON.stringify(saved.current.workspace));
@@ -63,8 +65,9 @@ export class WorkspaceRecordStore {
         try { await beforeMigration(clean); }
         catch { throw new Error('升级前备份未完成，原记录尚未更改。请先用旧版导出完整备份，再重新打开新版。'); }
       }
-      await this.write(clean, { archive: 'migration', legacyFingerprint: fingerprint });
-      return clean;
+      const compact = compactRequestCaches(clean);
+      await this.write(compact, { archive: 'migration', legacyFingerprint: fingerprint });
+      return compact;
     };
     this.loading = load().finally(() => { this.loading = undefined; });
     return this.loading;

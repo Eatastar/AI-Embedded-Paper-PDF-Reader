@@ -110,7 +110,7 @@ test('网络错误、中断及未完成的正文不阻止发送，保留全部�
   assert.deepEqual(context.map(m => m.content), ['系统提示', '原问题', '完整答案：测地线。', '问题-error', '问题-interrupted', '问题-streaming', '继续讨论', '后续完整答案']);
   const annotationContext = buildAnnotationContext(conversation, conversation.annotations[0]);
   assert.doesNotMatch(JSON.stringify(annotationContext), /部分答案/);
-  assert.match(JSON.stringify(annotationContext), /问题-error/);
+  assert.doesNotMatch(JSON.stringify(annotationContext), /问题-error/);
   assert.equal(prepareAnnotationRequest(conversation, conversation.annotations[0].id).annotation.status, 'generating');
 });
 
@@ -121,7 +121,7 @@ test('重新生成失败时旧批注仍固定原完整版本，后续主对话�
   conversation.messages.push(createUserMessage('继续问'));
   assert.deepEqual(buildMainContext(conversation).map(m => m.content), ['原问题', '继续问']);
   const context = buildAnnotationContext(conversation, conversation.annotations[0]);
-  assert.equal(context[1].content, old.content);
+  assert.ok(context[0].content.endsWith(old.content));
   assert.doesNotMatch(JSON.stringify(context), /失败的新回答/);
 });
 
@@ -179,7 +179,7 @@ test('PDF 页面可单独批注，完整附件按页作为引用上下文，空�
   assert.match(context[0].content, /文件名：论文.pdf/);
   assert.match(context[0].content, /第 1 页：[\s\S]*曲率/);
   assert.match(context[0].content, /第 2 页：/);
-  assert.equal(context[1].content, '原问题');
+  assert.doesNotMatch(JSON.stringify(context), /原问题/);
   assert.deepEqual(validateImport(workspace(conversation)), workspace(conversation));
   assert.throws(() => createAnnotation(conversation, { messageId: 'page-message-2', versionId: 'page-version-2', quote: '', anchor: {}, color: '#99ddff' }), /选中一段/);
   assert.throws(() => createAnnotation(conversation, { messageId: 'page-message-1', versionId: 'page-version-2', quote: '曲率', anchor: {}, color: '#99ddff' }), /文档页面/);

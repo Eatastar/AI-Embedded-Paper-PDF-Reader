@@ -73,7 +73,7 @@ export function ReaderToolbar(props: Props) {
       </>}
       <div className="reader-setting-row"><span>{t("界面语言")}</span><LanguageSelector /></div>
       <label className="reader-setting-row reader-context-setting"><span>{t("AI 资料范围")}</span><select aria-label={t("AI 资料范围")} value={props.contextMode} onChange={event => props.onContextMode(event.target.value as DocumentContextMode)}><option value="auto">{t("自动：小文件全文，大文件按需引用")}</option><option value="relevant">{t("按需引用")}</option><option value="full">{t("全文")}</option></select></label>
-      <p className="reader-settings-help" role="status">{props.relevantContext ? t("当前文件：按需引用，发送选段、所在页和相关片段；不发送全文。") : t("当前文件：全文，发送全部提取文字；扫描图片暂不识别。")}{t("主对话完整保留，失败重试沿用原资料。")}</p>
+      <p className="reader-settings-help" role="status">{props.relevantContext ? t("当前文件：按需引用，发送选段、所在页和相关片段；不发送全文。") : t("当前文件：全文，发送全部提取文字；扫描图片暂不识别。")}{t('批注不带聊天记录；失败重试保留本次问题和资料范围。')}</p>
       <p className="reader-settings-help">{t("自动模式：超过 25 MB、300 页或 12 万字符时按需引用，每份最多引用 2.4 万字符。全文模式仍受模型容量限制。")}</p>
       <ReaderAppearancePanel appearance={props.appearance} onChange={props.onAppearance} saved={props.saved} />
       <div className="reader-setting-actions"><button type="button" className="document-tool-button" aria-pressed={props.compareOriginal} disabled={props.appearance.preset === 'original'} onClick={props.onCompareOriginal}><Eye size={14} />{t("原色对照")}</button>
@@ -81,7 +81,7 @@ export function ReaderToolbar(props: Props) {
       </div>
       {props.onOpenModelSettings && <button type="button" className="reader-model-settings" onClick={() => { setSettingsOpen(false); props.onOpenModelSettings?.(); }}><Settings2 size={15} /><span>{t("模型与设置")}</span><small>{props.modelLabel}</small></button>}
       <p className="reader-settings-help">{t("划选文字可询问 AI 或只写批注。支持触控板捏合缩放；目录、搜索和批注总览在“文档导航”中。")}</p>
-      <p className="reader-settings-help">{t("询问会发送本对话和文档提取文字；原文件保存在本机。")}</p>
+      <p className="reader-settings-help">{t('批注只引用所属文档或原回答，不带主聊天和其他批注；原文件保存在本机。')}</p>
       <footer><span>AI-Embedded Paper PDF Reader</span><span>{__APP_VERSION__} · {__APP_BUILD__}</span></footer>
     </div>}
   </>;

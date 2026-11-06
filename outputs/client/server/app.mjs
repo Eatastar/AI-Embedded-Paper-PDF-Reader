@@ -102,7 +102,7 @@ function demoAnswer(body) {
     else if (/时间|钟|快慢/.test(body.quote)) explanation = '不同位置的钟不一定以相同速率走动。在其他条件相当时，引力较强处的钟相对于远处的钟走得更慢。这并不意味着当地的人觉得自己的动作变慢；差异需要把不同位置的钟放在一起比较，或交换信号后才能发现。';
     else if (/等效|自由落体/.test(body.quote)) explanation = '设想你在没有窗户的电梯里：当电梯自由下落时，你和身边的物体一起下落，会短暂感觉失重。等效原理把局部引力与加速运动联系起来；这个“局部”很重要，足够大的空间仍能通过潮汐效应区分两者。';
     else explanation = `这段文字需要放在主回答的语境里理解。你可以把概念拆成“它描述什么”和“能观察到什么现象”两步阅读，再回到原句检查它们的关系。当前为演示模式，尚未连接模型，不能针对任意原文生成真实解释。`;
-    return `**本地演示批注**\n\n${explanation}\n\n*这是预置的交互示例。连接 API 后，会把完整主对话、选中原文和你的问题一起发送给所选模型。*`;
+    return `**本地演示批注**\n\n${explanation}\n\n*这是预置的交互示例。连接 API 后，只发送所属文档或原回答、选中原文和这条批注问题，不带主聊天及其他批注。*`;
   }
   if (/广义相对论|引力|时空/.test(question)) {
     if ((body.variant || 0) > 0) return '**本地演示 · 另一个讲法**\n\n广义相对论用时空几何描述引力：物质和能量改变时空，自由运动的物体沿弯曲时空中的自然路径前进。\n\n例如，地球绕太阳运行，可以理解为它沿太阳周围时空中的轨迹运动。这里的“弯曲”不是向某个看不见的外部空间弯过去，而是时空本身的距离、时间和路径关系发生变化。\n\n**时间也会受到引力影响**：在其他条件相当时，引力较强处的钟，相对于远处的钟走得更慢。\n\n这份新回答拥有独立版本。原回答的高亮和批注保留在原版本中，切回去便能看到。\n\n*此内容为预置演示，没有调用 AI API。选中一段文字，即可试用一次批注问答。*';
@@ -224,7 +224,7 @@ export function createAppServer({ env = process.env, distDir = resolve('dist'), 
             }
             send({ type: 'done', modelLabel: '本地演示 · 未调用 AI' });
           } else {
-            const annotationInstruction = body.kind === 'annotation' ? `你在为主回答中选中的原文撰写一次性批注解释。请结合完整主对话回答用户最后的问题，聚焦下面的原文；不要要求用户继续追问。选中原文：\n${body.quote}` : '';
+            const annotationInstruction = body.kind === 'annotation' ? `你在解释一条独立批注。只根据本次提供的原文资料、选中原文和批注问题回答；不引用主聊天或其他批注问答，资料不足时明确说明。选中原文：\n${body.quote}` : '';
             if (activeSettings.apiFormat !== 'openai-chat') {
               const result = await streamProtocolReply({ ...activeSettings, messages: body.messages, annotationInstruction, signal: controller.signal, fetch: requestFetch, onText: text => send({ type: 'delta', text }) });
               if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError');

@@ -1,10 +1,10 @@
 # AI-Embedded Paper PDF Reader 项目总纲 / Project outline
 
-当前版本：客户端 0.1.19，构建 20261106.8，2026年11月6日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
+当前版本：客户端 0.1.20，构建 20261106.9，2026年11月6日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
 
 首个公开正式版沿用 v0.1.11 和现有构建，使用 MIT 许可证。公开范围包括已核对的源码及通用 Windows 发行包；历史检查范围见 [公开发布说明](OPEN_SOURCE_RELEASE.md)，本地数据和请求边界见 [隐私说明](PRIVACY.md)。
 
-Current source: **0.1.19 / 20261106.8**. A local paper reader with optional AI questions and personal notes. Public introductions and release notes are bilingual. Users can select Chinese or English in the app; interface language never rewrites their documents, messages, notes or answer preferences.
+Current source: **0.1.20 / 20261106.9**. A local paper reader with optional AI questions and personal notes. Public introductions and release notes are bilingual. Users can select Chinese or English in the app; interface language never rewrites their documents, messages, notes or answer preferences.
 
 PDF 显示保留有像素上限的整页底图；可视区域按屏幕密度重绘独立高清层，每页高清缓冲最多 800 万像素，仅在可见时保留。滚动复用边缘缓存并丢弃过期任务，页面移出视野或关闭时释放。高清层不接收鼠标事件，文字选取、引用跳转、批注及临时翻译继续使用原文字层。
 
@@ -26,9 +26,9 @@ Keep questions beside their source. Select, ask and take notes directly in AI an
 4. 平时只保留不同颜色的高亮，点击打开弹框。× 或框外点击收起，内容继续保存；独立的“停止回答”可中断生成并重试原问题。
 5. 批注框可拖动，正文和高亮保持文字光标。编辑时关闭会保存修改，取消编辑则放弃本次修改。
 6. 重新生成主回答得到独立版本，旧批注留在原版本，新版本不继承旧批注。
-7. 聊天与 AI 问答批注发送完整有效主对话；附件默认小文件全文、大文件按需引用，另带选中文字及所在页片段。原文件留在本机。自动模式在超过 25 MiB、300 页或 12 万提取字符时使用本地关键词检索，每份引用片段最多 2.4 万字符；选区和对话另计。阅读设置可切换全文或按需引用，工具栏显示范围。失败重试沿用首次请求的资料；资料不足会明确提示，全文仍受请求与模型容量限制，不静默截断主对话。失败残文不作为成功回答加入上下文。
+7. 聊天发送尚未删除的有效主对话及所选文档资料，默认不读取批注；点击输入框上方“引用批注”后，只把手动选择的问答或笔记加入该次问题。PDF 批注只引用所属文档、选段和本次问题，不带聊天及其他批注；在 AI 回答上提问时，仅引用批注绑定的那一版原回答。文档范围继续支持自动、全文或按需引用：自动模式下，小文件发送全文提取文字，超过 25 MiB、300 页或 12 万提取字符时在本机检索，每份文档最多引用 2.4 万片段字符，选段和问题另计。原 PDF 和页面图片不作为文件上传。资料不足时明确提示，全文仍受请求和模型容量限制。批注失败重试保留本次问题、回答偏好和文档范围，从同一份不可变来源重新组装请求，不保存整段聊天快照。失败残文不作为成功回答加入上下文。
 8. 文件原字节保存在本机。阅读配色只改变显示，不改写 PDF。
-9. 普通删除移入回收站；回收站支持恢复、单条永久删除和清空，永久删除对话时原子移除记录与附件原字节，正在排队的旧保存不能复活记录。历史自动备份和导出文件不随当前记录删除而改写。JSON 备份包含文档原字节和批注，追加导入不覆盖已有记录。
+9. 对话整体和批注的普通删除移入回收站；回收站支持恢复、单条永久删除和清空，永久删除对话时原子移除记录与附件原字节，正在排队的旧保存不能复活记录。历史自动备份和导出文件不随当前记录删除而改写。JSON 备份包含文档原字节和批注，追加导入不覆盖已有记录。
 10. 模型配置与聊天分别存储，桌面凭证使用系统加密，不进入聊天备份或源码仓库。
 11. 已保存的模型使用原生下拉列表；选择只加载配置，点击“使用”或“保存并使用”才切换。新增“其他”模板与常用服务快捷填写，地址、端口和模型名可修改；未开启鉴权的本机接口可留空密钥。
 12. 接口格式表示通信的数据格式，与模型品牌分开。支持通用聊天兼容格式、Responses 和 Anthropic Messages；常用服务自动填写，显示名称调整不改变旧配置。Gemini 当前使用官方兼容入口。
@@ -42,7 +42,12 @@ English: Each highlight may use a preset or custom color. Color changes preserve
 16. PDF 上限调整为 150 MiB / 5000 页 / 1000 万提取字符；读取显示进度并可取消。画布和页面几何按需准备，滚动用二分定位，关闭仍等待保存。
 17. 阅读器控件、边缘与批注浮框随纸张色变化。拖动颜色采用后台低分辨率预览，停下后恢复原分辨率；过期颜色任务不覆盖新结果，原 PDF 不改写。
 
-English: The home screen exposes API setup and model discovery. PDFs support up to 150 MiB / 5,000 pages with cancellable extraction. Auto mode sends full small documents and locally retrieved excerpts for large ones while preserving the complete valid conversation. Retries keep their original request material. Reader-wide colors use background previews followed by full-resolution refinement.
+English: The home screen exposes API setup and model discovery. PDFs support up to 150 MiB / 5,000 pages with cancellable extraction. Chat sends the remaining valid main conversation and document material, without automatically reading annotations. Reference annotations above the composer adds only the Q&A or notes you select to that question. A PDF annotation uses only its own document, selection and current question, without chat or other annotations. An annotation on an AI answer uses only its bound original answer version. Document scope still supports Auto, Full text and Relevant excerpts. Auto sends full extracted text for small files; above 25 MiB, 300 pages or 120,000 extracted characters, local retrieval sends at most 24,000 excerpt characters per document, with the selection and question additional. Original PDFs and page images are not uploaded as files. Missing evidence is disclosed, and full text remains subject to request/model limits. Failed annotation retries retain the question, answer preference and document scope and rebuild from the same immutable source, without storing a full-chat snapshot. Reader-wide colors use background previews followed by full-resolution refinement.
+
+18. 每轮回答下方的“删除本轮”会直接删除本轮问题、全部回答版本及这些回答上的批注，不进入回收站；PDF 原文批注和文件保留。同时清除剩余失败回答的旧请求快照，后续聊天中对被删回答批注的手动引用也会移除，重试不会通过这些缓存带回已删内容。以前的自动备份、迁移存档和导出文件可能仍含旧内容。
+19. 聊天主动引用最多 10 条已保存批注，发送时固定可见内容；批注提问成功后不保留请求快照，旧数据升级会清理重复上下文并保留原问答及重试设置。0.1.20 可读取旧备份，新字段需用 0.1.20 或更新版本恢复。
+
+English: Delete round under each answer permanently removes that question, all answer versions and annotations attached to those answers, without Trash. PDF annotations and files remain. Remaining failed-answer snapshots and later manual references to the removed answer annotations are also cleared, so retries cannot restore deleted content through these caches. Earlier automatic backups, migration archives and exports may still contain old content. Explicit references copy at most ten saved annotations per chat question. Successful responses retain no redundant request snapshots; old annotation caches are converted to small retry settings while preserving visible Q&A. Use v0.1.20 or newer to restore backups with the new fields.
 
 ## 模块职责 / Modules
 
@@ -70,7 +75,8 @@ English: The home screen exposes API setup and model discovery. PDFs support up 
 | 连续页面与目录 | `src/components/PdfAnnotatedPage.tsx`、`src/adapters/pdf-navigation.ts`、`src/components/DocumentReader.tsx` | 附近页面绘制、串行任务取消、混合页尺寸、目录内部位置解析与阅读点保持 |
 | 阅读配色与进度 | `src/domain/reader.ts`、`src/adapters/reader.ts` | 显示副本换色、本机配色和按文档保存位置 |
 | 本机保存与备份 | `src/adapters/storage.ts`、`src/hooks/useWorkspace.ts` | Dexie 元数据、独立文档字节表、保存屏障、容量门槛及完整 JSON |
-| 共享快照与增量保存 | `src/domain/context-pool.ts`、`src/domain/workspace-codec.ts`、`src/adapters/record-store.ts` | 不可变完整上下文、内容标识去重、按记录事务提交及旧记录迁移 |
+| 批注引用与逐轮删除 / Annotation references and round deletion | `src/domain/chat-references.ts`、`src/components/ChatAnnotations.tsx`、`src/domain/workspace.ts` | 主动选择、内容副本、整轮删除与失败缓存清理 / Explicit selection, visible copies, round removal and stale retry cleanup |
+| 共享快照与增量保存 | `src/domain/context-pool.ts`、`src/domain/workspace-codec.ts`、`src/adapters/record-store.ts` | 失败聊天的不可变快照、批注小型重试设置、成功快照清理、内容去重及事务迁移 |
 | 模型预载与协议 | `src/domain/model-presets.ts`、`src/components/SettingsDialog.tsx`、`src/adapters/model.ts`、`server/` | 原生下拉选择连接、其他服务及本地模型快捷填写，配置管理和三种文字流式协议 |
 | 回收站与永久删除 | `src/domain/trash.ts`、`src/components/TrashDialog.tsx`、存储事务与保存队列 | 恢复、确认删除、清空与关联文件清理 |
 | 本机自动备份与退出 | `desktop/backup-store.cjs`、`desktop/desktop-bridge.cjs`、`desktop/preload.cjs` | 完整检查点、内容校验、恢复入口和退出保存握手 |

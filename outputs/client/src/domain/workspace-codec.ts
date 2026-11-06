@@ -55,7 +55,7 @@ export class WorkspaceCodec {
     });
   }
   private message(value: ChatMessage): Group {
-    return this.memo(value, () => this.group('message', value.id, { ...pick(value, ['id', 'role', 'activeVersionId']), versionIds: value.versions.map(v => v.id) }, value.versions.map(v => this.version(v))));
+    return this.memo(value, () => this.group('message', value.id, { ...pick(value, ['id', 'role', 'activeVersionId', 'annotationReferences']), versionIds: value.versions.map(v => v.id) }, value.versions.map(v => this.version(v))));
   }
   private page(value: DocumentPage): Group { return this.memo(value, () => this.group('page', value.messageId, pick(value, ['pageNumber', 'text', 'messageId', 'versionId']))); }
   private document(value: DocumentAttachment): Group {
@@ -63,7 +63,7 @@ export class WorkspaceCodec {
   }
   private annotation(value: Annotation): Group {
     return this.memo(value, () => {
-      const data = { ...pick(value, ['id', 'conversationId', 'messageId', 'versionId', 'quote', 'anchor', 'color', 'question', 'answer', 'mode', 'note', 'originalQuestion', 'originalAnswer', 'edited', 'createdAt', 'updatedAt', 'error', 'deletedAt']), status: value.status === 'generating' ? 'interrupted' : value.status };
+      const data = { ...pick(value, ['id', 'conversationId', 'messageId', 'versionId', 'quote', 'anchor', 'color', 'question', 'answer', 'mode', 'note', 'originalQuestion', 'originalAnswer', 'edited', 'createdAt', 'updatedAt', 'error', 'deletedAt', 'requestPreference', 'documentContextMode']), status: value.status === 'generating' ? 'interrupted' : value.status };
       const children: Group[] = [];
       const attach = (target: Record<string, unknown>, context?: InputMessage[]) => {
         if (!context) return;
@@ -71,7 +71,7 @@ export class WorkspaceCodec {
       };
       attach(data, value.context);
       if (value.reask) {
-        const attempt = { ...pick(value.reask, ['question', 'answer', 'error']), status: value.reask.status === 'generating' ? 'interrupted' : value.reask.status };
+        const attempt = { ...pick(value.reask, ['question', 'answer', 'error', 'requestPreference', 'documentContextMode']), status: value.reask.status === 'generating' ? 'interrupted' : value.reask.status };
         attach(attempt, value.reask.context); (data as Record<string, unknown>).reask = attempt;
       }
       return this.group('annotation', value.id, data, children);
@@ -154,7 +154,7 @@ export function unpackWorkspace(input: unknown): unknown {
     const data = read('conversation', id);
     const messages = ids(data.messageIds, 10000).map(messageId => {
       const m = read('message', messageId);
-      return { ...pick(m, ['id', 'role', 'activeVersionId']), versions: ids(m.versionIds, 1000).map(versionId => withContext(read('version', versionId), ['id', 'content', 'status', 'createdAt', 'modelLabel', 'error'])) };
+      return { ...pick(m, ['id', 'role', 'activeVersionId', 'annotationReferences']), versions: ids(m.versionIds, 1000).map(versionId => withContext(read('version', versionId), ['id', 'content', 'status', 'createdAt', 'modelLabel', 'error'])) };
     });
     const documents = data.documentIds === undefined ? undefined : ids(data.documentIds, 10).map(documentId => {
       const d = read('document', documentId);
@@ -162,8 +162,8 @@ export function unpackWorkspace(input: unknown): unknown {
     });
     const annotations = ids(data.annotationIds, 10000).map(annotationId => {
       const a = read('annotation', annotationId);
-      const annotation = withContext(a, ['id', 'conversationId', 'messageId', 'versionId', 'quote', 'anchor', 'color', 'question', 'answer', 'mode', 'note', 'originalQuestion', 'originalAnswer', 'edited', 'status', 'createdAt', 'updatedAt', 'error', 'deletedAt']);
-      if (a.reask !== undefined) (annotation as Record<string, unknown>).reask = withContext(object(a.reask), ['question', 'answer', 'status', 'error']);
+      const annotation = withContext(a, ['id', 'conversationId', 'messageId', 'versionId', 'quote', 'anchor', 'color', 'question', 'answer', 'mode', 'note', 'originalQuestion', 'originalAnswer', 'edited', 'status', 'createdAt', 'updatedAt', 'error', 'deletedAt', 'requestPreference', 'documentContextMode']);
+      if (a.reask !== undefined) (annotation as Record<string, unknown>).reask = withContext(object(a.reask), ['question', 'answer', 'status', 'error', 'requestPreference', 'documentContextMode']);
       return annotation;
     });
     return { ...pick(data, ['id', 'title', 'createdAt', 'updatedAt', 'deletedAt']), messages, annotations, ...(documents !== undefined ? { documents } : {}) };

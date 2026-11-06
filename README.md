@@ -12,9 +12,9 @@ A desktop reader built around local PDFs. Connect your preferred AI provider, re
 
 [下载 / Downloads](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases) · [本版发布说明 / Release notes](docs/RELEASE_NOTES.md) · [隐私 / Privacy](docs/PRIVACY.md) · [版本记录 / Changelog](docs/CHANGELOG.md) · [项目总纲 / Project outline](docs/PROJECT.md)
 
-当前源码版本：**0.1.19**。Windows x64 客户端请以 Releases 中实际发布的完整 ZIP 为准。中文 / English 界面均可在程序内切换，选择保存在本机。
+当前源码版本：**0.1.20**。Windows x64 客户端请以 Releases 中实际发布的完整 ZIP 为准。中文 / English 界面均可在程序内切换，选择保存在本机。
 
-Current source version: **0.1.19**. Download the complete Windows x64 ZIP actually published on Releases. Switch between Chinese and English in the app; your choice is remembered locally.
+Current source version: **0.1.20**. Download the complete Windows x64 ZIP actually published on Releases. Switch between Chinese and English in the app; your choice is remembered locally.
 
 ## 主要功能 / Main features
 
@@ -25,6 +25,16 @@ Current source version: **0.1.19**. Download the complete Windows x64 ZIP actual
 | **在批注中询问 AI**：划选原文就地提问，问答与来源文字绑定；收起后保留高亮，点击即可重开。支持自选高亮颜色、重新提问，也可只写普通笔记。 | **Ask AI in annotations**: select a passage and ask in place, keeping the Q&A attached to its source. Close the panel and click the highlight to reopen it. Choose highlight colors, ask again or write a plain note. |
 | **划词翻译**：选中单词或段落，右键或按 Alt+1 即可翻译，在原文旁查看译文。可独立选择 API、自定义提示词与快捷键；只发送选段及翻译提示词，译文可保留为普通批注。 | **Translate selected text**: select a word or passage and right-click or press Alt+1 to see its translation beside the source. Choose an independent API, customize the prompt and shortcut, and optionally keep the result as a plain note. Only the selection and translation prompt are sent. |
 | **按需打开聊天模式**：需要进一步讨论时展开聊天，收起后继续阅读，保留当前文档、位置和缩放。聊天回答中的文字也可添加批注。 | **Open chat when needed** for a longer discussion, then return to the same document, position and zoom. Text in AI answers can also be annotated. |
+
+## 独立批注与聊天 / Independent annotations and chat
+
+聊天发送尚未删除的有效主对话及所选文档资料，默认不读取批注；点击输入框上方“引用批注”后，只把手动选择的问答或笔记加入该次问题。PDF 批注只引用所属文档、选段和本次问题，不带聊天及其他批注；在 AI 回答上提问时，仅引用批注绑定的那一版原回答。
+
+Chat sends the remaining valid main conversation and document material, without automatically reading annotations. Reference annotations above the composer adds only the Q&A or notes you select to that question. A PDF annotation uses only its own document, selection and current question, without chat or other annotations. An annotation on an AI answer uses only its bound original answer version.
+
+聊天中可逐轮删除问题及回答，清除关联的旧请求缓存；PDF 原文批注保留。批注保留论文背景：小文件默认全文，大文件默认按需引用，也可在阅读设置中选择全文。
+
+Delete individual chat rounds and their stale request caches while retaining PDF annotations. Annotations keep the paper background: full text for small files and retrieved excerpts for large files by default, with a full-text option in Reading settings.
 
 ## 自选 API，本地保存配置 / Your API, locally stored settings
 
