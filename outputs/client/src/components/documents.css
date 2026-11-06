@@ -26,6 +26,7 @@
 .document-page-annotator { width: fit-content; position: relative; line-height: 1; box-shadow: 0 2px 12px #62471616; }
 .document-page-stage { position: relative; width: 250px; min-height: 300px; background: var(--reader-paper, #fff); --scale-round-x: 1px; --scale-round-y: 1px; --total-scale-factor: 1; }
 .document-page-canvas { position: absolute; display: block; top: 0; left: 0; z-index: 0; }
+.document-page-detail { position: absolute; display: block; z-index: 0; visibility: hidden; pointer-events: none; }
 .document-reader .document-page-annotator .r6o-span-highlight-layer { z-index: 2; }
 .document-page-text { max-width: 790px; min-height: 300px; margin: 0 auto; padding: 28px 30px 45px; border: 1px solid var(--ls-border); background: var(--reader-paper, var(--ls-panel)); color: var(--reader-ink, var(--ls-ink)); border-radius: 8px; box-shadow: 0 2px 8px #62471606; font-size: 14px; }
 .document-text-page-label { margin: 0 0 24px; color: var(--ls-muted); font-size: 10px; }

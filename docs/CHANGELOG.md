@@ -1,5 +1,11 @@
 # 版本记录 / Changelog
 
+## 0.1.19 · 20261106.8 · 2026-11-06
+
+新增可视区域高清重绘，改善整页像素上限导致的高倍放大发虚。整页底图继续限制内存，可视区域单独按屏幕密度绘制，每页高清缓冲最多 800 万像素；滚动复用边缘，过期任务丢弃，移出视野后释放缓存和 Worker。高清层不拦截鼠标，配色及原色对照同步，文字选取、引用跳转和批注层沿用原位置。
+
+Adds high-resolution visible-area redrawing to improve enlarged text softened by the whole-page pixel limit. The bounded base bitmap remains, while visible regions render separately at screen-aware density with at most eight million detail pixels per page. Scrolling reuses margins, discards stale work and releases offscreen caches/workers. The detail layer does not intercept pointer events; colors and original comparison stay synchronized, and selection, reference navigation and annotations retain their original geometry.
+
 ## 0.1.18 · 20261106.7 · 2026-11-06
 
 深色纸张下，PDF 自带引用、图号等文字链接统一使用柔和浅蓝色，并根据纸张颜色保持可读对比度。链接字形与全部抗锯齿边缘一并换色，避免仅修补邻接像素时遗漏白色残影。范围限定为链接与提取文字的交集，图片链接不会整块变色；原色对照与浅色纸张保留原有显示。缩放、快速配色预览和后台换色使用相同的文字范围，PDF 跳转及个人批注颜色保留。

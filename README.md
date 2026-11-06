@@ -12,9 +12,9 @@ A desktop reader built around local PDFs. Connect your preferred AI provider, re
 
 [下载 / Downloads](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases) · [本版发布说明 / Release notes](docs/RELEASE_NOTES.md) · [隐私 / Privacy](docs/PRIVACY.md) · [版本记录 / Changelog](docs/CHANGELOG.md) · [项目总纲 / Project outline](docs/PROJECT.md)
 
-当前源码版本：**0.1.18**。Windows x64 客户端请以 Releases 中实际发布的完整 ZIP 为准。中文 / English 界面均可在程序内切换，选择保存在本机。
+当前源码版本：**0.1.19**。Windows x64 客户端请以 Releases 中实际发布的完整 ZIP 为准。中文 / English 界面均可在程序内切换，选择保存在本机。
 
-Current source version: **0.1.18**. Download the complete Windows x64 ZIP actually published on Releases. Switch between Chinese and English in the app; your choice is remembered locally.
+Current source version: **0.1.19**. Download the complete Windows x64 ZIP actually published on Releases. Switch between Chinese and English in the app; your choice is remembered locally.
 
 ## 主要功能 / Main features
 

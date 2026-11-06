@@ -1,16 +1,18 @@
 import { t } from '../i18n/locale';
 import { useLocale } from '../i18n/react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { RefObject } from 'react';
+import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
 import { loadPdfJs } from '../adapters/documents';
 import { bindPdfTextSelection } from '../adapters/pdf-selection';
 import { paintPdfFrame, startPdfFrame } from '../adapters/pdf-frame';
 import { PdfColorProcessor } from '../adapters/pdf-color';
+import { bindPdfDetail } from '../adapters/pdf-detail';
 import { PdfRenderQueue } from '../adapters/pdf-navigation';
 import { markReaderSearch } from '../adapters/reader-search';
 import { pdfPageSize } from '../domain/pdf-zoom';
 import { pdfLinkTextRegions, type PixelFrame } from '../domain/pdf-color';
-import type { ReaderAppearance } from '../domain/reader';
+import type { ReaderAppearance, PdfColorRegion } from '../domain/reader';
 import type { SearchFocus } from '../domain/reader-navigation';
 import { pdfLinkAt, readPdfLinks, type PdfLink } from '../adapters/pdf-links';
 import { AnnotatedAnswer } from './AnnotatedAnswer';
@@ -25,15 +27,18 @@ interface PdfAnnotatedPageProps extends AnnotatedAnswerProps {
   compareOriginal: boolean;
   onPageReady: () => void;
   queue: PdfRenderQueue;
+  scrollViewport: RefObject<HTMLDivElement | null>;
   maxPixels?: number;
   search: SearchFocus | null;
   onSearchLocated: (marker: HTMLElement | null, request: number) => void;
   onPdfLink: (link: PdfLink) => void;
 }
 
-export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appearance, compareOriginal, onPageReady, queue, maxPixels = 16_000_000, search, onSearchLocated, onPdfLink, ...annotationProps }: PdfAnnotatedPageProps) {
+export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appearance, compareOriginal, onPageReady, queue, scrollViewport, maxPixels = 16_000_000, search, onSearchLocated, onPdfLink, ...annotationProps }: PdfAnnotatedPageProps) {
   useLocale();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const detailRef = useRef<HTMLCanvasElement>(null);
+  const detailSourceRef = useRef<{ page: PDFPageProxy; viewport: ReturnType<PDFPageProxy['getViewport']>; linkText: PdfColorRegion[]; baseDensity: number } | null>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const presentationRef = useRef<HTMLDivElement>(null);
@@ -59,6 +64,11 @@ export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appear
     presentationRef.current.style.zoom = String(size.scale / publishedScale.current);
   };
   useLayoutEffect(preview, [availableWidth, zoom]);
+  useLayoutEffect(() => {
+    const source = detailSourceRef.current, stage = stageRef.current, canvas = detailRef.current, scroller = scrollViewport.current;
+    if (!readyKey || !source || !stage || !canvas || !scroller || !pageSize.current || source.viewport.scale !== pdfPageSize(pageSize.current, availableWidth, zoom).scale) return;
+    return bindPdfDetail({ ...source, stage, canvas, scrollViewport: scroller, appearance: compareOriginal ? { ...appearance, preset: 'original' } : appearance });
+  }, [readyKey, availableWidth, zoom, appearance.paper, appearance.ink, appearance.preserveColors, appearance.preset, compareOriginal, scrollViewport]);
   const readyRef = useRef(onPageReady);
   readyRef.current = onPageReady;
   const paintRef = useRef((original?: ImageData | null, source?: PixelFrame | null) => Boolean(original));
@@ -128,6 +138,7 @@ export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appear
         // the visible canvas, and the new text and geometry arrive together.
         originalRef.current = frame.original;
         colorSourceRef.current = colorSource;
+        detailSourceRef.current = { page, viewport, linkText: pdfLinkTextRegions(nextLinks, frame.textBounds, 1, 1), baseDensity: frame.original.width / width };
         stage.style.width = canvas.style.width = `${width}px`;
         stage.style.height = canvas.style.height = `${height}px`;
         stage.style.setProperty('--total-scale-factor', String(viewport.scale * viewport.userUnit));
@@ -173,6 +184,7 @@ export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appear
         stage.dataset.linkHover = link ? 'true' : 'false'; stage.title = link ? (link.url || t('跳转到文内引用')) : '';
       }} onPointerLeave={event => { event.currentTarget.dataset.linkHover = 'false'; }}>
         <canvas ref={canvasRef} className="document-page-canvas" aria-label={t("PDF 第 {0} 页原页面", [pageNumber])} role="img" />
+        <canvas ref={detailRef} className="document-page-detail" aria-hidden="true" />
         <div ref={textRef} />
         {readyKey > 0 && <div className="pdf-link-accessibility">{links.map(link => <button type="button" key={link.id} className="pdf-link-keyboard" style={link.rect} aria-label={link.url ? t('打开链接：{0}', [link.url]) : t('跳转到文内引用：{0}', [link.label])} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); onPdfLink(link); } }} />)}</div>}
       </div>

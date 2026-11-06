@@ -1,5 +1,5 @@
 AI-Embedded Paper PDF Reader
-AI 嵌入式论文 PDF 阅读器 · 0.1.18 · 20261106.7
+AI 嵌入式论文 PDF 阅读器 · 0.1.19 · 20261106.8
 
 一、运行 / Run
 完整解压 ZIP，运行 AI-Embedded-Paper-PDF-Reader.exe，保留所有同目录文件。
@@ -30,6 +30,8 @@ Regeneration creates a separate answer version; old annotations stay on the orig
 四、阅读配色 / Reading colors
 阅读设置可选择原色、暖黄、浅灰、深色或自定义纸张/文字色。可保留彩图及临时对照原色。
 Reading settings offer original, warm yellow, light gray, dark or custom paper/text colors. Preserve colored areas or temporarily compare original colors.
+放大或滚动后，可视区域会自动补上高清绘制。整页底图继续控制内存占用，屏幕外不保留高清缓存；文字选择、引用跳转及批注位置使用原来的文字层。
+After zooming or scrolling, visible areas automatically receive a high-resolution redraw. The bounded whole-page bitmap remains available, while offscreen detail caches are released. Selection, reference navigation and annotation positions continue to use the original text layer.
 深色纸张会将 PDF 自带链接的文字及边缘统一调整为柔和浅蓝色，减少引用数字的白色重影。图片链接不会整体换色，原色对照可恢复原来的颜色。
 On dark paper, embedded PDF link text and its edges share a soft light blue to prevent pale citation halos. Image links are not recolored as a whole, and original-color comparison restores the source colors.
 工具栏、阅读区边缘、设置与批注框随纸张色变化，拖动先快速预览，停下后恢复清晰。换色只改变显示，不改写 PDF。支持连续/单页、双指捏合或 Ctrl + 滚轮缩放及续读。
