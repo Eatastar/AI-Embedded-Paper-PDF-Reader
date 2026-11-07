@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { createRequire } from 'node:module';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { MathMarkdown } from '../src/components/MathMarkdown';
@@ -9,6 +10,29 @@ function render(source: string, streaming = false) {
   return renderToStaticMarkup(createElement(MathMarkdown, { children: source, streaming }));
 }
 const countMath = (html: string) => (html.match(/class="katex"/g) || []).length;
+
+test('the stylesheet package matches the KaTeX engine actually used by the markdown plugin', () => {
+  const rootRequire = createRequire(import.meta.url);
+  const pluginRequire = createRequire(import.meta.resolve('@streamdown/math'));
+  const rendererRequire = createRequire(pluginRequire.resolve('rehype-katex'));
+  assert.equal(rootRequire('katex').version, rendererRequire('katex').version,
+    'KaTeX CSS and rendered markup must use the same version or negated relations lose their overlay');
+});
+
+test('negated relations, inequalities and Unicode not-equal render in completed and streamed answers', () => {
+  const formulas = [String.raw`\delta \ne 0`, String.raw`\delta \neq 0`,
+    String.raw`\delta \not= 0`, 'δ ≠ 0', String.raw`x \leq y \geq z`,
+    String.raw`A \not\subset B`, String.raw`x \notin A`];
+  for (const streaming of [false, true]) {
+    for (const formula of formulas) {
+      const html = render(`前文 \\(${formula}\\)，后文。`, streaming);
+      assert.equal(countMath(html), 1, formula);
+      assert.doesNotMatch(html, /katex-error/, formula);
+      assert.match(html, /<math[^>]*xmlns=/, formula);
+      assert.match(html, /后文/, formula);
+    }
+  }
+});
 
 test('the reported Einstein equation and its inline variables render as real math', () => {
   const source = String.raw`广义相对论的核心是爱因斯坦场方程：

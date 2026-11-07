@@ -1,3 +1,5 @@
+@import 'katex/dist/katex.min.css';
+
 :root {
   font-family: "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
   color: var(--ls-ink);
@@ -265,9 +267,12 @@ button svg { flex-shrink: 0; }
 .profile-dialog-footer > div { display: flex; align-items: center; gap: 7px; }
 .profile-form-fields:disabled .field-input, .profile-form-fields:disabled .password-field { opacity: .65; }
 .topbar-actions { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
-.reopen-document-button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 9px; border: 1px solid var(--ls-border); border-radius: 7px; background: var(--ls-panel); color: var(--ls-text); font: inherit; font-size: 11px; white-space: nowrap; }
-.reopen-document-button:hover { background: var(--ls-surface); }
-@media (max-width: 760px) { .reopen-document-button > span { display: none; } }
+.reader-mode-actions { display: inline-flex; align-items: center; flex: none; border: 1px solid var(--ls-border); border-radius: 7px; background: var(--ls-panel); overflow: hidden; }
+.reader-mode-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 32px; padding: 6px 9px; border: 0; background: transparent; color: var(--ls-text); font: inherit; font-size: 11px; white-space: nowrap; }
+.reader-mode-button + .reader-mode-button { border-left: 1px solid var(--ls-border); }
+.reader-mode-button:hover { background: var(--ls-surface); }
+.reader-mode-button:focus-visible { outline-offset: -3px; }
+@media (max-width: 760px) { .reader-mode-button > span { display: none; } .topbar-actions > .translation-trigger > span { display: none; } }
 .conversation-row { display: flex; align-items: center; border-radius: 7px; margin-bottom: 5px; }
 .conversation-row:hover { background: var(--ls-surface); }
 .conversation-row.active { background: var(--ls-hover); }
@@ -292,10 +297,16 @@ button svg { flex-shrink: 0; }
 .app-shell.reader-focused .topbar { display: none; }
 .app-shell.reader-focused .mobile-menu { display: none; }
 .chat-local-files { flex: none; border-bottom: 1px solid var(--ls-border); font-size: 11px; }
-.chat-local-files > summary { display: flex; align-items: center; gap: 7px; padding: 9px 22px; color: var(--ls-muted); cursor: pointer; list-style: none; }
+.chat-local-files > summary { display: flex; align-items: center; gap: 7px; min-height: 36px; padding: 5px 22px; color: var(--ls-muted); cursor: pointer; list-style: none; }
 .chat-local-files > summary::-webkit-details-marker { display: none; }
-.chat-local-files > summary::after { content: '⌄'; margin-left: auto; }
-.chat-local-files[open] > summary::after { content: '⌃'; }
+.chat-files-disclosure { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; padding: 4px 7px; border-radius: 5px; color: var(--ls-text); font-size: 10px; line-height: 1.4; }
+.chat-local-files > summary:hover .chat-files-disclosure { background: var(--ls-surface); }
+.chat-files-disclosure svg { flex: none; transition: transform .12s ease; }
+.chat-files-collapse { display: none; }
+.chat-local-files[open] .chat-files-expand { display: none; }
+.chat-local-files[open] .chat-files-collapse { display: inline; }
+.chat-local-files[open] .chat-files-disclosure svg { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .chat-files-disclosure svg { transition: none; } }
 .chat-local-files > summary small { color: var(--ls-text); }
 .chat-local-files > div { max-height: 160px; overflow: auto; padding: 0 18px 8px; }
 .chat-local-files > div > button { width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 5px; border: 0; background: transparent; color: var(--ls-text); text-align: start; font: inherit; cursor: pointer; }

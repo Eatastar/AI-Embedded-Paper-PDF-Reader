@@ -1,5 +1,5 @@
 AI-Embedded Paper PDF Reader
-AI 嵌入式论文 PDF 阅读器 · 0.1.22 · 20261107.2
+AI 嵌入式论文 PDF 阅读器 · 0.1.23 · 20261107.3
 
 一、运行 / Run
 完整解压 ZIP，运行 AI-Embedded-Paper-PDF-Reader.exe，保留所有同目录文件。
@@ -127,3 +127,12 @@ Closing a PDF in chat keeps the conversation visible. Open PDF at the top, or th
 Annotations stay open while clicking chat/source text, turning pages or changing reading layout; use × or Esc to close. Pending edits are saved when closing or leaving the source. Switching documents or conversations dismisses the annotation. Temporary translation retains outside-click, Esc/× dismissal and scroll retention; when both panels are open, Esc dismisses translation first.
 文字引用与本轮问题一起保存和备份，聊天仍按原设置带入有效聊天与文档资料。它与“只发送选段”的翻译功能不同；批注提问仍不引用聊天或其他批注。删除被引用的聊天轮次时，后续问题中的相关文字引用副本与旧重试缓存也会清除，PDF 引用和原文批注保留。新版本可读取旧备份，含文字引用的备份请使用 v0.1.22 或更新版本恢复。
 Text quotations are saved and backed up with the question. Chat still uses valid history and document material according to existing scope settings, unlike selection-only translation. Annotation questions still exclude chat and other annotations. Deleting a quoted chat round clears its later quotation copies and stale retry snapshots while retaining PDF quotations and annotations. Older backups remain readable; restore backups with text quotations using v0.1.22 or newer.
+
+
+聊天与阅读切换 / Switching between chat and reading
+聊天关闭 PDF 后，顶部“展开 PDF”恢复并排阅读，“阅读模式”直接返回专注阅读。两者均恢复原页码和缩放。文件栏右侧显示“展开 / 收起”和矢量箭头。
+After closing a PDF in chat, Open PDF restores side-by-side reading, while Reading mode returns to focused reading; both retain page and zoom. The file bar displays Expand / Collapse beside a vector chevron.
+
+公式显示 / Math rendering
+本版统一公式渲染器与本地样式版本，修复聊天、批注和翻译中不等号等否定符号的斜线错位。旧回答重新显示即可，无需重新生成。
+This version aligns the math renderer with its local stylesheet, fixing negated relations in chat, annotations and translations. Existing answers display correctly without regeneration.

@@ -3,7 +3,7 @@ import { useLocale } from './i18n/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AssistantRuntimeProvider, ComposerPrimitive, ThreadPrimitive, useExternalStoreRuntime } from '@assistant-ui/react';
 import type { ThreadMessageLike } from '@assistant-ui/react';
-import { ArrowDown, ArrowUp, BookOpen, Check, ChevronLeft, ChevronRight, Download, FileUp, FileText, FolderOpen, Menu, MessageSquare, MessageSquareQuote, Paperclip, PenLine, Plus, RefreshCw, RotateCcw, Settings2, Square, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, Columns2, Download, FileUp, FileText, FolderOpen, Menu, MessageSquare, MessageSquareQuote, Paperclip, PenLine, Plus, RefreshCw, RotateCcw, Settings2, Square, Trash2, X } from 'lucide-react';
 import type { Annotation, ChatMessage, ChatTextReference, Conversation, InputMessage, MessageVersion, ModelSettings, ProfileInput, Workspace } from './domain/types';
 import { activeVersion, addAssistantVersion, buildMainContext, completeAnnotation, createAssistantMessage, createConversation, createUserMessage, deleteAnnotation, restoreAnnotation, deleteConversation, restoreConversation, prepareAnnotationRequest, updateAnnotationCopy, saveNoteAnnotation } from './domain/workspace';
 import { exportWorkspaceWithFiles, importWorkspaceWithFiles, saveDocumentBytes, getDocumentBytes } from './adapters/storage';
@@ -159,9 +159,10 @@ export default function App() {
     if (active && openDocument) { const next: ReaderSession = { conversationId: active.id, documentId: openDocument.id, mode: 'closed' }; setLastReader(next); saveReaderSession(next); }
     setOpenAnnotationId(null); setOpenDocumentId(null);
   }
-  function expandReader() {
+  function expandReader(mode: 'focused' | 'split' = 'split') {
     if (fileOperation.current) return;
-    if (active && reopenDocument) openReaderReference({ conversationId: active.id, document: reopenDocument }, 'split');
+    if (openDocument) setReaderFocused(mode === 'focused');
+    else if (active && reopenDocument) openReaderReference({ conversationId: active.id, document: reopenDocument }, mode);
     else setReaderFocused(true);
   }
   function quoteText(selection: ChatTextSelection) {
@@ -495,7 +496,7 @@ export default function App() {
     <main className="main-pane">
       <header className="topbar">
         <div className="topbar-heading"><button className="icon-button mobile-menu" aria-label={t("打开对话列表")} onClick={() => setSidebarOpen(true)}><Menu size={20} /></button><span>{openDocument && readerFocused ? openDocument.name : active.title}</span><span className="version-badge" title={t("构建 {0} · {1}", [__APP_BUILD__, new Date(__APP_BUILD_TIME__).toLocaleString(getLocale(), { hour12: false })])}>{__APP_VERSION__} · {__APP_BUILD__}</span></div>
-        <div className="topbar-actions"><TranslationButton />{!openDocument && reopenDocument ? <button type="button" className="reopen-document-button" aria-label={t('展开 PDF 与聊天并排阅读')} title={t('展开文档：{0}', [reopenDocument.name])} disabled={fileBusy || turnBusy} onClick={expandReader}><BookOpen size={18} /><span>{t('展开 PDF')}</span></button> : <button className="icon-button" aria-label={t("返回阅读器")} title={t("返回阅读器")} onClick={() => setReaderFocused(true)}><BookOpen size={18} /></button>}<button className="icon-button" aria-label={t("备份当前对话")} title={t("单独备份这个对话及其文件")} onClick={() => void downloadBackup(active.id)}><Download size={17} /></button><button className={'connection-button ' + (settings.mode === 'demo' ? 'demo-connection' : '')} onClick={() => setSettingsOpen(true)}><span className="status-dot" />{settings.mode === 'demo' ? t("演示模式") : settings.model || t("连接模型")}<Settings2 size={14} /></button></div>
+        <div className="topbar-actions"><TranslationButton /><div className="reader-mode-actions">{!openDocument && reopenDocument && <button type="button" className="reader-mode-button" aria-label={t('展开 PDF 与聊天并排阅读')} title={t('展开文档：{0}', [reopenDocument.name])} disabled={fileBusy || turnBusy} onClick={() => expandReader('split')}><Columns2 size={17} /><span>{t('展开 PDF')}</span></button>}<button type="button" className="reader-mode-button" aria-label={t('返回阅读模式')} title={t('返回阅读模式')} disabled={fileBusy || turnBusy} onClick={() => expandReader('focused')}><BookOpen size={17} /><span>{t('阅读模式')}</span></button></div><button className="icon-button" aria-label={t("备份当前对话")} title={t("单独备份这个对话及其文件")} onClick={() => void downloadBackup(active.id)}><Download size={17} /></button><button className={'connection-button ' + (settings.mode === 'demo' ? 'demo-connection' : '')} onClick={() => setSettingsOpen(true)}><span className="status-dot" />{settings.mode === 'demo' ? t("演示模式") : settings.model || t("连接模型")}<Settings2 size={14} /></button></div>
       </header>
       <div className={'workspace-content ' + (openDocument ? 'with-reader' : '')}>
       <div className="conversation-pane">
@@ -560,7 +561,7 @@ export function ChatView(props: ChatViewProps) {
   });
   return <AssistantRuntimeProvider runtime={runtime}>
     <ThreadPrimitive.Root className="chat-root">
-      {Boolean(conversation.documents?.length) && <details className="chat-local-files" aria-label={t("对话本地文件")}><summary><FolderOpen size={14} />{t("本地文件")}<small>{props.filesLoading ? t("整理中…") : props.fileGroups.length}</small></summary><div>{props.fileGroups.map(group => { const d = group.references[0].document; return <button type="button" key={group.id} title={t("阅读 {0}", [d.name])} onClick={() => props.onOpenDocument(d.id)}><FileText size={15} /><span>{d.name}</span><small>{d.pages.length}{t("页")}</small></button>; })}</div></details>}
+      {Boolean(conversation.documents?.length) && <details className="chat-local-files" aria-label={t("对话本地文件")}><summary><FolderOpen size={14} />{t("本地文件")}<small>{props.filesLoading ? t("整理中…") : props.fileGroups.length}</small><span className="chat-files-disclosure" aria-hidden="true"><span className="chat-files-expand">{t('展开')}</span><span className="chat-files-collapse">{t('收起')}</span><ChevronDown size={14} strokeWidth={1.6} /></span></summary><div>{props.fileGroups.map(group => { const d = group.references[0].document; return <button type="button" key={group.id} title={t("阅读 {0}", [d.name])} onClick={() => props.onOpenDocument(d.id)}><FileText size={15} /><span>{d.name}</span><small>{d.pages.length}{t("页")}</small></button>; })}</div></details>}
 
       <ThreadPrimitive.Viewport className="chat-viewport" autoScroll={isRunning} scrollToBottomOnInitialize={false} scrollToBottomOnRunStart scrollToBottomOnThreadSwitch={false} onScroll={e => { const el = e.currentTarget; setAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight < 160); }}>
         <div className="reading-column">

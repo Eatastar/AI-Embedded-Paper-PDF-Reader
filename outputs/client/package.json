@@ -1,7 +1,7 @@
 {
   "name": "ai-embedded-paper-pdf-reader-client",
-  "version": "0.1.22",
-  "buildId": "20261107.2",
+  "version": "0.1.23",
+  "buildId": "20261107.3",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -23,7 +23,7 @@
     "@streamdown/math": "1.0.3",
     "ai": "7.0.143",
     "dexie": "4.4.6",
-    "katex": "0.19.0",
+    "katex": "0.16.47",
     "lucide-react": "1.59.0",
     "pdfjs-dist": "6.4.299",
     "react": "19.3.1",
@@ -43,5 +43,5 @@
     "typescript": "7.0.2",
     "vite": "8.3.4"
   },
-  "buildTime": "2026-11-07T06:41:33.645Z"
+  "buildTime": "2026-11-07T07:14:57.086Z"
 }

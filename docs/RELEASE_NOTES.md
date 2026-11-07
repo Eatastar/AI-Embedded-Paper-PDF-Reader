@@ -1,17 +1,13 @@
-# AI-Embedded Paper PDF Reader v0.1.22
+# AI-Embedded Paper PDF Reader v0.1.23
 
-聊天模式关闭 PDF 后保持聊天可见，顶部“展开 PDF”及聊天文件名可一键恢复并排阅读，沿用原页码与缩放。左上角长项目名按侧栏宽度换行。选中 PDF、AI 回答或聊天问题中的文字，可通过浮动按钮或右键“引用到聊天”，在输入框预览选段、补充问题再发送，不创建批注或自动调用 API。每次引用一段，重新选择会替换待发送段落，可用 × 取消。
+聊天文件栏改用居中的矢量箭头，并明确显示“展开 / 收起”，避免原来依赖字体的小字符箭头错位。纯聊天模式下，顶部同时提供“展开 PDF”和“阅读模式”：前者恢复 PDF 与聊天并排显示，后者直接返回专注阅读，均沿用文档的阅读页码与缩放。
 
-Closing a PDF in chat keeps the conversation visible. Open PDF at the top, or the file name in chat, restores side-by-side reading with the saved page and zoom. Long branding wraps inside the sidebar. Select text in a PDF, AI answer or chat question and use Quote in chat from the selection action or context menu, preview the excerpt, add a question and send. This creates no annotation and makes no automatic API call. One pending excerpt can be replaced or removed with ×.
+The chat file bar now uses a centered vector chevron with explicit Expand / Collapse labels. Pure chat provides two separate actions: Open PDF restores side-by-side reading, while Reading mode returns directly to focused reading. Both retain the document's page and zoom.
 
-批注在点击聊天、正文、翻页和切换阅读布局时保持打开，用 × 或 Esc 收起；编辑中的修改在关闭或切换来源时保存。切换文件或对话会收起批注。临时翻译继续保持原来的框外点击、Esc / × 关闭及滚动保留规则；同时展开时，Esc 优先关闭翻译。
+修复不等号及否定关系符号（≠、不属于、非子集等）的斜线错位。原因是公式渲染器与加载的 KaTeX 样式版本不一致；现在统一为同一版本，并在全局加载本地样式与字体。修复覆盖聊天回答、批注问答、普通批注、临时翻译及流式显示。旧回答重新显示即可应用，无需重新生成。
 
-Annotations stay open while clicking chat/source text, turning pages or changing reading layout; use × or Esc to close. Pending edits are saved when closing or leaving the source. Switching documents or conversations dismisses the annotation. Temporary translation retains outside-click, Esc/× dismissal and scroll retention; when both panels are open, Esc dismisses translation first.
+Fixed misplaced negation slashes in not-equal, not-in and not-subset relations. The renderer and its KaTeX stylesheet had different versions; they now use the same pinned version with locally bundled styles and fonts. The correction applies to chat, annotation answers, plain notes, temporary translations and streaming output. Existing answers use the corrected layout when displayed, without regeneration.
 
-文字引用与本轮问题一起保存和备份，聊天仍按原设置带入有效聊天与文档资料。它与“只发送选段”的翻译功能不同；批注提问仍不引用聊天或其他批注。删除被引用的聊天轮次时，后续问题中的相关文字引用副本与旧重试缓存也会清除，PDF 引用和原文批注保留。新版本可读取旧备份，含文字引用的备份请使用 v0.1.22 或更新版本恢复。
+277 项自动检查和 60 项实际 PDF 界面及公式检查通过。完整解压 Windows x64 ZIP，正常退出旧版后运行新目录的 AI-Embedded-Paper-PDF-Reader.exe。沿用原本机数据目录、聊天、批注及 API 配置。普通阅读与上述界面切换不调用 API；本次更新不改变提问、批注或翻译的发送范围。
 
-Text quotations are saved and backed up with the question. Chat still uses valid history and document material according to existing scope settings, unlike selection-only translation. Annotation questions still exclude chat and other annotations. Deleting a quoted chat round clears its later quotation copies and stale retry snapshots while retaining PDF quotations and annotations. Older backups remain readable; restore backups with text quotations using v0.1.22 or newer.
-
-275 项自动检查和 40 项实际 PDF 界面检查通过。完整解压 Windows x64 ZIP，正常退出旧版后运行新目录的 AI-Embedded-Paper-PDF-Reader.exe。沿用原本机数据目录与 API 配置，历史 Release、标签和附件保留。
-
-275 automated tests and 40 real PDF UI checks passed. Fully extract the Windows x64 ZIP, exit the old app normally and run AI-Embedded-Paper-PDF-Reader.exe in the new folder. The existing local data directory and API settings remain in use; historical releases, tags and assets are preserved.
+277 automated tests and 60 real PDF UI and formula checks passed. Fully extract the Windows x64 ZIP, exit the old app normally and run AI-Embedded-Paper-PDF-Reader.exe from the new folder. Existing local data, chats, annotations and API settings remain in use. Reading and these interface switches make no API requests; this update does not change the context sent by chat, annotation or translation requests.

@@ -946,5 +946,9 @@ export const english: Record<string, string> = {
   "引用文字的来源说明无效。": "Invalid source label for quoted text.",
   "引用的原文已不存在，请重新选择。": "The quoted source no longer exists. Select it again.",
   "只有用户问题可以引用文字。": "Only user questions can quote text.",
-  "引用文字不属于当前对话。": "Quoted text belongs to a different conversation."
+  "引用文字不属于当前对话。": "Quoted text belongs to a different conversation.",
+  "返回阅读模式": "Return to reading mode",
+  "阅读模式": "Reading mode",
+  "展开": "Expand",
+  "收起": "Collapse"
 };

@@ -15,7 +15,6 @@ import { reviveQuoteSelector } from '../adapters/anchors';
 import { AnnotationCard } from './AnnotationCard';
 import { MovableAnnotationPopup } from './MovableAnnotationPopup';
 import '@recogito/text-annotator/text-annotator.css';
-import 'katex/dist/katex.min.css';
 import './annotation.css';
 
 export interface AnnotatedAnswerProps {
