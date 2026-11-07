@@ -2,19 +2,57 @@
 
 **AI 嵌入式论文 PDF 阅读器**
 
-**接入自己的 API，在论文原文中批注提问、划词翻译。**
+**面向文献与书籍精读：接入自己的 API，把批注提问与快速翻译留在原文旁。**
 
-这是一个以本地 PDF 阅读为主的桌面阅读器。你可以连接自选的 AI 服务、中转 API，或自行部署的本地模型服务；遇到不懂的内容，划选原文，在批注框里提问、查看回答，也可以直接翻译选中的单词或段落，在原文旁阅读译文。纸张颜色可以自由调整，需要展开讨论时再打开聊天模式。
+这是一个以本地 PDF 阅读为主的桌面阅读器，适合逐段理解论文的概念、公式与论证，也适合精读教材、专业书籍和外语 PDF 书籍。你可以连接自选的 AI 服务、中转 API，或自行部署的本地模型服务；划选原文，在批注框里提问、查看回答，或快速翻译选中的单词和段落。需要把某个疑问展开讨论时，选择引用已有批注，在聊天中继续追问，同时对照 PDF 和原文批注。纸张与文字颜色可以自由调整。
 
-**Connect your own API to ask AI in annotations and translate selected text beside a paper.**
+**Close reading for papers and PDF books, with your own API, annotation Q&A and quick translation beside the source.**
 
-A desktop reader built around local PDFs. Connect your preferred AI provider, relay API or self-hosted local model service. Select a passage to ask a question in its annotation panel, or translate a selected word or paragraph and read the result beside the source. Adjust the paper colors to your preference, and open chat when you want a longer discussion.
+A desktop reader built around local PDFs, for working through a paper's concepts, equations and arguments or studying textbooks, technical books and foreign-language PDF books in detail. Connect your preferred AI provider, relay API or self-hosted model service. Select a passage to ask in its annotation panel or quickly translate a word or paragraph. To develop a question further, reference selected annotations in chat while keeping the PDF and its original note in view. Adjust paper and text colors to your preference.
 
 [下载 / Downloads](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases) · [本版发布说明 / Release notes](docs/RELEASE_NOTES.md) · [隐私 / Privacy](docs/PRIVACY.md) · [版本记录 / Changelog](docs/CHANGELOG.md) · [项目总纲 / Project outline](docs/PROJECT.md)
 
 当前源码版本：**0.1.25**。Windows x64 客户端请以 Releases 中实际发布的完整 ZIP 为准。中文 / English 界面均可在程序内切换，选择保存在本机。
 
 Current source version: **0.1.25**. Download the complete Windows x64 ZIP actually published on Releases. Switch between Chinese and English in the app; your choice is remembered locally.
+
+## 精读场景 / Close-reading workflows
+
+以下图片取自实际运行的 v0.1.25 客户端，展示真实的批注、引用、聊天和翻译界面。拍摄使用独立演示资料、虚构 PDF 和本地模拟回复，部分图片裁切到相关区域以便查看。日常使用中的回答和译文由你配置的模型生成。
+
+These are screenshots of the running v0.1.25 client, showing its actual annotation, reference, chat and translation interfaces. They use an isolated demonstration profile, a fictional PDF and local mock responses; some captures are cropped for clarity. In normal use, answers and translations come from the model you configure.
+
+### 1. 在原文旁批注提问 / Ask beside the passage
+
+![客户端截图：划选原文，在批注中提问并保留高亮 / Client screenshot: ask in an annotation beside the selected passage](docs/images/annotation-qa.png)
+
+读论文或书籍时，把不懂的概念、公式和论证留在对应原文旁处理。批注收起后保留高亮，之后点击即可重新打开，也可以只写普通笔记。
+
+Work through unfamiliar concepts, equations and arguments beside their source. A closed annotation leaves a highlight you can reopen later; plain notes are available too.
+
+### 2. 引用批注，继续追问 / Reference annotations in chat
+
+![客户端截图：选择已保存的问答和笔记，作为下一次聊天问题的引用 / Client screenshot: choose saved Q&A or notes as references](docs/images/reference-annotations.png)
+
+点击聊天输入框中的“引用批注”，勾选这次需要的问答或笔记，再补充问题发送。适合把几处阅读疑问联系起来，做比较、归纳或进一步推导。
+
+Use Reference annotations in the composer, select the Q&A or notes you need, and add your next question. Connect questions from different passages to compare ideas, summarize or work through a derivation.
+
+### 3. 边聊边对照 PDF 批注 / Discuss with the PDF and note in view
+
+![客户端截图：聊天与 PDF 并排显示，原文批注在讨论过程中保持打开 / Client screenshot: chat beside the PDF with its annotation open](docs/images/side-by-side-discussion.png)
+
+把聊天与 PDF 并排打开，在聊天中展开长问题，同时查看原文和已打开的批注。点击聊天或正文不会关闭批注；用 × 或 Esc 收起，继续沿着原文阅读。
+
+Open chat beside the PDF for a longer discussion while consulting the source passage and its annotation. Clicking chat or the source keeps the note open; close it with × or Esc and continue reading.
+
+### 4. 划词快速翻译 / Translate a selection quickly
+
+![客户端截图：选中文字后按 Alt+1 或右键翻译，在原文旁查看临时译文 / Client screenshot: translate the selection beside the source](docs/images/quick-translation.png)
+
+外语文献和书籍中，选中单词或一段文字，按默认 **Alt+1** 或右键翻译。临时面板只显示译文和对应模型；需要留下时，点击图钉保留为普通批注。翻译 API、提示词和快捷键均可单独设置，调用时只发送选段及翻译提示词。
+
+For foreign-language papers and books, select a word or passage and press **Alt+1** or right-click to translate. The temporary panel shows the translation and its model; pin it to keep a plain note. Configure the translation API, prompt and shortcut separately. Only the selection and translation prompt are sent.
 
 ## 主要功能 / Main features
 
@@ -124,9 +162,9 @@ Source lives in `outputs/client/`; desktop packages are generated locally in `ou
 
 ## 提交范围与许可 / Repository scope and license
 
-这里只保存源码、测试、依赖清单、通用品牌资源和文档。个人聊天、API 配置与密钥、日志、备份、论文和阅读截图不属于源码。发布前运行 `node tools/source-audit.mjs`，报告写到忽略的 `work/` 目录，不读取个人数据目录。
+这里只保存源码、测试、依赖清单、通用品牌资源和文档，包括经过审阅的四张虚构资料演示截图。个人聊天、API 配置与密钥、日志、备份、论文和个人阅读截图不属于源码。发布前运行 `node tools/source-audit.mjs`，报告写到忽略的 `work/` 目录，不读取个人数据目录。
 
-Only source, tests, dependency manifests, generic branding assets and documentation belong here. Personal conversations, API settings/keys, logs, backups, papers and reading screenshots do not. Run `node tools/source-audit.mjs` before publishing. Reports go to ignored `work/` and do not read the personal data directory.
+Only source, tests, dependency manifests, generic branding assets and documentation belong here, including the four reviewed screenshots made with fictional demonstration data. Personal conversations, API settings/keys, logs, backups, papers and personal reading screenshots do not. Run `node tools/source-audit.mjs` before publishing. Reports go to ignored `work/` and do not read the personal data directory.
 
 项目自身代码采用 [MIT](LICENSE)，第三方许可继续保留。首次公开前检查范围见 [OPEN_SOURCE_RELEASE](docs/OPEN_SOURCE_RELEASE.md)，提交规则见 [REPOSITORY_POLICY](docs/REPOSITORY_POLICY.md)。Windows 包保留 Electron、Chromium 及依赖许可文件。
 

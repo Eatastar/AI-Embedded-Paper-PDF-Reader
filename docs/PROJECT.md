@@ -4,7 +4,7 @@
 
 首个公开正式版沿用 v0.1.11 和现有构建，使用 MIT 许可证。公开范围包括已核对的源码及通用 Windows 发行包；历史检查范围见 [公开发布说明](OPEN_SOURCE_RELEASE.md)，本地数据和请求边界见 [隐私说明](PRIVACY.md)。
 
-Current source: **0.1.25 / 20261107.5**. A local paper reader with optional AI questions and personal notes. Public introductions and release notes are bilingual. Users can select Chinese or English in the app; interface language never rewrites their documents, messages, notes or answer preferences.
+Current source: **0.1.25 / 20261107.5**. A local PDF reader for close reading of papers and books, with optional AI questions, quick translation and personal notes. Public introductions and release notes are bilingual. Users can select Chinese or English in the app; interface language never rewrites their documents, messages, notes or answer preferences.
 
 PDF 显示保留有像素上限的整页底图；可视区域按屏幕密度重绘独立高清层，每页高清缓冲最多 800 万像素，仅在可见时保留。滚动复用边缘缓存并丢弃过期任务，页面移出视野或关闭时释放。高清层不接收鼠标事件，文字选取、引用跳转、批注及临时翻译继续使用原文字层。
 
@@ -14,9 +14,9 @@ Original application code was implemented entirely by GPT through Codex; the hum
 
 ## 产品目标 / Product goal
 
-让问题留在原文旁。在 AI 回答和论文文字中直接划选、提问和记录，减少主对话与原文之间的反复滚动。
+让疑问留在原文旁。以文献、教材和 PDF 书籍精读为主要场景，在原文和 AI 回答中直接划选、提问、翻译与记录，并按需引用批注、展开并排讨论。
 
-Keep questions beside their source. Select, ask and take notes directly in AI answers and paper text, reducing scrolling between the conversation and the original passage.
+Keep questions beside their source. Support close reading of papers, textbooks and PDF books through in-place questions, translation and notes, with explicit annotation references and side-by-side chat when a question needs deeper discussion.
 
 ## 已确定规则
 
@@ -238,3 +238,10 @@ Sending a new question still follows the new answer. Manually scrolling upward d
 聊天阅读位置只在本机保存对话/回答标识及显示位置，不复制聊天正文、PDF 文字或密钥，不进入聊天备份，也不发送给 AI。回收站中的对话可继续保留位置以供恢复，永久删除对话时清理其位置记录。
 
 Chat reading preferences store only local conversation/reply identifiers and display positions. They contain no message text, PDF text or credentials, are excluded from conversation backups and are never sent to AI. Recycled conversations retain their preferences for recovery; permanent conversation removal clears the saved position.
+
+
+## 首页功能截图 / Homepage screenshots
+
+首页展示批注问答、引用批注、并排讨论与快速翻译的四张真实客户端截图。截图在独立演示资料中拍摄，使用虚构 PDF 和本地模拟回复，部分裁切以突出操作区域。`docs/images/` 只开放明确列出的四个 PNG；画面审阅、格式及审阅哈希检查见 [仓库规则](REPOSITORY_POLICY.md)。
+
+The homepage shows four actual client screenshots covering annotation Q&A, annotation references, side-by-side discussion and quick translation. They use an isolated profile, a fictional PDF and local mock responses, with some captures cropped for clarity. Only the four named PNG files are allowed under `docs/images/`; see [Repository policy](REPOSITORY_POLICY.md) for visual review, format and reviewed-hash checks.

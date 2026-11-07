@@ -18,6 +18,12 @@
 !/docs/THIRD_PARTY.md
 !/docs/OPEN_SOURCE_RELEASE.md
 !/docs/ATTRIBUTION.md
+!/docs/images/
+/docs/images/*
+!/docs/images/annotation-qa.png
+!/docs/images/reference-annotations.png
+!/docs/images/side-by-side-discussion.png
+!/docs/images/quick-translation.png
 /tools/*
 !/tools/source-audit.mjs
 /outputs/*

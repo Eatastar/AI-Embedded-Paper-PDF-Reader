@@ -6,11 +6,18 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const app = 'outputs/client/';
+const demoImageHashes = new Map([
+  ['docs/images/annotation-qa.png', '9600c81fd1d4ccfc6051d4079e55a2e09b56a48cb978025977c1d8653fe13ba9'],
+  ['docs/images/reference-annotations.png', 'ab60c8d84c383c4b97d3401cc3cd6d5f5f9fb84b5965730cf8141f8772537914'],
+  ['docs/images/side-by-side-discussion.png', '725145791556aaea2d0ab597757c4907dea8e8534855ce0ff04732f393121ce8'],
+  ['docs/images/quick-translation.png', '273137f888e4497aa9321debb7224421dd778df76da7f96b2529f686c3318f21'],
+]);
+const demoImages = new Set(demoImageHashes.keys());
 const staticFiles = [
   '.gitignore', '.gitattributes', 'README.md', 'AGENTS.md', 'LICENSE', 'tools/source-audit.mjs',
   'docs/PROJECT.md', 'docs/ROADMAP.md', 'docs/REPOSITORY_POLICY.md', 'docs/CHANGELOG.md',
   'docs/PRIVACY.md', 'docs/RELEASE_NOTES.md', 'docs/THIRD_PARTY.md', 'docs/OPEN_SOURCE_RELEASE.md', 'docs/ATTRIBUTION.md',
-  'outputs/windows/开始使用.txt',
+  'outputs/windows/开始使用.txt', ...demoImages,
   ...['.gitignore', '.gitattributes', '.env.example', 'README.md', 'package.json', 'pnpm-lock.yaml',
     'pnpm-workspace.yaml', 'index.html', 'tsconfig.json', 'vite.config.ts', '启动客户端.cmd', '停止客户端.cmd',
     'public/icon.svg'].map(name => app + name),
@@ -22,10 +29,31 @@ const directories = new Map([
   [app + 'tests', new Set(['.ts'])],
   [app + 'desktop', new Set(['.cjs', '.cmd', '.ps1', '.md', '.png', '.ico', '.bmp'])],
 ]);
-const binaryFiles = new Set(['desktop/icon.png', 'desktop/icon.ico', 'desktop/splash.bmp'].map(name => app + name));
+const binaryFiles = new Set([...['desktop/icon.png', 'desktop/icon.ico', 'desktop/splash.bmp'].map(name => app + name), ...demoImages]);
 const slash = path => path.split(sep).join('/');
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const gitHash = bytes => createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
+
+function screenshotFindings(path, bytes, expected = demoImageHashes.get(path)) {
+  const failures = [];
+  if (hash(bytes) !== expected) failures.push({ path, kind: 'unreviewed-public-screenshot' });
+  let valid = bytes.length > 32 && bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  let offset = 8, header = false, data = false, end = false;
+  while (valid && offset + 12 <= bytes.length) {
+    const length = bytes.readUInt32BE(offset), type = bytes.toString('ascii', offset + 4, offset + 8);
+    if (!['IHDR', 'IDAT', 'IEND'].includes(type) || offset + length + 12 > bytes.length || end) { valid = false; break; }
+    if (type === 'IHDR') {
+      if (header || offset !== 8 || length !== 13) { valid = false; break; }
+      const width = bytes.readUInt32BE(offset + 8), height = bytes.readUInt32BE(offset + 12);
+      valid = width >= 500 && width <= 2400 && height >= 250 && height <= 1800;
+      header = true;
+    } else if (type === 'IDAT') { if (!header) valid = false; data = true; }
+    else { if (length !== 0) valid = false; end = true; }
+    offset += length + 12;
+  }
+  if (!valid || !header || !data || !end || offset !== bytes.length) failures.push({ path, kind: 'invalid-public-screenshot-png' });
+  return failures;
+}
 
 function allowedPath(path) {
   if (path.startsWith('/') || path.includes('\\') || path.split('/').includes('..')) return false;
@@ -78,7 +106,15 @@ if (process.argv.includes('--self-test')) {
   assert.ok(contentFindings(app + 'src/unsafe.ts', JSON.stringify(key)).failures.some(item => item.kind === 'provider-key'));
   assert.ok(contentFindings(app + '.env.example', ['AI_API', 'KEY'].join('_') + '=value').failures.length);
   assert.equal(contentFindings(app + 'tests/demo.test.ts', ['api', 'Key'].join('') + " = 'fake-test-key'").failures.length, 0);
-  console.log(JSON.stringify({ passed: true, checks: 25 }));
+  for (const path of demoImages) assert.equal(allowedPath(path), true, path);
+  for (const path of ['docs/images/personal-reading.png', 'docs/images/unreviewed.svg', 'docs/images/actual-paper.pdf']) assert.equal(allowedPath(path), false, path);
+  const chunk = (type, data = Buffer.alloc(0)) => { const buffer = Buffer.alloc(data.length + 12); buffer.writeUInt32BE(data.length); buffer.write(type, 4); data.copy(buffer, 8); return buffer; };
+  const png = (width = 800, height = 600, extra = []) => { const size = Buffer.alloc(13); size.writeUInt32BE(width); size.writeUInt32BE(height, 4); return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', size), ...extra, chunk('IDAT'), chunk('IEND')]); };
+  const good = png();
+  assert.equal(screenshotFindings('synthetic-screenshot', good, hash(good)).length, 0);
+  assert.ok(screenshotFindings('synthetic-screenshot', good, 'unreviewed').length);
+  for (const bytes of [Buffer.alloc(0), good.subarray(0, -12), png(800, 600, [chunk('tEXt')]), png(800, 600, [chunk('iTXt')]), png(800, 600, [chunk('eXIf')]), png(80), png(2401), Buffer.concat([good.subarray(0, 33), good.subarray(-12)])]) assert.ok(screenshotFindings('synthetic-screenshot', bytes, hash(bytes)).length);
+  console.log(JSON.stringify({ passed: true, checks: 42 }));
   process.exit(0);
 }
 
@@ -111,6 +147,7 @@ for (const path of [...new Set(paths)].sort()) {
   if (!(await inside(path)).isFile()) throw new Error('Expected source file: ' + path);
   const original = await readFile(join(root, path));
   const binary = binaryFiles.has(path);
+  if (demoImages.has(path)) failures.push(...screenshotFindings(path, original));
   const content = binary ? original.toString('base64') : new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(original).replace(/\r\n?/g, '\n');
   const bytes = binary ? original : Buffer.from(content, 'utf8');
   if (!binary) {

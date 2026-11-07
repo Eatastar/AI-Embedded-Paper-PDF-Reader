@@ -2,6 +2,10 @@
 
 ## 0.1.25 · 20261107.5 · 2026-11-07
 
+发布文档补充四张真实客户端功能截图，重点介绍文献与 PDF 书籍精读、批注问答、手动引用批注、并排讨论和快速翻译；示例资料均为虚构内容。
+
+Release documentation adds four real client screenshots and highlights close reading for papers and PDF books, annotation Q&A, explicit annotation references, side-by-side discussion and quick translation, using fictional demonstration data.
+
 聊天按对话分别记住上次阅读的位置。正常退出后重新打开聊天，会回到上次的段落；上次在底部则回到最新回答。窗口宽度变化、聊天与 PDF 并排/专注阅读切换时，优先按回答和段落定位，避免只按像素恢复导致偏移。首次打开没有位置记录的历史对话时，显示最新内容。
 
 Chat remembers the reading position separately for each conversation. After a normal exit, reopening chat returns to the last paragraph, or to the latest answer if it was at the bottom. Reply and paragraph anchors preserve the reading location across window resizing and PDF/chat layout changes. Existing conversations without a saved position initially show their latest content.
