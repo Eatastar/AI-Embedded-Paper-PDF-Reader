@@ -75,3 +75,10 @@ The target language, prompt, shortcut and shared connection ID are separate loca
 
 点击 PDF 外部网页链接会在系统浏览器打开对应 HTTP/HTTPS 地址，后续网页访问由浏览器处理；文内跳转不访问外部服务。
 External PDF web links open their HTTP/HTTPS addresses in the system browser, which handles subsequent browsing. Internal PDF navigation contacts no external service.
+
+
+## 聊天阅读位置 / Chat reading position
+
+聊天阅读位置只在本机保存对话/回答标识及显示位置，不复制聊天正文、PDF 文字或密钥，不进入聊天备份，也不发送给 AI。回收站中的对话可继续保留位置以供恢复，永久删除对话时清理其位置记录。
+
+Chat reading preferences store only local conversation/reply identifiers and display positions. They contain no message text, PDF text or credentials, are excluded from conversation backups and are never sent to AI. Recycled conversations retain their preferences for recovery; permanent conversation removal clears the saved position.

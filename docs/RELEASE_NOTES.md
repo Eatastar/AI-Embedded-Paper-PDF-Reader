@@ -1,13 +1,17 @@
-# AI-Embedded Paper PDF Reader v0.1.24
+# AI-Embedded Paper PDF Reader v0.1.25
 
-按操作用途优化鼠标光标：标题、工具栏说明、面板边距和空白处使用普通箭头；PDF、聊天、批注及翻译的正文在实际文字上保留 I 形光标，段落和纸张空白处恢复箭头。正文及高亮仍可划选、复制和引用。
+聊天按对话分别记住上次阅读的位置。正常退出后重新打开聊天，会回到上次的段落；上次在底部则回到最新回答。窗口宽度变化、聊天与 PDF 并排/专注阅读切换时，优先按回答和段落定位，避免只按像素恢复导致偏移。首次打开没有位置记录的历史对话时，显示最新内容。
 
-Mouse cursors now reflect the available action. Headings, interface labels, panel padding and empty areas use the normal arrow. PDF, chat, annotation and translation text retain the I-beam over actual text, while paragraph and paper whitespace use an arrow. Text and highlights remain selectable, copyable and quotable.
+Chat remembers the reading position separately for each conversation. After a normal exit, reopening chat returns to the last paragraph, or to the latest answer if it was at the bottom. Reply and paragraph anchors preserve the reading location across window resizing and PDF/chat layout changes. Existing conversations without a saved position initially show their latest content.
 
-按钮、下拉列表、复选框、颜色选择器和链接显示手形；PDF 引用和图片链接按实际链接位置显示手形。文字输入框显示 I 形，翻译快捷键录入框保持可点击的手形；禁用的操作显示禁止光标。批注和翻译的标题栏显示抓取提示，拖动期间保持抓取状态，松开后恢复正常。
+主动发送新问题时继续显示新回答；生成中手动向上阅读会暂停跟随，仍可通过“回到对话底部”查看最新内容。退出、切换对话和暂时收起聊天时都会保留位置；字体、公式或页面晚到的排版更新不会立即覆盖保存的位置。原定位的回答被删除或切换版本时，回退到附近仍存在的消息。
 
-Buttons, dropdowns, checkboxes, color pickers and links show a hand. PDF reference and figure links use actual link hit testing. Editable text fields show an I-beam, the shortcut recorder remains clickable, and disabled controls show the unavailable cursor. Annotation and translation title bars show a grab cursor, which stays in its grabbing state while dragging and returns to normal on release.
+Sending a new question still follows the new answer. Manually scrolling upward during generation pauses following; the bottom button remains available. Positions survive exiting, switching conversations and hiding chat. Delayed font, formula or content layout does not overwrite the saved location. Deleted or replaced source answers fall back to a nearby surviving message.
 
-277 项自动检查和 97 项实际界面检查通过，其中使用原生光标反馈核对了首页、API 设置、PDF、聊天、批注和翻译。完整解压 Windows x64 ZIP，正常退出旧版后运行新目录的 AI-Embedded-Paper-PDF-Reader.exe。
+聊天阅读位置只在本机保存对话/回答标识及显示位置，不复制聊天正文、PDF 文字或密钥，不进入聊天备份，也不发送给 AI。回收站中的对话可继续保留位置以供恢复，永久删除对话时清理其位置记录。
 
-277 automated tests and 97 real UI checks passed, including native cursor feedback for the home screen, API settings, PDFs, chat, annotations and translations. Fully extract the Windows x64 ZIP, exit the old app normally and run AI-Embedded-Paper-PDF-Reader.exe from the new folder.
+Chat reading preferences store only local conversation/reply identifiers and display positions. They contain no message text, PDF text or credentials, are excluded from conversation backups and are never sent to AI. Recycled conversations retain their preferences for recovery; permanent conversation removal clears the saved position.
+
+282 项自动检查、97 项既有界面回归检查及 30 项聊天位置检查通过，位置检查包含正常退出后启动第二个独立 Electron 进程。完整解压 Windows x64 ZIP，正常退出旧版后运行新目录的 AI-Embedded-Paper-PDF-Reader.exe。
+
+282 automated tests, 97 existing UI regression checks and 30 chat-position checks passed. Position checks include normal shutdown and a second independent Electron process. Fully extract the Windows x64 ZIP, exit the old app normally and run AI-Embedded-Paper-PDF-Reader.exe from the new folder.

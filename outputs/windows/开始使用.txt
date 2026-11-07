@@ -1,5 +1,5 @@
 AI-Embedded Paper PDF Reader
-AI 嵌入式论文 PDF 阅读器 · 0.1.24 · 20261107.4
+AI 嵌入式论文 PDF 阅读器 · 0.1.25 · 20261107.5
 
 一、运行 / Run
 完整解压 ZIP，运行 AI-Embedded-Paper-PDF-Reader.exe，保留所有同目录文件。
@@ -141,3 +141,17 @@ This version aligns the math renderer with its local stylesheet, fixing negated 
 鼠标反馈 / Mouse feedback
 空白与界面标题显示箭头，正文及文字输入框显示 I 形，可点击的按钮、菜单、颜色选择器和链接显示手形，禁用操作显示禁止光标。批注和翻译标题栏可拖动，按住移动时显示抓取状态，松开后恢复。
 Whitespace and interface headings use an arrow; text and text fields use an I-beam. Clickable controls and links use a hand, and disabled actions show the unavailable cursor. Drag annotation and translation panels by their title bars; the grabbing cursor remains active until release.
+
+
+聊天阅读位置 / Chat reading position
+聊天按对话分别记住上次阅读的位置。正常退出后重新打开聊天，会回到上次的段落；上次在底部则回到最新回答。窗口宽度变化、聊天与 PDF 并排/专注阅读切换时，优先按回答和段落定位，避免只按像素恢复导致偏移。首次打开没有位置记录的历史对话时，显示最新内容。
+
+Chat remembers the reading position separately for each conversation. After a normal exit, reopening chat returns to the last paragraph, or to the latest answer if it was at the bottom. Reply and paragraph anchors preserve the reading location across window resizing and PDF/chat layout changes. Existing conversations without a saved position initially show their latest content.
+
+主动发送新问题时继续显示新回答；生成中手动向上阅读会暂停跟随，仍可通过“回到对话底部”查看最新内容。退出、切换对话和暂时收起聊天时都会保留位置；字体、公式或页面晚到的排版更新不会立即覆盖保存的位置。原定位的回答被删除或切换版本时，回退到附近仍存在的消息。
+
+Sending a new question still follows the new answer. Manually scrolling upward during generation pauses following; the bottom button remains available. Positions survive exiting, switching conversations and hiding chat. Delayed font, formula or content layout does not overwrite the saved location. Deleted or replaced source answers fall back to a nearby surviving message.
+
+聊天阅读位置只在本机保存对话/回答标识及显示位置，不复制聊天正文、PDF 文字或密钥，不进入聊天备份，也不发送给 AI。回收站中的对话可继续保留位置以供恢复，永久删除对话时清理其位置记录。
+
+Chat reading preferences store only local conversation/reply identifiers and display positions. They contain no message text, PDF text or credentials, are excluded from conversation backups and are never sent to AI. Recycled conversations retain their preferences for recovery; permanent conversation removal clears the saved position.
