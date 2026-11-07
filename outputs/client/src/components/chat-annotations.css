@@ -1,7 +1,7 @@
 .chat-reference-tools { display: flex; align-items: center; flex: none; gap: 2px; padding: 0; font-size: 11px; color: var(--ls-muted); }
 .chat-reference-tools button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 30px; min-height: 30px; border: 0; border-radius: 6px; padding: 6px; color: var(--ls-muted); background: transparent; font: inherit; line-height: 1; white-space: nowrap; cursor: pointer; }
 .chat-reference-tools button:hover, .chat-reference-tools .chat-reference-trigger[data-selected] { color: var(--ls-text); background: var(--ls-surface); }
-.chat-reference-tools button:disabled { opacity: .4; cursor: default; }
+.chat-reference-tools button:disabled { opacity: .4; }
 .chat-reference-tools .chat-reference-clear { min-width: 24px; padding: 4px; color: var(--ls-muted); }
 .chat-reference-count { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--ls-selected); color: var(--ls-ink); font-size: 10px; }
 .chat-annotation-picker { max-width: min(640px, calc(100vw - 32px)); }

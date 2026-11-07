@@ -29,10 +29,14 @@
   --ls-danger-bg: #faeadb;
 }
 * { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; }
+body { margin: 0; min-width: 320px; cursor: default; }
 button, input, textarea { font: inherit; }
 button { cursor: pointer; }
-button:disabled { cursor: not-allowed; opacity: .4; }
+input, textarea { cursor: text; }
+a[href], summary, select, [role="button"], input:is([type="button"], [type="submit"], [type="reset"], [type="checkbox"], [type="radio"], [type="color"], [type="file"], [type="range"]) { cursor: pointer; }
+label:has(> input:is([type="checkbox"], [type="radio"], [type="file"], [type="color"]):not(:disabled)) { cursor: pointer; }
+button:disabled { opacity: .4; }
+button:disabled, input:disabled, textarea:disabled, select:disabled, [role="button"][aria-disabled="true"] { cursor: not-allowed; }
 button { -webkit-tap-highlight-color: transparent; }
 button, a, input, textarea { outline-offset: 4px; }
 button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--ls-focus); }
@@ -79,7 +83,7 @@ button svg { flex-shrink: 0; }
 .recovery-dialog .recovery-toolbar { justify-content: flex-start; }
 .secondary-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; color: var(--ls-ink); font: inherit; font-size: 12px; background: var(--ls-panel); border: 1px solid var(--ls-border); border-radius: 8px; padding: 9px 12px; cursor: pointer; }
 .secondary-button:hover:not(:disabled) { background: #f7e9bd; }
-.secondary-button:disabled { cursor: default; opacity: .5; }
+.secondary-button:disabled { opacity: .5; }
 .recovery-list { border-block: 1px solid var(--ls-border); max-height: 360px; overflow-y: auto; }
 .recovery-empty { font-size: 12px; padding: 25px 10px; color: var(--ls-muted); text-align: center; }
 .recovery-entry { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 16px 2px; border-bottom: 1px solid var(--ls-border); }
@@ -128,7 +132,7 @@ button svg { flex-shrink: 0; }
 .composer-quick-actions .upload-document-button { display: inline-flex; align-items: center; justify-content: center; flex: none; gap: 5px; min-width: 30px; min-height: 30px; padding: 6px; border: 0; border-radius: 6px; color: var(--ls-muted); background: transparent; font: inherit; font-size: 11px; line-height: 1; white-space: nowrap; cursor: pointer; }
 .composer-quick-actions .upload-document-button:hover { color: var(--ls-text); background: var(--ls-surface); }
 .composer-quick-actions button:focus-visible { outline: 2px solid var(--ls-focus); outline-offset: 2px; }
-.composer-quick-actions button:disabled { opacity: .45; cursor: default; }
+.composer-quick-actions button:disabled { opacity: .45; cursor: not-allowed; }
 .composer-model-controls { display: flex; align-items: center; flex: 0 1 220px; min-width: 72px; margin-left: auto; color: var(--ls-muted); font-size: 11px; }
 .composer-model-controls .composer-model-select > select.field-input { min-width: 0; min-height: 30px; max-width: 100%; padding: 5px 29px 5px 8px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--ls-text); font: inherit; line-height: 1.5; }
 .composer-model-controls .composer-model-select > select.field-input:hover { background: var(--ls-surface); }
@@ -346,9 +350,9 @@ button svg { flex-shrink: 0; }
 .trash-entry-text span { display: block; font-size: 10px; color: var(--ls-muted); margin-top: 6px; overflow-wrap: anywhere; }
 .trash-entry-actions, .trash-confirm-actions { display: flex; gap: 9px; align-items: center; }
 .trash-delete-button { display: inline-flex; align-items: center; gap: 5px; background: transparent; border: 0; color: #a45d40; font: inherit; font-size: 11px; padding: 8px 3px; cursor: pointer; }
-.trash-delete-button:disabled { opacity: .45; cursor: default; }
+.trash-delete-button:disabled { opacity: .45; }
 .danger-button { display: inline-flex; align-items: center; gap: 6px; background: #a45d40; border: 1px solid #a45d40; color: #fff9eb; border-radius: 8px; font: inherit; font-size: 12px; padding: 10px 14px; cursor: pointer; }
-.danger-button:disabled { opacity: .5; cursor: default; }
+.danger-button:disabled { opacity: .5; }
 .trash-confirmation h3 { font-size: 16px; font-weight: 550; margin: 22px 0 12px; }
 .trash-confirmation p { font-size: 12px; line-height: 1.9; }
 .trash-confirm-label { padding: 12px 14px; border-radius: 8px; background: #f8edce; overflow-wrap: anywhere; }

@@ -2,7 +2,7 @@
 .document-reader[data-reader-focused="true"] { border: 0; border-radius: 0; }
 .document-reader button, .document-reader input { font: inherit; }
 .document-reader button { cursor: pointer; }
-.document-reader button:disabled { cursor: default; opacity: .35; }
+.document-reader button:disabled { cursor: not-allowed; opacity: .35; }
 .document-reader button:focus-visible, .document-reader input:focus-visible { outline: 2px solid var(--ls-focus); outline-offset: 2px; }
 .document-icon-button { display: inline-flex; align-items: center; justify-content: center; width: 29px; height: 29px; flex-shrink: 0; border: 0; border-radius: 7px; background: transparent; color: var(--ls-text); }
 .document-icon-button:hover:not(:disabled) { background: var(--ls-surface); color: var(--ls-ink); }
@@ -40,7 +40,7 @@
 .document-text-layer .markedContent { display: contents; }
 .document-text-layer ::selection { color: transparent; background: #ddbd586e; }
 .document-text-layer br::selection { background: transparent; }
-.document-page-stage[data-link-hover="true"] .document-text-layer :is(span, br) { cursor: pointer; }
+.document-page-stage[data-link-hover="true"], .document-page-stage[data-link-hover="true"] :is(canvas, .document-text-layer, span, br) { cursor: pointer; }
 .pdf-link-accessibility { position: absolute; inset: 0; pointer-events: none; }
 .pdf-link-keyboard { position: absolute; border: 0; padding: 0; background: transparent; pointer-events: none; }
 .pdf-link-keyboard:focus-visible { outline: 2px solid var(--ls-focus); outline-offset: 2px; }
@@ -155,7 +155,7 @@
 .reader-home-intro h1 { margin: 18px 0 12px; font-size: 30px; font-weight: 500; letter-spacing: .02em; color: var(--ls-ink); }
 .reader-home-intro p { color: var(--ls-muted); font-size: 13px; line-height: 1.8; margin: 0 0 25px; }
 .reader-open-file { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 13px 23px; border: 1px solid var(--ls-border-strong); border-radius: 9px; background: var(--ls-hover); color: var(--ls-ink); font: inherit; font-size: 13px; cursor: pointer; }
-.reader-open-file:disabled { opacity: .55; cursor: default; }
+.reader-open-file:disabled { opacity: .55; }
 .reader-recent > header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 15px; }
 .reader-recent h2 { margin: 0; font-size: 12px; color: var(--ls-text); font-weight: 500; }
 .reader-recent > header > span { font-size: 10px; color: var(--ls-muted); }

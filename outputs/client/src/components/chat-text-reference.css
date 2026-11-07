@@ -5,5 +5,6 @@
 .chat-text-reference .icon-button { margin-left: auto; flex: none; width: 24px; height: 24px; }
 .chat-text-reference blockquote { margin: 5px 0 0; padding: 0; max-height: 76px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 1.6; }
 .user-message .chat-text-reference { margin-top: 10px; margin-bottom: 0; }
-.chat-question-text { display: block; }
+.chat-question-text { display: block; cursor: auto; }
+.chat-text-reference blockquote { cursor: auto; }
 .chat-text-selection { position: fixed; z-index: 120; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 11px; border: 1px solid var(--ls-border-strong); border-radius: 7px; background: var(--ls-panel); color: var(--ls-text); font: inherit; font-size: 12px; box-shadow: 0 4px 18px #62471622; }

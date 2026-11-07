@@ -1,7 +1,10 @@
 .annotation-answer { min-width: 0; line-height: 1.85; }
-.annotation-answer-ready { cursor: text; }
-.annotation-answer.hovered, .annotation-answer.hovered * { cursor: text; }
-.annotation-answer :is(a, button, [role="button"]), .annotation-answer :is(a, button, [role="button"]) * { cursor: pointer; }
+/* Let Chromium distinguish text glyphs from paragraph/page whitespace.
+   Override the annotator's blanket hand cursor without making the whole page a text cursor. */
+.annotation-answer-ready, .annotation-answer.hovered, .annotation-answer.hovered * { cursor: auto; }
+.annotation-markdown, .annotation-plain-text, .annotation-quote, .annotation-question-text { cursor: auto; }
+.annotation-answer :is(a[href], button, [role="button"]), .annotation-answer :is(a[href], button, [role="button"]) * { cursor: pointer; }
+.annotation-answer :is(button, input, textarea, select):disabled, .annotation-answer :is(button, input, textarea, select):disabled * { cursor: not-allowed; }
 .annotation-plain-text { white-space: pre-wrap; overflow-wrap: anywhere; }
 .annotation-answer .r6o-span-highlight-layer { z-index: 0; mix-blend-mode: multiply; }
 .annotation-markdown { overflow-wrap: anywhere; font-size: inherit; line-height: 1.85; }
@@ -59,7 +62,9 @@
 .annotation-card button:focus-visible, .annotation-selection-button:focus-visible { outline: 2px solid var(--ls-focus); outline-offset: 3px; }
 .annotation-card-header { min-height: 53px; padding: 0 15px 0 18px; border-bottom: 1px solid var(--ls-border); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-shrink: 0; cursor: grab; touch-action: none; user-select: none; }
 .annotation-card-header:focus-visible { outline: 2px solid var(--ls-focus); outline-offset: -4px; }
-.annotation-popup-dragging .annotation-card-header { cursor: grabbing; }
+.annotation-popup-dragging, .annotation-popup-dragging .annotation-card-header { cursor: grabbing; }
+/* Pointer capture can cross text and controls while moving a card. */
+body:has(.annotation-popup-dragging), body:has(.annotation-popup-dragging) * { cursor: grabbing !important; }
 .annotation-drag-icon { color: var(--ls-muted); flex-shrink: 0; }
 .annotation-card-heading { display: flex; align-items: center; gap: 8px; }
 .annotation-card-header-actions { display: flex; align-items: center; gap: 2px; }
