@@ -31,7 +31,16 @@ let failureReported = false;
 let desktopBridge;
 let closeGuard;
 let interfaceLocale = 'zh-CN';
-const local = (zh, en) => interfaceLocale === 'en' ? en : zh;
+const menuKeys = ['Quit', 'Edit', 'View', 'Reload', 'Zoom in', 'Zoom out', 'Actual size', 'Full screen', 'Undo', 'Redo', 'Cut', 'Copy', 'Paste', 'Select all', 'Retry saving', 'Cancel exit', 'Quit anyway'];
+const menuWords = Object.fromEntries(Object.entries({
+  es: ['Salir', 'Editar', 'Vista', 'Recargar', 'Ampliar', 'Alejar', 'Tamaño real', 'Pantalla completa', 'Deshacer', 'Rehacer', 'Cortar', 'Copiar', 'Pegar', 'Seleccionar todo', 'Reintentar guardado', 'Cancelar salida', 'Salir igualmente'],
+  ja: ['終了', '編集', '表示', '再読み込み', '拡大', '縮小', '実際のサイズ', '全画面', '元に戻す', 'やり直す', '切り取り', 'コピー', '貼り付け', 'すべて選択', '保存を再試行', '終了をキャンセル', '保存せず終了'],
+  de: ['Beenden', 'Bearbeiten', 'Ansicht', 'Neu laden', 'Vergrößern', 'Verkleinern', 'Originalgröße', 'Vollbild', 'Rückgängig', 'Wiederholen', 'Ausschneiden', 'Kopieren', 'Einfügen', 'Alles auswählen', 'Speichern wiederholen', 'Beenden abbrechen', 'Trotzdem beenden'],
+  ar: ['خروج', 'تحرير', 'عرض', 'إعادة تحميل', 'تكبير', 'تصغير', 'الحجم الفعلي', 'ملء الشاشة', 'تراجع', 'إعادة', 'قص', 'نسخ', 'لصق', 'تحديد الكل', 'إعادة محاولة الحفظ', 'إلغاء الخروج', 'الخروج على أي حال'],
+  fr: ['Quitter', 'Édition', 'Affichage', 'Recharger', 'Agrandir', 'Réduire', 'Taille réelle', 'Plein écran', 'Annuler', 'Rétablir', 'Couper', 'Copier', 'Coller', 'Tout sélectionner', 'Réessayer l’enregistrement', 'Annuler la fermeture', 'Quitter quand même'],
+  'zh-TW': ['結束', '編輯', '檢視', '重新載入', '放大', '縮小', '實際大小', '全螢幕', '復原', '重做', '剪下', '複製', '貼上', '全選', '重試儲存', '取消結束', '直接結束'],
+}).map(([code, words]) => [code, Object.fromEntries(menuKeys.map((key, i) => [key, words[i]]))]));
+const local = (zh, en) => interfaceLocale === 'zh-CN' ? zh : menuWords[interfaceLocale]?.[en] || en;
 function refreshMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     { label: 'AI-Embedded Paper PDF Reader', submenu: [{ label: local('退出', 'Quit'), role: 'quit' }] },

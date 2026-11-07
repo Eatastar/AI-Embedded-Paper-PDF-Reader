@@ -10,6 +10,7 @@ import { discoverModels } from './model-discovery.mjs';
 import { streamProtocolReply } from './protocols.mjs';
 import { errorDetails, safeRequestRecord } from './diagnostics.mjs';
 import { translationRequest, TranslationError } from './translation.mjs';
+import { validateImageInput, friendlyImageError, ImageInputError } from './vision.mjs';
 
 export { isLocalEndpoint } from './profiles.mjs';
 
@@ -59,6 +60,7 @@ function validateChat(body) {
   if (body.kind === 'annotation' && (typeof body.quote !== 'string' || !body.quote.trim())) throw new RequestError(400, '批注请求缺少选中的原文。');
   if (body.variant !== undefined && (!Number.isInteger(body.variant) || body.variant < 0)) throw new RequestError(400, '回答版本格式不正确。');
   if (body.profileId !== undefined && body.profileId !== null && typeof body.profileId !== 'string') throw new RequestError(400, '模型配置标识不正确。');
+  if (body.image !== undefined) { if (body.kind !== 'annotation') throw new RequestError(400, '图片只随主动发起的图片批注发送。'); validateImageInput(body.image); }
   return body;
 }
 
@@ -134,7 +136,7 @@ export function createAppServer({ env = process.env, distDir = resolve('dist'), 
     apiFormat: 'openai-chat',
     baseURL: env.AI_BASE_URL || 'https://api.openai.com/v1',
     model: env.AI_MODEL || '',
-    systemPrompt: env.AI_SYSTEM_PROMPT || '请用清楚、准确的中文回答。支持使用 Markdown。',
+    systemPrompt: env.AI_SYSTEM_PROMPT || '请清楚、准确地回答，支持使用 Markdown，解释概念时适当举例。',
     apiKey: env.AI_API_KEY || '',
   } });
   const server = createServer(async (req, res) => {
@@ -212,9 +214,12 @@ export function createAppServer({ env = process.env, distDir = resolve('dist'), 
           outcome = controller.signal.aborted && !timedOut ? 'aborted' : 'error';
           failureCode = details.code;
           if (observedStatus === undefined) observedStatus = details.httpStatus;
-          send({ type: 'error', message: `${friendlyModelError(error, timedOut)}\n诊断编号：${requestId}`, requestId });
+          const friendly = body.image && error instanceof RequestError ? error.message : friendlyModelError(error, timedOut);
+          send({ type: 'error', message: `${body.image && !timedOut && !(error instanceof RequestError) ? friendlyImageError(error, friendly) : friendly}\n诊断编号：${requestId}`, requestId });
         };
         try {
+          if (body.image && activeSettings.mode === 'demo') throw new RequestError(400, '图片问答需要连接支持图片理解的模型，当前为本地演示。');
+          if (body.image && activeSettings.imageInput === 'unsupported') throw new RequestError(400, '此连接已设置为不支持图片。请切换支持图片理解的模型后重试，图片、圈画和问题已保留。');
           if (activeSettings.mode === 'demo') {
             const answer = demoAnswer(body);
             const chunkSize = Math.max(8, Math.ceil(answer.length / 26));
@@ -225,8 +230,8 @@ export function createAppServer({ env = process.env, distDir = resolve('dist'), 
             send({ type: 'done', modelLabel: '本地演示 · 未调用 AI' });
           } else {
             const annotationInstruction = body.kind === 'annotation' ? `你在解释一条独立批注。只根据本次提供的原文资料、选中原文和批注问题回答；不引用主聊天或其他批注问答，资料不足时明确说明。选中原文：\n${body.quote}` : '';
-            if (activeSettings.apiFormat !== 'openai-chat') {
-              const result = await streamProtocolReply({ ...activeSettings, messages: body.messages, annotationInstruction, signal: controller.signal, fetch: requestFetch, onText: text => send({ type: 'delta', text }) });
+            if (activeSettings.apiFormat !== 'openai-chat' || body.image) {
+              const result = await streamProtocolReply({ ...activeSettings, messages: body.messages, image: body.image, annotationInstruction, signal: controller.signal, fetch: requestFetch, onText: text => send({ type: 'delta', text }) });
               if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError');
               send({ type: 'done', modelLabel: activeSettings.model, ...(result.usage ? { usage: result.usage } : {}) });
               return;
@@ -275,7 +280,7 @@ export function createAppServer({ env = process.env, distDir = resolve('dist'), 
       if (!['GET', 'HEAD'].includes(req.method || '')) throw new RequestError(405, '不支持该操作。');
       await serveFile(req, res, pathname, distDir);
     } catch (error) {
-      if (!res.headersSent) json(res, error instanceof RequestError || error instanceof ProfileError || error instanceof TranslationError ? error.status : 500, { error: error instanceof RequestError || error instanceof ProfileError || error instanceof TranslationError ? error.message : '本地服务遇到问题，请重试。' });
+      if (!res.headersSent) json(res, error instanceof RequestError || error instanceof ProfileError || error instanceof TranslationError || error instanceof ImageInputError ? error.status : 500, { error: error instanceof RequestError || error instanceof ProfileError || error instanceof TranslationError || error instanceof ImageInputError ? error.message : '本地服务遇到问题，请重试。' });
       else if (!res.writableEnded) res.end();
     }
   });

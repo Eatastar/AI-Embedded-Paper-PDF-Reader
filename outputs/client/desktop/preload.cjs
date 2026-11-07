@@ -1,7 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('learnSomething', {
-  setLocale: locale => { if (locale === 'zh-CN' || locale === 'en') ipcRenderer.send('learn:locale', locale); },
+  setLocale: locale => { if (['zh-CN', 'en', 'es', 'ja', 'zh-TW', 'de', 'ar', 'fr'].includes(locale)) ipcRenderer.send('learn:locale', locale); },
   onPrepareClose(handler, onCancel) {
     const listener = async (_event, id) => {
       try { await handler(); ipcRenderer.send('learn:close-result', { id, ok: true }); }

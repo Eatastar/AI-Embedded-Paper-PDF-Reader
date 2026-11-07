@@ -42,6 +42,21 @@
 .annotation-selection-toolbar .quote-selection-button { color: var(--ls-text); background: transparent; }
 .annotation-selection-toolbar .quote-selection-button:hover { background: var(--ls-surface); }
 .annotation-popup { position: fixed; z-index: 105; animation: annotation-rise .16s ease-out; }
+.annotation-popup-resized > .annotation-card { height: 100%; max-height: 100%; }
+.annotation-resize-handle { position: absolute; z-index: 5; border: 0; padding: 0; background: transparent; touch-action: none; }
+.annotation-resize-handle.resize-n,.annotation-resize-handle.resize-s { left: 12px; right: 12px; height: 6px; cursor: ns-resize; }
+.annotation-resize-handle.resize-n { top: -2px; }.annotation-resize-handle.resize-s { bottom: -2px; }
+.annotation-resize-handle.resize-e,.annotation-resize-handle.resize-w { top: 12px; bottom: 12px; width: 6px; cursor: ew-resize; }
+.annotation-resize-handle.resize-e { right: -2px; }.annotation-resize-handle.resize-w { left: -2px; }
+.annotation-resize-handle.resize-ne,.annotation-resize-handle.resize-nw,.annotation-resize-handle.resize-se,.annotation-resize-handle.resize-sw { width: 12px; height: 12px; }
+.annotation-resize-handle.resize-ne { top: -2px; right: -2px; cursor: nesw-resize; }.annotation-resize-handle.resize-nw { top: -2px; left: -2px; cursor: nwse-resize; }
+.annotation-resize-handle.resize-se { bottom: 1px; right: 1px; cursor: nwse-resize; border-right: 2px solid var(--ls-border-strong); border-bottom: 2px solid var(--ls-border-strong); border-radius: 0 0 7px; }
+.annotation-resize-handle.resize-sw { bottom: -2px; left: -2px; cursor: nesw-resize; }
+.annotation-resize-handle:focus-visible { outline: 2px solid var(--ls-focus); outline-offset: 2px; }
+body:has(.annotation-popup-resizing.resize-e),body:has(.annotation-popup-resizing.resize-e) *,body:has(.annotation-popup-resizing.resize-w),body:has(.annotation-popup-resizing.resize-w) * { cursor: ew-resize !important; }
+body:has(.annotation-popup-resizing.resize-n),body:has(.annotation-popup-resizing.resize-n) *,body:has(.annotation-popup-resizing.resize-s),body:has(.annotation-popup-resizing.resize-s) * { cursor: ns-resize !important; }
+body:has(.annotation-popup-resizing.resize-nw),body:has(.annotation-popup-resizing.resize-nw) *,body:has(.annotation-popup-resizing.resize-se),body:has(.annotation-popup-resizing.resize-se) * { cursor: nwse-resize !important; }
+body:has(.annotation-popup-resizing.resize-ne),body:has(.annotation-popup-resizing.resize-ne) *,body:has(.annotation-popup-resizing.resize-sw),body:has(.annotation-popup-resizing.resize-sw) * { cursor: nesw-resize !important; }
 .annotation-choice-popup { position: fixed; z-index: 108; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--ls-border); border-radius: 12px; background: var(--ls-panel); color: var(--ls-ink); box-shadow: 0 9px 32px #62471626; font-family: Inter, 'PingFang SC', 'Microsoft YaHei', sans-serif; animation: annotation-rise .13s ease-out; }
 .annotation-choice-header { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; padding: 8px 9px 7px 14px; border-bottom: 1px solid var(--ls-border); }
 .annotation-choice-header strong { font-size: 11px; font-weight: 550; color: var(--ls-text); }
@@ -74,7 +89,7 @@ body:has(.annotation-popup-dragging), body:has(.annotation-popup-dragging) * { c
 .annotation-card-badge { margin-left: 3px; font-size: 10px; color: var(--ls-muted); font-weight: 400; }
 .annotation-icon-button { display: inline-flex; align-items: center; justify-content: center; width: 29px; height: 29px; border: 0; border-radius: 7px; background: transparent; color: var(--ls-muted); }
 .annotation-icon-button:hover { background: var(--ls-surface); color: var(--ls-ink); }
-.annotation-card-scroll { padding: 18px; overflow-y: auto; min-height: 0; overscroll-behavior: contain; scrollbar-width: thin; }
+.annotation-card-scroll { padding: 18px; overflow-y: auto; min-height: 0; overflow-wrap: anywhere; overscroll-behavior: contain; scrollbar-width: thin; }
 .annotation-quote { margin: 0 0 19px; padding: 5px 0 5px 11px; border-left: 3px solid; font-size: 12px; line-height: 1.7; color: var(--ls-muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .annotation-draft label, .annotation-edit-fields label { display: block; margin-bottom: 9px; font-size: 12px; font-weight: 550; color: var(--ls-text); }
 .annotation-mode-switch { display: flex; gap: 4px; padding: 4px; margin: 0 0 17px; border: 1px solid var(--ls-border); border-radius: 9px; background: var(--ls-surface); }
@@ -86,9 +101,10 @@ body:has(.annotation-popup-dragging), body:has(.annotation-popup-dragging) * { c
 .annotation-textarea { display: block; width: 100%; box-sizing: border-box; resize: vertical; min-height: 84px; padding: 11px 12px; border: 1px solid var(--ls-border); border-radius: 9px; outline: none; background: var(--ls-panel); color: var(--ls-ink); line-height: 1.7; }
 .annotation-textarea::placeholder { color: var(--ls-muted); }
 .annotation-textarea:focus { border-color: var(--ls-accent); box-shadow: 0 0 0 3px #62471617; }
-.annotation-draft-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; }
-.annotation-draft-footer > span { font-size: 10px; color: var(--ls-muted); }
-.annotation-primary-button { display: inline-flex; justify-content: center; align-items: center; gap: 6px; border: 1px solid var(--ls-accent); border-radius: 7px; padding: 7px 12px; min-height: 32px; background: var(--ls-accent); color: var(--ls-on-accent); font-size: 12px !important; }
+.annotation-draft-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; }
+.annotation-draft-footer > span { flex: 1 1 130px; min-width: 0; font-size: 10px; color: var(--ls-muted); overflow-wrap: anywhere; }
+.annotation-draft-footer > button { margin-inline-start: auto; }
+.annotation-primary-button { display: inline-flex; justify-content: center; align-items: center; gap: 6px; border: 1px solid var(--ls-accent); border-radius: 7px; padding: 7px 12px; min-height: 32px; max-width: 100%; min-width: 0; background: var(--ls-accent); color: var(--ls-on-accent); font-size: 12px !important; line-height: 1.4; overflow-wrap: anywhere; }
 .annotation-primary-button:hover:not(:disabled) { background: var(--ls-accent); border-color: var(--ls-accent); }
 .annotation-shortcut { display: flex; align-items: center; gap: 4px; margin: 13px 0 0; font-size: 10px; color: var(--ls-muted); }
 .annotation-section-label { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--ls-muted); font-weight: 650; letter-spacing: .05em; }
@@ -96,9 +112,11 @@ body:has(.annotation-popup-dragging), body:has(.annotation-popup-dragging) * { c
 .annotation-answer-label { margin-bottom: 9px; }
 .annotation-response .annotation-markdown { font-size: 12px; line-height: 1.85; color: var(--ls-text); }
 .annotation-response .annotation-markdown h2 { font-size: 1.15em; }
-.annotation-response-actions { display: flex; align-items: center; justify-content: space-between; padding-top: 15px; margin-top: 18px; border-top: 1px solid var(--ls-border); gap: 8px; }
-.annotation-response-actions > span { color: var(--ls-muted); font-size: 10px; }
-.annotation-text-button { border: 0; border-radius: 5px; padding: 5px 4px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; background: transparent; color: var(--ls-text); font-size: 11px !important; }
+.annotation-response-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; padding-top: 15px; margin-top: 18px; border-top: 1px solid var(--ls-border); gap: 8px; }
+.annotation-response-actions > span { min-width: 0; color: var(--ls-muted); font-size: 10px; overflow-wrap: anywhere; }
+.annotation-response-actions > .annotation-reask-actions { margin-inline-start: auto; }
+.annotation-text-button { border: 0; border-radius: 5px; padding: 5px 4px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; max-width: 100%; min-width: 0; background: transparent; color: var(--ls-text); font-size: 11px !important; line-height: 1.4; overflow-wrap: anywhere; }
+.annotation-primary-button > svg, .annotation-text-button > svg { flex-shrink: 0; }
 .annotation-text-button:hover { color: var(--ls-ink); background: var(--ls-surface); }
 .annotation-edited-label { margin-left: 4px; color: var(--ls-muted); font-weight: 400; font-size: 9px; }
 .annotation-waiting { color: var(--ls-muted); font-size: 12px; margin: 9px 0; }
@@ -107,7 +125,10 @@ body:has(.annotation-popup-dragging), body:has(.annotation-popup-dragging) * { c
 .annotation-footnote { color: var(--ls-muted); font-size: 10px; margin: 13px 0 0; line-height: 1.6; }
 .annotation-edit-fields .annotation-textarea { margin-bottom: 14px; }
 .annotation-answer-editor { min-height: 155px; }
-.annotation-edit-actions { display: flex; justify-content: flex-end; gap: 9px; }
+.annotation-edit-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px 10px; }
+/* Leave room for the input's focus ring and native resize grip before its actions. */
+.annotation-draft > .annotation-edit-actions { margin-block-start: 14px; }
+.annotation-reask > .annotation-footnote { margin: 0 0 12px; }
 .annotation-spin { animation: annotation-spin 1s linear infinite; }
 .annotation-context-menu { position: fixed; z-index: 125; width: min(278px, calc(100vw - 16px)); max-height: calc(100dvh - 16px); overflow-y: auto; padding: 5px; border: 1px solid var(--ls-border); border-radius: 11px; color: var(--ls-ink); background: var(--ls-panel); box-shadow: 0 9px 32px #6247162b; font: 12px/1.5 Inter, 'PingFang SC', 'Microsoft YaHei', sans-serif; overscroll-behavior: contain; animation: annotation-rise .1s ease-out; }
 .annotation-context-menu > button { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 35px; padding: 8px 10px; border: 0; border-radius: 6px; background: transparent; color: inherit; text-align: left; font: inherit; cursor: pointer; }

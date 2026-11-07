@@ -37,6 +37,7 @@ function endpoint(value) {
 function normalizeFields(input, previous, { requireKey = false, requireModel = true } = {}) {
   object(input);
   const next = { ...previous };
+  if (input.imageInput !== undefined) { if (!['auto', 'supported', 'unsupported'].includes(input.imageInput)) throw new ProfileError(400, '图片能力设置无效。'); next.imageInput = input.imageInput; }
   if (input.apiFormat !== undefined) next.apiFormat = text(input.apiFormat, '接口格式', 40);
   if (!FORMATS.has(next.apiFormat)) throw new ProfileError(400, '请选择支持的接口格式。');
   if (input.baseURL !== undefined) next.baseURL = endpoint(input.baseURL);
@@ -74,7 +75,7 @@ function normalizeStored(snapshot) {
     const name = text(raw.name, '配置名称', 80);
     if (!name || typeof raw.apiKey !== 'string' || typeof raw.model !== 'string' || typeof raw.systemPrompt !== 'string') throw new Error('Invalid stored profile');
     const fields = normalizeFields(raw, { apiFormat: 'openai-chat', baseURL: 'https://api.openai.com/v1', model: '', systemPrompt: '', apiKey: '' });
-    return { id: profileId, name, apiFormat: fields.apiFormat, baseURL: fields.baseURL, model: fields.model, systemPrompt: fields.systemPrompt, apiKey: fields.apiKey };
+    return { id: profileId, name, apiFormat: fields.apiFormat, baseURL: fields.baseURL, model: fields.model, systemPrompt: fields.systemPrompt, apiKey: fields.apiKey, ...(fields.imageInput ? { imageInput: fields.imageInput } : {}) };
   });
   const activeProfileId = snapshot.activeProfileId === null ? null : id(snapshot.activeProfileId);
   if (activeProfileId !== null && !used.has(activeProfileId)) throw new Error('Unknown active stored profile');
@@ -99,7 +100,7 @@ export function createProfileManager({ initialSettings, store } = {}) {
   }
   const persistence = store?.persistence === 'encrypted' ? 'encrypted' : store ? 'configuration' : 'session';
   const selected = () => state.activeProfileId === null ? state.legacy : state.profiles.find(profile => profile.id === state.activeProfileId);
-  const visible = profile => ({ apiFormat: profile.apiFormat, baseURL: profile.baseURL, model: profile.model, systemPrompt: profile.systemPrompt, hasApiKey: Boolean(profile.apiKey) });
+  const visible = profile => ({ apiFormat: profile.apiFormat, baseURL: profile.baseURL, model: profile.model, systemPrompt: profile.systemPrompt, hasApiKey: Boolean(profile.apiKey), ...(profile.imageInput ? { imageInput: profile.imageInput } : {}) });
   const storageWarning = () => localWarning || (typeof store?.warning === 'string' ? store.warning : '');
   const publicSettings = () => ({
     mode: state.mode,
@@ -158,7 +159,7 @@ export function createProfileManager({ initialSettings, store } = {}) {
       const name = text(input.name, '配置名称', 80);
       if (!name) throw new ProfileError(400, '请给这份模型配置起个名字。');
       const fields = normalizeFields(input, previous || { apiFormat: 'openai-chat', baseURL: 'https://api.openai.com/v1', model: '', systemPrompt: initial.systemPrompt || '', apiKey: '' });
-      const profile = { id: previous?.id || randomUUID(), name, apiFormat: fields.apiFormat, baseURL: fields.baseURL, model: fields.model, systemPrompt: fields.systemPrompt, apiKey: fields.apiKey };
+      const profile = { id: previous?.id || randomUUID(), name, apiFormat: fields.apiFormat, baseURL: fields.baseURL, model: fields.model, systemPrompt: fields.systemPrompt, apiKey: fields.apiKey, ...(fields.imageInput ? { imageInput: fields.imageInput } : {}) };
       const profiles = previous ? state.profiles.map(item => item.id === previous.id ? profile : item) : [...state.profiles, profile];
       const activate = input.activate !== false;
       return commit({ ...state, profiles, ...(activate ? { activeProfileId: profile.id, mode: 'api' } : {}) });

@@ -1,7 +1,7 @@
 const { readFileSync, writeFileSync, mkdirSync, renameSync, unlinkSync } = require('node:fs');
 const { dirname } = require('node:path');
 
-const FIELDS = ['id', 'name', 'apiFormat', 'baseURL', 'model', 'systemPrompt'];
+const FIELDS = ['id', 'name', 'apiFormat', 'baseURL', 'model', 'systemPrompt', 'imageInput'];
 
 /** The desktop supplies safeStorage after app-ready; the browser saves metadata. */
 function createProfileStore({ filePath, safeStorage }) {
@@ -9,7 +9,7 @@ function createProfileStore({ filePath, safeStorage }) {
   try { encrypted = Boolean(safeStorage?.isEncryptionAvailable()); } catch { /* Metadata storage remains usable. */ }
   let warning = safeStorage && !encrypted ? '系统加密暂不可用：配置会保存，密钥仅本次运行有效。' : '';
   let blocked = false;
-  const metadata = profile => Object.fromEntries(FIELDS.map(key => [key, profile[key]]));
+  const metadata = profile => Object.fromEntries(FIELDS.filter(key => key !== 'imageInput' || profile[key] !== undefined).map(key => [key, profile[key]]));
 
   return {
     persistence: encrypted ? 'encrypted' : 'configuration',

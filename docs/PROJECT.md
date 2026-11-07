@@ -1,10 +1,10 @@
 # AI-Embedded Paper PDF Reader 项目总纲 / Project outline
 
-当前版本：客户端 0.1.25，构建 20261107.5，2026年11月7日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
+当前版本：客户端 0.1.31，构建 20261107.11，2026年11月7日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
 
 首个公开正式版沿用 v0.1.11 和现有构建，使用 MIT 许可证。公开范围包括已核对的源码及通用 Windows 发行包；历史检查范围见 [公开发布说明](OPEN_SOURCE_RELEASE.md)，本地数据和请求边界见 [隐私说明](PRIVACY.md)。
 
-Current source: **0.1.25 / 20261107.5**. A local PDF reader for close reading of papers and books, with optional AI questions, quick translation and personal notes. Public introductions and release notes are bilingual. Users can select Chinese or English in the app; interface language never rewrites their documents, messages, notes or answer preferences.
+Current source: **0.1.31 / 20261107.11**. A local PDF reader for close reading of papers and books, with optional AI questions, quick translation and personal notes. Public introductions and release notes are bilingual. Users can select one of eight interface languages in the app; interface language sets the default AI answer and translation languages without rewriting their documents, messages, notes or custom preferences.
 
 PDF 显示保留有像素上限的整页底图；可视区域按屏幕密度重绘独立高清层，每页高清缓冲最多 800 万像素，仅在可见时保留。滚动复用边缘缓存并丢弃过期任务，页面移出视野或关闭时释放。高清层不接收鼠标事件，文字选取、引用跳转、批注及临时翻译继续使用原文字层。
 
@@ -34,9 +34,9 @@ Keep questions beside their source. Support close reading of papers, textbooks a
 12. 接口格式表示通信的数据格式，与模型品牌分开。支持通用聊天兼容格式、Responses 和 Anthropic Messages；常用服务自动填写，显示名称调整不改变旧配置。Gemini 当前使用官方兼容入口。
 
 13. 批注可自选预设色或自定义颜色，颜色和原批注一起保存、备份与恢复。改色不改变原文锚点、来源版本、当前问答或生成中的重新提问。
-14. 首页、阅读设置和模型设置提供简体中文 / English。默认中文，选择单独保存在本机；界面翻译不写入聊天或备份，不更改回答偏好。桌面编辑菜单和退出提示跟随所选语言。
+14. 首页、阅读设置和聊天设置提供八种界面语言。默认中文，选择单独保存在本机；界面翻译不写入聊天或备份，不更改回答偏好。桌面编辑菜单随所选语言切换，部分系统诊断提示回退英文。
 
-English: Each highlight may use a preset or custom color. Color changes preserve the source anchor/version, current Q&A and in-flight replacement request, and survive save/backup/restore. Chinese is the default UI; the Chinese/English selector remembers a separate local preference, without changing paper or conversation content, model preferences or backup formats. Native editing menus and exit prompts follow the chosen language. Existing profile and app identities stay stable across the rename.
+English: Each highlight may use a preset or custom color. Color changes preserve the source anchor/version, current Q&A and in-flight replacement request, and survive save/backup/restore. Chinese is the default UI; the eight-language selector remembers a separate local preference, without changing paper or conversation content, model preferences or backup formats. Native editing menus follow the chosen language; some system diagnostics fall back to English. Existing profile and app identities stay stable across the rename.
 
 15. 首页显示当前 API 与配置入口；模型列表通过用户填写的地址获取，支持兼容接口与 Claude 分页、筛选及手动兜底。获取不生成回答、不保存或启用配置，也不把旧密钥带到新地址。
 16. PDF 上限调整为 150 MiB / 5000 页 / 1000 万提取字符；读取显示进度并可取消。画布和页面几何按需准备，滚动用二分定位，关闭仍等待保存。
@@ -245,3 +245,65 @@ Chat reading preferences store only local conversation/reply identifiers and dis
 首页展示批注问答、引用批注、并排讨论与快速翻译的四张真实客户端截图。截图在独立演示资料中拍摄，使用虚构 PDF 和本地模拟回复，部分裁切以突出操作区域。`docs/images/` 只开放明确列出的四个 PNG；画面审阅、格式及审阅哈希检查见 [仓库规则](REPOSITORY_POLICY.md)。
 
 The homepage shows four actual client screenshots covering annotation Q&A, annotation references, side-by-side discussion and quick translation. They use an isolated profile, a fictional PDF and local mock responses, with some captures cropped for clarity. Only the four named PNG files are allowed under `docs/images/`; see [Repository policy](REPOSITORY_POLICY.md) for visual review, format and reviewed-hash checks.
+
+## 图片批注问答 / Image Q&A annotations (0.1.26)
+
+在 PDF 工具栏点击“框选图片”，选中整幅图及坐标、图例或图注，在紧凑批注中点击“圈出疑问”。默认画圈，也可选择画笔、颜色和粗细，支持撤销与清空。保留圈画后输入问题，选择已保存的视觉模型连接即可提问。点击缩略图可临时放大，默认侧栏宽度约 280–320px；窄窗口移到页面下方。批注可拖动，用 × 或 Esc 收起，再点原图选区重新打开。
+
+Choose Select image in the PDF toolbar, include the figure with its axes, legend or caption, then choose Circle a detail in the compact annotation. Circle is the default; pen, colors, widths, undo and clear are available. Keep the markings, enter a question and select a saved image-capable connection. Click the thumbnail to enlarge it. The default panel is about 280–320px wide and moves below the page in narrow windows. Drag the panel or close it with × or Esc; click its source region to reopen it.
+
+只有主动发送图片问题时，才向所选连接发送本次原始配色选图、圈画、问题及所属文档的文字资料；小文件默认全文，大文件按需引用，不带聊天及其他批注。重新提问成功后才替换原问答和圈画。明确只支持文字的连接可在设置中标记并提前阻止请求；未知能力依据上游明确错误提示，不会自动发送测试图片或产生探测调用。
+
+Only sending an image question transmits its original-color crop, markings, question and source-document text to the selected connection. Small files use full text and large files use relevant excerpts by default, without chat or other annotations. A successful re-question replaces the old Q&A and markings; failures keep them. Mark known text-only connections in settings to block image requests. Unknown capabilities are classified from explicit upstream errors, without automatic probe images or billable test calls.
+
+保存和备份只新增文档关联、页码、相对选区及矢量笔迹，不为每条图片批注持久保存截图或 Base64。重新打开时从已保存 PDF 还原选图；原 PDF 仍按原附件机制保留。派生原色选图采用最多 32 MiB / 24 项的临时缓存，发送图片最多 1 MiB、最长边 1800px、200 万像素；活动预览、合成画布与 PDF 页面内存另计，收起或关闭后释放相应资源。图片批注备份请用 v0.1.26 或更新版本恢复。
+
+Storage and backups add only the document association, page, normalized region and vector markings, without a persisted screenshot or Base64 copy for each annotation. Images are regenerated from the saved PDF; the original PDF remains an attachment. Derived original-color crops use a transient cache capped at 32 MiB / 24 entries. A transmitted image is capped at 1 MiB, 1800px per edge and two million pixels. Active previews, compositing canvases and PDF page memory are separate and released when no longer needed. Restore image-annotation backups with v0.1.26 or newer.
+
+模块职责：FigureSelectionLayer 管理页内选区；FigureDrawingEditor 管理矢量圈画；FigureAnnotationPanel 复用现有批注编辑、重问与保存流程；adapters/figure 复用已加载 PDF 按选区渲染和压缩；server/vision 校验有界内联图片并向三种既有协议映射；持久化编解码只保存坐标和笔迹。所有真实图片请求沿用现有本机代理和凭证管理。
+
+Module responsibilities: FigureSelectionLayer manages page regions; FigureDrawingEditor manages vector markings; FigureAnnotationPanel reuses annotation editing, re-questioning and persistence. The figure adapter renders bounded crops from the loaded PDF. server/vision validates bounded inline images and maps them to the three existing protocols. Storage codecs retain coordinates and vectors. Image requests use existing local proxy and credential handling.
+
+## 图片快捷键与聊天设置 / Image shortcut and chat settings (0.1.27)
+
+新增 Ctrl+Alt+A 图片框选快捷键，在 PDF 原排版中按下即可开始框选，再按一次或按 Esc 取消；输入文字、使用输入法和设置弹窗期间不会触发。聊天模式左下角提供独立“设置”入口，可直接切换中文 / English，查看快捷键并进入共享模型/API 连接管理；语言选择在本机记住。
+
+Ctrl+Alt+A starts image selection in the original PDF view; press again or Esc to cancel. It does not trigger while editing text, composing input or using settings dialogs. A dedicated Settings entry at the bottom left of chat provides Chinese/English selection, a shortcut reminder and shared model/API connection management. The interface language is remembered locally.
+
+## 多语言与批注缩放 / Languages and resizing (0.1.28)
+
+语言选择框改为单层轻边框，去掉原来的棕色焦点框。界面新增西班牙语、日语、繁体中文、德语、阿拉伯语和法语，含简体中文及英语共八种语言；主要操作界面本地化，部分帮助和技术诊断回退英文。阿拉伯语界面从右向左排列，PDF、图表、公式、代码及原始内容保留各自方向。语言选择仅保存在本机，不会翻译或改写论文、聊天与批注正文。
+
+The language picker uses one subtle border, replacing the brown focus frame. Spanish, Japanese, Traditional Chinese, German, Arabic and French join Simplified Chinese and English. Core controls are localized; some help and technical diagnostics fall back to English. Arabic uses a right-to-left interface while PDFs, figures, formulas, code and source content retain their own direction. Language preferences stay local and do not translate or rewrite papers, conversations or annotation content.
+
+文字批注、图片问答和翻译浮窗可通过四边、四角拖拽调整大小，内容溢出时在框内滚动；保留标题栏拖动。双击缩放边角恢复默认大小，聚焦缩放手柄后可用方向键微调（Shift 加快）。窗口变小时约束尺寸，保持关闭按钮可见。尺寸只保留在当前打开的浮窗，不增加图片缓存或请求。
+
+Text annotations, image Q&A and translation popups can be resized from every edge and corner, with internal scrolling and existing title-bar dragging. Double-click a handle to reset; focus it and use arrow keys for adjustments, with Shift for larger steps. Viewport limits keep the close control reachable. Sizes remain only in the open popup and create no image cache or model request.
+
+主要界面翻译为静态本机字库，繁体字库仅转换程序自有模板，插值中的文件名与用户内容原样保留。新增语言没有自动调用翻译 API。
+
+Core translations are static local catalogs. The Traditional Chinese catalog converts only application-owned templates; interpolated filenames and user content remain verbatim. Language changes make no translation API call.
+
+## 图片批注占位修复 / Image dock layout fix (0.1.31)
+
+修复图片批注拖走后，PDF 底部或侧边仍留下一大块空白的问题。拖动标题栏或缩放边角时自动改为浮窗，立即释放原停靠占位；PDF 恢复完整阅读区域。标题栏新增图钉按钮，可手动停靠或取消停靠。同一文档的本次阅读中，关闭再打开图片批注会继续使用浮窗模式；重新停靠会恢复默认尺寸和停靠位置。问答、圈画与编辑草稿保持原样。
+
+Fixes the blank area left below or beside the PDF after moving an image annotation away. Dragging its title bar or resizing switches it to a floating popup and releases the reserved dock space, restoring the full reading area. A pin button also docks or undocks it explicitly. Reopening image annotations in the same document session retains floating mode; docking restores default size and placement. Q&A, markings and editing drafts are preserved.
+
+停靠状态仅在当前阅读器实例的界面内存中保留，不写入文档、批注记录、备份或模型请求。浮窗占位节点脱离文档流，不截获 PDF 上的鼠标操作；圈画对话框仍保持可交互。
+
+Docking state lives only in the current reader instance, outside documents, annotation records, backups and model requests. A floating host is outside document flow and does not intercept PDF pointer input; the drawing dialog stays interactive.
+
+
+## AI 与翻译语言联动 / AI and translation languages
+
+聊天、文字批注和图片批注的默认 AI 回答语言跟随界面语言，八种语言均生效。默认翻译目标和默认翻译提示词也跟随界面；在翻译设置中选择“自定义目标语言”可固定译文语言。自己写的回答偏好和翻译提示词原样保留；回答偏好或本次问题中明确指定的语言优先。旧版内置的固定中文默认提示词自动按当前界面处理，不批量改写保存的连接。切换仅影响新请求；已发出的请求、失败重试、旧回答和已有译文保持原样。语言切换本身不会发起模型调用，也不会翻译或改写文档及批注正文。
+
+Default AI answer languages for chat, text annotations and image Q&A follow all eight interface languages. The default translation target and built-in translation prompt follow the interface too; choose Custom target language to keep a fixed target. Custom response preferences and translation prompts remain verbatim, with explicit language requests in response preferences or the current question taking priority. Exact legacy built-in Chinese defaults are resolved for the current interface without bulk-editing saved connections. Changes apply to fresh requests; sent requests, failed retries, existing answers and existing translations remain unchanged. Changing language makes no model request and does not translate or rewrite documents or annotation content.
+
+
+## 批注操作布局 / Annotation action layout
+
+修复批注“重新提问”时发送按钮紧贴输入框、遮挡焦点外圈的问题，输入区与操作区保留明确间距。文字批注和图片问答的发送、编辑、重问及重试操作栏按可用宽度换行，图标保持清晰，长错误信息自动换行；拖动改变批注大小或拉高输入框后，按钮仍在输入区下方。修复窄窗口下日语、德语等界面中模型/翻译设置的底部按钮和语言选择框溢出。
+
+Fixes the Send and replace button touching the re-ask input and covering its focus ring, with a clear gap between the input and its actions. Send, edit, re-ask and retry actions in text and image annotations wrap to fit the available width while icons retain their size and long error messages wrap inside the panel. Actions stay below the input after resizing a popup or increasing the input height. Also fixes narrow-dialog overflow in model and translation footers and the language picker, including Japanese and German interfaces.

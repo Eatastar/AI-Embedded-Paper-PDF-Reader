@@ -17,8 +17,12 @@ import type { SearchFocus } from '../domain/reader-navigation';
 import { pdfLinkAt, readPdfLinks, type PdfLink } from '../adapters/pdf-links';
 import { AnnotatedAnswer } from './AnnotatedAnswer';
 import type { AnnotatedAnswerProps } from './AnnotatedAnswer';
+import type { FigureRect } from '../domain/figure';
+import { FigureSelectionLayer } from './FigureSelectionLayer';
 
 interface PdfAnnotatedPageProps extends AnnotatedAnswerProps {
+  figureSelecting?: boolean;
+  onSelectFigure?: (rect: FigureRect) => void;
   pdf: PDFDocumentProxy;
   pageNumber: number;
   availableWidth: number;
@@ -34,7 +38,7 @@ interface PdfAnnotatedPageProps extends AnnotatedAnswerProps {
   onPdfLink: (link: PdfLink) => void;
 }
 
-export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appearance, compareOriginal, onPageReady, queue, scrollViewport, maxPixels = 16_000_000, search, onSearchLocated, onPdfLink, ...annotationProps }: PdfAnnotatedPageProps) {
+export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appearance, compareOriginal, onPageReady, queue, scrollViewport, maxPixels = 16_000_000, search, onSearchLocated, onPdfLink, figureSelecting = false, onSelectFigure, ...annotationProps }: PdfAnnotatedPageProps) {
   useLocale();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const detailRef = useRef<HTMLCanvasElement>(null);
@@ -170,13 +174,16 @@ export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appear
     {!readyKey && !renderError && <div className="document-render-status" role="status">{t("正在显示原页面…")}</div>}
     {renderError && <div className="document-reader-warning" role="alert">{t(renderError)}</div>}
     {colorError && <div className="document-reader-warning" role="status">{t("这一页暂时无法换色，可切换“可批注文本”，或主动选择“原色对照”查看。")}</div>}
-    <div ref={presentationRef} className="document-page-presentation"><AnnotatedAnswer {...annotationProps} onSourceClick={point => {
+    <div ref={presentationRef} className="document-page-presentation"><AnnotatedAnswer {...annotationProps} annotations={annotationProps.annotations.filter(annotation => !annotation.figure)} onSourceClick={point => {
       const stage = stageRef.current, start = linkClickStart.current;
       if (!readyKey || !stage || !start || Math.hypot(point.x - start.x, point.y - start.y) > 4) return false;
       const rect = stage.getBoundingClientRect(), scaleX = stage.offsetWidth / rect.width, scaleY = stage.offsetHeight / rect.height;
       const link = pdfLinkAt(links, (point.x - rect.left) * scaleX, (point.y - rect.top) * scaleY);
-      if (!link) return false;
-      onPdfLink(link); return true;
+      if (link) { onPdfLink(link); return true; }
+      const x = (point.x - rect.left) / rect.width, y = (point.y - rect.top) / rect.height;
+      const figure = annotationProps.annotations.slice().reverse().find(annotation => { const r = annotation.figure?.rect; return r && annotation.deletedAt === undefined && x >= r.x && x <= r.x + r.width && y >= r.y && y <= r.y + r.height; });
+      if (figure) { annotationProps.onOpen(figure.id); return true; }
+      return false;
     }} contentReadyKey={readyKey} contentClassName="document-page-annotator" content={
       <div ref={stageRef} className="document-page-stage" onPointerDown={event => { linkClickStart.current = event.button === 0 ? { x: event.clientX, y: event.clientY } : null; }} onPointerMove={event => {
         const stage = event.currentTarget, rect = stage.getBoundingClientRect();
@@ -186,6 +193,7 @@ export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appear
         <canvas ref={canvasRef} className="document-page-canvas" aria-label={t("PDF 第 {0} 页原页面", [pageNumber])} role="img" />
         <canvas ref={detailRef} className="document-page-detail" aria-hidden="true" />
         <div ref={textRef} />
+        {readyKey > 0 && onSelectFigure && <FigureSelectionLayer enabled={figureSelecting} annotations={annotationProps.annotations} openedId={annotationProps.openAnnotationId} onSelect={onSelectFigure} onOpen={annotationProps.onOpen} onNotify={annotationProps.onNotify} />}
         {readyKey > 0 && <div className="pdf-link-accessibility">{links.map(link => <button type="button" key={link.id} className="pdf-link-keyboard" style={link.rect} aria-label={link.url ? t('打开链接：{0}', [link.url]) : t('跳转到文内引用：{0}', [link.label])} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); onPdfLink(link); } }} />)}</div>}
       </div>
     } /></div>

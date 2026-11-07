@@ -1,3 +1,4 @@
+import type { FigureSelection, FigureStroke } from './figure';
 export type GenerationStatus = 'complete' | 'streaming' | 'error' | 'interrupted';
 export type AnnotationStatus = 'draft' | 'generating' | 'answered' | 'error' | 'interrupted' | 'noted';
 
@@ -43,6 +44,8 @@ export interface AnnotationReference {
 }
 
 export interface Annotation {
+  figure?: FigureSelection;
+  modelLabel?: string;
   id: string;
   conversationId: string;
   messageId: string;
@@ -70,6 +73,7 @@ export interface Annotation {
 
 /** A pending replacement. The current successful exchange stays intact until commit. */
 export interface AnnotationAttempt {
+  figureStrokes?: FigureStroke[];
   question: string;
   answer: string;
   status: 'draft' | 'generating' | 'error' | 'interrupted';
@@ -116,6 +120,7 @@ export interface Workspace {
 export type ApiFormat = 'openai-chat' | 'openai-responses' | 'anthropic-messages';
 
 export interface ModelProfile {
+  imageInput?: 'auto' | 'supported' | 'unsupported';
   id: string;
   name: string;
   apiFormat: ApiFormat;
@@ -127,6 +132,7 @@ export interface ModelProfile {
 }
 
 export interface ProfileInput {
+  imageInput?: 'auto' | 'supported' | 'unsupported';
   id?: string;
   name: string;
   apiFormat: ApiFormat;
@@ -139,6 +145,7 @@ export interface ProfileInput {
 }
 
 export interface ModelSettings {
+  imageInput?: 'auto' | 'supported' | 'unsupported';
   mode: 'demo' | 'api';
   baseURL: string;
   model: string;

@@ -2,7 +2,7 @@ import { t } from '../i18n/locale';
 import { useLocale } from '../i18n/react';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { ArrowLeft, ChevronLeft, ChevronRight, Columns2, Download, Eye, FolderOpen, Maximize2, Minus, PanelLeft, Plus, Settings2, SlidersHorizontal, X } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Columns2, Crop, Download, Eye, FolderOpen, Maximize2, Minus, PanelLeft, Plus, Settings2, SlidersHorizontal, X } from 'lucide-react';
 import type { ReaderAppearance } from '../domain/reader';
 import { LanguageSelector } from './LanguageSelector';
 import { ReaderAppearancePanel } from './ReaderAppearancePanel';
@@ -10,6 +10,7 @@ import type { DocumentContextMode } from '../domain/document-context';
 import { TranslationButton } from './Translation';
 
 interface Props {
+  figureSelecting?: boolean; onToggleFigure?: () => void;
   onReturnFromLink?: () => void;
   name: string; kind: 'pdf' | 'text'; pageCount: number; pageIndex: number; pageInput: string;
   pageInputRef: RefObject<HTMLInputElement | null>; onPageInput: (value: string) => void; onCommitPage: () => void; onPage: (index: number) => void;
@@ -60,6 +61,7 @@ export function ReaderToolbar(props: Props) {
       </div>
       {props.kind === 'pdf' && props.view === 'original' && <div className="document-zoom-controls reader-toolbar-zoom">{zoomControls}</div>}
       <TranslationButton />
+      {props.kind === 'pdf' && props.view === 'original' && props.onToggleFigure && <button type="button" className="reader-figure-button" aria-pressed={props.figureSelecting} aria-label={t(props.figureSelecting ? '取消框选图片' : '框选图片提问')} aria-keyshortcuts="Control+Alt+A" title={`${t(props.figureSelecting ? '取消框选图片' : '框选整图，再圈出疑问')} · Ctrl+Alt+A`} onClick={props.onToggleFigure}><Crop size={15} /><span>{t(props.figureSelecting ? '取消框选' : '框选图片')}</span></button>}
       <button ref={triggerRef} type="button" className="document-icon-button" aria-label={t("阅读设置")} title={t("阅读模式、配色与更多")} aria-controls={id} aria-expanded={settingsOpen} onClick={() => setSettingsOpen(value => !value)}><SlidersHorizontal size={18} /></button>
       <button type="button" className="document-icon-button" aria-label={props.focused ? t("显示聊天") : t("专注阅读")} title={props.focused ? t("显示聊天") : t("专注阅读")} onClick={props.onToggleFocus}>{props.focused ? <Columns2 size={18} /> : <Maximize2 size={18} />}</button>
       <button type="button" className="document-icon-button" aria-label={t("关闭文档阅读")} title={t("关闭文档阅读")} onClick={props.onClose}><X size={19} /></button>

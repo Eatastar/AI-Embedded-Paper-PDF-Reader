@@ -1,4 +1,5 @@
-import { t } from '../i18n/locale';
+import { t, getLocale } from '../i18n/locale';
+import { localizedResponsePrompt } from '../domain/response-language';
 import { useLocale } from '../i18n/react';
 import { LanguageSelector } from './LanguageSelector';
 import { useEffect, useRef, useState } from 'react';
@@ -14,7 +15,8 @@ import { modelListEndpoint } from '../../server/model-endpoint.mjs';
 function editProfile(profile: ModelProfile): ProfileInput {
   return {
     id: profile.id, name: profile.name, apiFormat: profile.apiFormat,
-    baseURL: profile.baseURL, model: profile.model, systemPrompt: profile.systemPrompt,
+    baseURL: profile.baseURL, model: profile.model, systemPrompt: localizedResponsePrompt(profile.systemPrompt, getLocale()),
+    ...(profile.imageInput ? { imageInput: profile.imageInput } : {}),
   };
 }
 
@@ -140,7 +142,7 @@ export function SettingsDialog({ settings, initialIntent = 'configure', purpose 
       <button type="button" className="icon-button" aria-label={t("关闭设置")} onClick={onClose}><X size={20} /></button>
     </header>
 
-    <div className="app-preferences"><span>{t("界面语言")}</span><LanguageSelector /></div><p className="field-help language-scope">{t("切换只影响界面，不会改写论文、对话或回答偏好。")}</p>
+    <div className="app-preferences"><span>{t("界面语言")}</span><LanguageSelector /></div><p className="field-help language-scope">{t('AI 默认回答和翻译目标跟随界面语言；自定义语言优先，已有内容不会被改写。')}</p>
     <section className="saved-profiles" aria-labelledby="saved-profiles-title">
       <div className="profile-section-heading"><h3 id="saved-profiles-title">{t("已保存的连接")}</h3><button type="button" className="profile-text-button" disabled={Boolean(busy)} onClick={() => choosePreset('other')}><Plus size={14} />{t("新建")}</button></div>
       {settings.profiles.length === 0 && <p className="profile-empty">{t("还没有保存的模型，选一个下方模板开始。")}</p>}
@@ -206,7 +208,8 @@ export function SettingsDialog({ settings, initialIntent = 'configure', purpose 
         {(!models.length || manualModel) && <div id="manual-model-field"><label className="field-label">{t("调用模型（手动填写）")}<input className="field-input" value={form.model} required onChange={e => setForm({ ...form, model: e.target.value })} placeholder={t("填写服务商提供的准确模型 ID")} autoComplete="off" /></label><p className="field-help">{t("这是 API 接受的模型名称，不是本地显示名称。")}</p></div>}
         <p className="field-help profile-storage-help">{settings.persistence === 'encrypted' ? t("密钥使用本机系统加密保存，重启后可继续使用。") : settings.persistence === 'configuration' ? t("连接配置会保存在本机；密钥仅本次运行有效，重启后需重新填写。") : t("当前只能在本次运行中保留连接和密钥，退出后需重新填写。")}{t("密钥不会进入聊天记录或聊天备份。")}</p>
         {settings.storageWarning && <p className="profile-key-notice">{t(settings.storageWarning)}</p>}
-        {purpose !== 'translation' && <label className="field-label">{t("回答偏好")}<textarea className="field-input" rows={3} value={form.systemPrompt} onChange={e => setForm({ ...form, systemPrompt: e.target.value })} placeholder={t("例如：用中文回答，解释清楚，适当举例。")} /></label>}
+        <label className="field-label">{t('图片理解')}<SettingsSelect value={form.imageInput || 'auto'} onChange={event => setForm({ ...form, imageInput: event.target.value as ProfileInput['imageInput'] })}><option value="auto">{t('自动：按接口返回判断')}</option><option value="supported">{t('支持图片')}</option><option value="unsupported">{t('不支持图片（仅文字）')}</option></SettingsSelect></label><p className="field-help">{t('不确定时保留自动；明确只支持文字时可提前阻止图片请求。')}</p>
+        {purpose !== 'translation' && <><label className="field-label">{t("回答偏好")}<textarea className="field-input" rows={3} value={localizedResponsePrompt(form.systemPrompt, getLocale())} onChange={e => setForm({ ...form, systemPrompt: e.target.value })} placeholder={t("例如：解释清楚，适当举例。")} /></label><p className="field-help">{t('默认按界面语言回答；在偏好或本次问题中指定其他语言时，按你的要求回答。')}</p></>}
       </fieldset>
       {error && <p className="form-error" role="alert">{t(error)}</p>}
       <footer className="dialog-footer profile-dialog-footer"><span>{t("保存和切换都不会发送问题")}</span><div><button type="button" className="profile-text-button" onClick={onClose} disabled={Boolean(busy)}>{t("取消")}</button><button className="primary-button" disabled={Boolean(busy)} type="submit"><PlugZap size={16} />{busy === 'save' ? t("保存中…") : purpose === 'translation' ? t("保存并用于翻译") : t("保存并使用")}</button></div></footer>

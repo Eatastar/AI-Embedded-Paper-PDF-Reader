@@ -12,9 +12,9 @@ A desktop reader built around local PDFs, for working through a paper's concepts
 
 [下载 / Downloads](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases) · [本版发布说明 / Release notes](docs/RELEASE_NOTES.md) · [隐私 / Privacy](docs/PRIVACY.md) · [版本记录 / Changelog](docs/CHANGELOG.md) · [项目总纲 / Project outline](docs/PROJECT.md)
 
-当前源码版本：**0.1.25**。Windows x64 客户端请以 Releases 中实际发布的完整 ZIP 为准。中文 / English 界面均可在程序内切换，选择保存在本机。
+当前源码版本：**0.1.31**。Windows x64 客户端请以 Releases 中实际发布的完整 ZIP 为准。支持八种界面语言，可在程序内切换并在本机记忆。
 
-Current source version: **0.1.25**. Download the complete Windows x64 ZIP actually published on Releases. Switch between Chinese and English in the app; your choice is remembered locally.
+Current source version: **0.1.31**. Download the complete Windows x64 ZIP actually published on Releases. Choose from eight interface languages in the app; your choice is remembered locally.
 
 ## 精读场景 / Close-reading workflows
 
@@ -61,8 +61,27 @@ For foreign-language papers and books, select a word or passage and press **Alt+
 | **阅读本地 PDF**：保留论文原排版，支持连续滚动、单页阅读、目录、全文搜索、手势缩放和阅读位置记忆。 | **Read local PDFs** with their original layout, continuous or single-page reading, contents, full-text search, pinch zoom and reading position memory. |
 | **自定义纸张颜色**：调节 PDF 纸张和文字颜色，阅读区及工具栏随之配色；保留彩图并可切回原色对照。减少刺眼白底，方便畏光或对明亮屏幕敏感的读者按个人感受调整。 | **Customize paper colors**: adjust PDF paper and text colors, with matching reader controls and margins. Preserve colored figures and compare with original colors. Reduce bright white backgrounds and tailor the display for readers with light sensitivity, including photophobia. |
 | **在批注中询问 AI**：划选原文就地提问，问答与来源文字绑定；收起后保留高亮，点击即可重开。支持自选高亮颜色、重新提问，也可只写普通笔记。 | **Ask AI in annotations**: select a passage and ask in place, keeping the Q&A attached to its source. Close the panel and click the highlight to reopen it. Choose highlight colors, ask again or write a plain note. |
+| **图片批注问答**：框选图表，默认画圈或切换画笔标出疑问，使用自选视觉 API 在原图旁提问；选区、圈画与问答保存到本机。 | **Image Q&A annotations**: select a figure, circle or draw on a detail, and ask your chosen vision API beside the source. Region, markings and Q&A are saved locally. |
 | **划词翻译**：选中单词或段落，右键或按 Alt+1 即可翻译，在原文旁查看译文。可独立选择 API、自定义提示词与快捷键；只发送选段及翻译提示词，译文可保留为普通批注。 | **Translate selected text**: select a word or passage and right-click or press Alt+1 to see its translation beside the source. Choose an independent API, customize the prompt and shortcut, and optionally keep the result as a plain note. Only the selection and translation prompt are sent. |
 | **按需打开聊天模式**：需要进一步讨论时展开聊天，收起后继续阅读，保留当前文档、位置和缩放。聊天回答中的文字也可添加批注。 | **Open chat when needed** for a longer discussion, then return to the same document, position and zoom. Text in AI answers can also be annotated. |
+
+聊天模式左下角“设置”可切换界面语言、查看快捷键并管理模型/API 连接。
+
+Use Settings at the bottom left of chat to choose the interface language, view shortcuts and manage model/API connections.
+
+## 图片提问 / Ask about a figure
+
+在 PDF 工具栏点击“框选图片”或按 **Ctrl+Alt+A**，选中整幅图及坐标、图例或图注，在紧凑批注中点击“圈出疑问”。默认画圈，也可选择画笔、颜色和粗细，支持撤销与清空。保留圈画后输入问题，选择已保存的视觉模型连接即可提问。点击缩略图可临时放大，默认侧栏宽度约 280–320px；窄窗口移到页面下方。批注可拖动，用 × 或 Esc 收起，再点原图选区重新打开。
+
+Choose Select image in the PDF toolbar or press **Ctrl+Alt+A**, include the figure with its axes, legend or caption, then choose Circle a detail in the compact annotation. Circle is the default; pen, colors, widths, undo and clear are available. Keep the markings, enter a question and select a saved image-capable connection. Click the thumbnail to enlarge it. The default panel is about 280–320px wide and moves below the page in narrow windows. Drag the panel or close it with × or Esc; click its source region to reopen it.
+
+只有主动发送图片问题时，才向所选连接发送本次原始配色选图、圈画、问题及所属文档的文字资料；小文件默认全文，大文件按需引用，不带聊天及其他批注。重新提问成功后才替换原问答和圈画。明确只支持文字的连接可在设置中标记并提前阻止请求；未知能力依据上游明确错误提示，不会自动发送测试图片或产生探测调用。
+
+Only sending an image question transmits its original-color crop, markings, question and source-document text to the selected connection. Small files use full text and large files use relevant excerpts by default, without chat or other annotations. A successful re-question replaces the old Q&A and markings; failures keep them. Mark known text-only connections in settings to block image requests. Unknown capabilities are classified from explicit upstream errors, without automatic probe images or billable test calls.
+
+保存和备份只新增文档关联、页码、相对选区及矢量笔迹，不为每条图片批注持久保存截图或 Base64。重新打开时从已保存 PDF 还原选图；原 PDF 仍按原附件机制保留。派生原色选图采用最多 32 MiB / 24 项的临时缓存，发送图片最多 1 MiB、最长边 1800px、200 万像素；活动预览、合成画布与 PDF 页面内存另计，收起或关闭后释放相应资源。图片批注备份请用 v0.1.26 或更新版本恢复。
+
+Storage and backups add only the document association, page, normalized region and vector markings, without a persisted screenshot or Base64 copy for each annotation. Images are regenerated from the saved PDF; the original PDF remains an attachment. Derived original-color crops use a transient cache capped at 32 MiB / 24 entries. A transmitted image is capped at 1 MiB, 1800px per edge and two million pixels. Active previews, compositing canvases and PDF page memory are separate and released when no longer needed. Restore image-annotation backups with v0.1.26 or newer.
 
 ## 独立批注与聊天 / Independent annotations and chat
 
@@ -175,3 +194,26 @@ Original project code uses [MIT](LICENSE), with third-party licenses retained. S
 滚动时保留翻译框，连续阅读暂留当前翻译的来源页，滚远后仍可保留为原位置的批注。普通框外点击、Esc 或 × 关闭，拖动滚动条不会关闭。
 
 The translation panel remains open while scrolling, retaining its source page in continuous reading so it can still be saved as a note at the original passage. Ordinary outside click, Esc or × closes it; dragging the scrollbar does not.
+
+## 多语言与浮窗大小 / Languages and popup sizes
+
+语言选择框改为单层轻边框，去掉原来的棕色焦点框。界面新增西班牙语、日语、繁体中文、德语、阿拉伯语和法语，含简体中文及英语共八种语言；主要操作界面本地化，部分帮助和技术诊断回退英文。阿拉伯语界面从右向左排列，PDF、图表、公式、代码及原始内容保留各自方向。语言选择仅保存在本机，不会翻译或改写论文、聊天与批注正文。
+
+The language picker uses one subtle border, replacing the brown focus frame. Spanish, Japanese, Traditional Chinese, German, Arabic and French join Simplified Chinese and English. Core controls are localized; some help and technical diagnostics fall back to English. Arabic uses a right-to-left interface while PDFs, figures, formulas, code and source content retain their own direction. Language preferences stay local and do not translate or rewrite papers, conversations or annotation content.
+
+文字批注、图片问答和翻译浮窗可通过四边、四角拖拽调整大小，内容溢出时在框内滚动；保留标题栏拖动。双击缩放边角恢复默认大小，聚焦缩放手柄后可用方向键微调（Shift 加快）。窗口变小时约束尺寸，保持关闭按钮可见。尺寸只保留在当前打开的浮窗，不增加图片缓存或请求。
+
+Text annotations, image Q&A and translation popups can be resized from every edge and corner, with internal scrolling and existing title-bar dragging. Double-click a handle to reset; focus it and use arrow keys for adjustments, with Shift for larger steps. Viewport limits keep the close control reachable. Sizes remain only in the open popup and create no image cache or model request.
+
+## 图片批注停靠 / Image annotation docking
+
+修复图片批注拖走后，PDF 底部或侧边仍留下一大块空白的问题。拖动标题栏或缩放边角时自动改为浮窗，立即释放原停靠占位；PDF 恢复完整阅读区域。标题栏新增图钉按钮，可手动停靠或取消停靠。同一文档的本次阅读中，关闭再打开图片批注会继续使用浮窗模式；重新停靠会恢复默认尺寸和停靠位置。问答、圈画与编辑草稿保持原样。
+
+Fixes the blank area left below or beside the PDF after moving an image annotation away. Dragging its title bar or resizing switches it to a floating popup and releases the reserved dock space, restoring the full reading area. A pin button also docks or undocks it explicitly. Reopening image annotations in the same document session retains floating mode; docking restores default size and placement. Q&A, markings and editing drafts are preserved.
+
+
+## AI 与翻译语言联动 / AI and translation languages
+
+聊天、文字批注和图片批注的默认 AI 回答语言跟随界面语言，八种语言均生效。默认翻译目标和默认翻译提示词也跟随界面；在翻译设置中选择“自定义目标语言”可固定译文语言。自己写的回答偏好和翻译提示词原样保留；回答偏好或本次问题中明确指定的语言优先。旧版内置的固定中文默认提示词自动按当前界面处理，不批量改写保存的连接。切换仅影响新请求；已发出的请求、失败重试、旧回答和已有译文保持原样。语言切换本身不会发起模型调用，也不会翻译或改写文档及批注正文。
+
+Default AI answer languages for chat, text annotations and image Q&A follow all eight interface languages. The default translation target and built-in translation prompt follow the interface too; choose Custom target language to keep a fixed target. Custom response preferences and translation prompts remain verbatim, with explicit language requests in response preferences or the current question taking priority. Exact legacy built-in Chinese defaults are resolved for the current interface without bulk-editing saved connections. Changes apply to fresh requests; sent requests, failed retries, existing answers and existing translations remain unchanged. Changing language makes no model request and does not translate or rewrite documents or annotation content.

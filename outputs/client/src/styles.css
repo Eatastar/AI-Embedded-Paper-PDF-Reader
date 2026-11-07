@@ -68,6 +68,14 @@ button svg { flex-shrink: 0; }
 .backup-actions button:hover { background: var(--ls-hover); color: var(--ls-text); }
 .sidebar-settings { display: flex; align-items: center; gap: 10px; border: 0; background: transparent; padding: 11px; width: 100%; text-align: left; font-size: 12px; color: var(--ls-text); border-radius: 6px; }
 .sidebar-settings:hover { background: var(--ls-hover); }
+.app-settings-dialog { width: min(480px, calc(100vw - 32px)); }
+.app-shortcuts { border-top: 1px solid var(--ls-border); margin-top: 24px; padding-top: 18px; }
+.app-shortcuts h3 { font-size: 12px; font-weight: 600; margin: 0 0 15px; }
+.app-shortcuts > div { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12px; }
+.app-shortcuts kbd { font: inherit; font-size: 11px; padding: 4px 7px; border: 1px solid var(--ls-border); border-radius: 5px; background: var(--ls-surface); white-space: nowrap; }
+.app-model-settings { display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 20px; padding: 12px; border: 1px solid var(--ls-border); border-radius: 7px; background: var(--ls-surface); color: var(--ls-text); font-size: 12px; text-align: left; }
+.app-model-settings:hover { background: var(--ls-hover); }
+.app-model-settings > svg:last-child { margin-left: auto; }
 .save-status { display: flex; align-items: center; gap: 6px; margin: 13px 11px 2px; color: var(--ls-muted); font-size: 10px; }
 .save-status > span { background: var(--ls-accent); height: 4px; width: 4px; border-radius: 50%; }
 .save-status.save-error { color: var(--ls-danger); }
@@ -361,10 +369,32 @@ button svg { flex-shrink: 0; }
 .backup-scope { display: flex; align-items: center; gap: 12px; font-size: 12px; margin-top: 20px; }
 .backup-scope select { border: 1px solid var(--ls-border); border-radius: 7px; color: var(--ls-ink); background: var(--ls-panel); font: inherit; padding: 8px 10px; }
 .language-preference { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; max-width: 100%; }
-.language-selector { display: inline-flex; align-items: center; gap: 6px; padding: 4px 7px; border: 1px solid #e7d2a2; border-radius: 7px; background: #fffaf0; color: #75572e; font-size: 12px; }
+.language-selector { display: inline-flex; align-items: center; gap: 6px; padding: 4px 7px; border: 1px solid var(--ls-border); border-radius: 7px; background: var(--ls-panel); color: var(--ls-text); font-size: 12px; }
 .language-selector select { min-width: 90px; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; padding: 3px 2px; }
-.language-selector select:focus-visible { outline: 2px solid #bc8b3d; outline-offset: 3px; }
-.app-preferences { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 0 0 18px; font-size: 13px; color: #75572e; }
+.language-selector .settings-select { width: 112px; }
+.language-selector .settings-select > select.field-input { min-width: 0; min-height: 26px; margin: 0; border: 0; border-radius: 4px; padding: 2px 25px 2px 3px; outline: none; box-shadow: none; background: transparent; }
+.language-selector .settings-select-indicator { right: 4px; width: 17px; border: 0; background: transparent; }
+.language-selector:has(select:focus-visible) { border-color: var(--ls-muted); box-shadow: 0 0 0 2px var(--ls-surface); }
+html[dir=rtl] .language-selector .settings-select > select.field-input { padding-inline: 3px 25px; }
+html[dir=rtl] .language-selector .settings-select-indicator { right: auto; left: 4px; }
+html[dir=rtl] .settings-select > select.field-input { padding-inline: 12px 48px; }
+html[dir=rtl] .settings-select-indicator { right: auto; left: 0; border-left: 0; border-right: 1px solid var(--ls-border); }
+html[dir=rtl] .app-model-settings > svg:last-child { margin-left: 0; margin-right: auto; transform: scaleX(-1); }
+/* Documents, figure coordinates, code and formulas keep their own reading direction. */
+html[dir=rtl] .document-reader-body,html[dir=rtl] .document-reader-viewport,html[dir=rtl] .document-page-stage,html[dir=rtl] .drawing-stage,html[dir=rtl] .katex,html[dir=rtl] pre,html[dir=rtl] code,html[dir=rtl] input[type=url],html[dir=rtl] input[type=password],html[dir=rtl] .reader-toolbar-pages { direction: ltr; }
+html[dir=rtl] .reader-navigation { direction: rtl; }
+.annotation-markdown,.annotation-quote,.annotation-question-text,.chat-question-text,.user-message>div,.composer-input,.annotation-textarea { unicode-bidi: plaintext; }
+.annotation-markdown pre,.annotation-markdown .katex { unicode-bidi: isolate; direction: ltr; }
+.annotation-card-heading { min-width: 0; }.annotation-card-heading>strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.annotation-card-header-actions { flex-shrink: 0; }
+.app-preferences { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding: 0 0 18px; font-size: 13px; color: #75572e; }
+.app-preferences > span { min-width: 0; overflow-wrap: anywhere; }
+.app-preferences > .language-preference { margin-inline-start: auto; }
+/* Footer actions remain reachable when labels grow or a dialog becomes narrow. */
+.settings-dialog .dialog-footer { flex-wrap: wrap; align-items: center; }
+.settings-dialog .dialog-footer > span { min-width: 0; overflow-wrap: anywhere; }
+.settings-dialog .dialog-footer > div { min-width: 0; max-width: 100%; flex-wrap: wrap; justify-content: flex-end; margin-inline-start: auto; }
+.settings-dialog .dialog-footer :is(.primary-button, .profile-text-button) { min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.settings-dialog .dialog-footer button > svg { flex-shrink: 0; }
 .project-about { border-top: 1px solid #ead8b0; padding: 18px 0 4px; font-size: 12px; line-height: 1.75; color: #80633b; }
 .project-about summary { cursor: pointer; margin-bottom: 8px; }
 .project-about a { color: #886023; text-underline-offset: 3px; }

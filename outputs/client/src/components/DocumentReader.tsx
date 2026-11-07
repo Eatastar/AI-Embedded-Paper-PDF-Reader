@@ -4,7 +4,10 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import type { CSSProperties, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
-import type { DocumentAttachment, MessageVersion } from '../domain/types';
+import type { Annotation, DocumentAttachment, MessageVersion, ModelSettings } from '../domain/types';
+import type { FigureRect, FigureStroke } from '../domain/figure';
+import { clearFigureCache, type PreparedFigureImage } from '../adapters/figure';
+import { FigureAnnotationPanel } from './FigureAnnotationPanel';
 import { loadPdfDocument } from '../adapters/documents';
 import { bindPdfZoom } from '../adapters/pdf-zoom';
 import { PdfRenderQueue, readPdfOutline } from '../adapters/pdf-navigation';
@@ -31,6 +34,9 @@ import { MovableAnnotationPopup } from './MovableAnnotationPopup';
 import './documents.css';
 
 export interface DocumentReaderProps extends Omit<AnnotatedAnswerProps, 'messageId' | 'version' | 'plainText' | 'content' | 'contentReadyKey' | 'contentClassName'> {
+  figureSettings?: ModelSettings;
+  onFigureAsk?: (id: string, image: PreparedFigureImage, profileId?: string | null) => void;
+  onFigureStrokes?: (id: string, strokes: FigureStroke[]) => void;
   source: DocumentAttachment; onClose: () => void; focused: boolean; onToggleFocus: () => void;
   modelLabel?: string; onOpenModelSettings?: () => void; onBackup?: () => void; onOpenFile?: () => void;
   contextMode: DocumentContextMode; onContextMode: (value: DocumentContextMode) => void;
@@ -43,7 +49,7 @@ const ReaderPageSlot = memo(function ReaderPageSlot({ index, number, width, heig
   return <div ref={element => register(index, element)} data-reader-page={index} className="reader-page-slot" style={{ width }}><p className="reader-page-label">{t('第 {0} 页', [number])}{empty ? t(' · 无可提取文字，暂不支持 OCR') : ''}</p><div className="reader-page-body" style={{ width, height }}>{children || <div className="reader-page-placeholder" aria-label={t('第 {0} 页，滚动到此处时显示', [number])} />}</div></div>;
 });
 
-export function DocumentReader({ source, onClose, focused, onToggleFocus, modelLabel, onOpenModelSettings, onBackup, onOpenFile, contextMode, onContextMode, onLocation, ...annotationProps }: DocumentReaderProps) {
+export function DocumentReader({ source, onClose, focused, onToggleFocus, modelLabel, onOpenModelSettings, onBackup, onOpenFile, contextMode, onContextMode, onLocation, figureSettings, onFigureAsk, onFigureStrokes, ...annotationProps }: DocumentReaderProps) {
   useLocale();
   const translation = useTranslation();
   // Keep only the active translation's source page mounted so scrolling cannot
@@ -58,6 +64,11 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null), [loading, setLoading] = useState(source.kind === 'pdf');
   const [fileError, setFileError] = useState(''), [availableWidth, setAvailableWidth] = useState(700);
   const [navigationOpen, setNavigationOpen] = useState(false), [narrow, setNarrow] = useState(false);
+  const [figureSelecting, setFigureSelecting] = useState(false), [figureStacked, setFigureStacked] = useState(false);
+  const [figureDocked, setFigureDocked] = useState(true);
+  const openedFigure = annotationProps.annotations.find(annotation => annotation.id === annotationProps.openAnnotationId && annotation.figure && annotation.deletedAt === undefined);
+  useEffect(() => () => clearFigureCache(), []);
+  useEffect(() => { if (!figureSelecting) return; const cancel = (event: KeyboardEvent) => { if (event.key === 'Escape') { event.preventDefault(); setFigureSelecting(false); } }; document.addEventListener('keydown', cancel); return () => document.removeEventListener('keydown', cancel); }, [figureSelecting]);
   const [outline, setOutline] = useState<OutlineEntry[]>([]), [outlineLoading, setOutlineLoading] = useState(false);
   const [outlineError, setOutlineError] = useState(false), [outlineTruncated, setOutlineTruncated] = useState(false);
   const [geometry, setGeometry] = useState<PageGeometry>({});
@@ -67,6 +78,18 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
   const [search, setSearch] = useState<SearchFocus | null>(null), [navigationRevision, setNavigationRevision] = useState(0);
   const [queue] = useState(() => new PdfRenderQueue());
   const rootRef = useRef<HTMLElement>(null), viewportRef = useRef<HTMLDivElement>(null), textRef = useRef<HTMLElement>(null);
+  const toggleFigure = useCallback(() => { setFigureSelecting(value => !value); annotationProps.onOpen(null); }, [annotationProps.onOpen]);
+  useEffect(() => {
+    if (!pdf || view !== 'original' || !onFigureAsk || annotationProps.disabled) return;
+    const keydown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.repeat || event.isComposing || event.code !== 'KeyA' || !event.ctrlKey || !event.altKey || event.shiftKey || event.metaKey || event.getModifierState('AltGraph')) return;
+      if (document.querySelector('dialog[open], .reader-settings') || !rootRef.current?.getClientRects().length) return;
+      if (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+      event.preventDefault(); window.getSelection()?.removeAllRanges(); toggleFigure();
+    };
+    document.addEventListener('keydown', keydown);
+    return () => document.removeEventListener('keydown', keydown);
+  }, [pdf, view, onFigureAsk, annotationProps.disabled, toggleFigure]);
   const detachedPopup = useRef<HTMLDivElement>(null);
   const pageInputRef = useRef<HTMLInputElement>(null), slots = useRef(new Map<number, HTMLDivElement>());
   const registerSlot = useCallback((index: number, element: HTMLDivElement | null) => { if (element) slots.current.set(index, element); else slots.current.delete(index); }, []);
@@ -205,7 +228,7 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
     const note = annotationProps.annotations.find(a => a.id === id); if (!note) return;
     const prose = element.querySelector<HTMLElement>(`.annotation-answer[data-version-id="${CSS.escape(note.versionId)}"]`);
     if (!prose || (view === 'original' && !prose.querySelector('canvas[data-page-ready="true"]'))) return;
-    const range = readerAnnotationRange(prose, note.anchor); if (!range) return;
+    const range = note.figure ? prose.querySelector<HTMLElement>(`[data-figure-annotation="${CSS.escape(note.id)}"]`) : readerAnnotationRange(prose, note.anchor); if (!range) return;
     restore(); pendingNote.current = null;
     const rect = range.getBoundingClientRect(), viewport = element.getBoundingClientRect();
     element.scrollTop += rect.top - viewport.top - element.clientHeight / 2 + rect.height / 2;
@@ -223,6 +246,7 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
     const id = annotationProps.openAnnotationId;
     if (id === handledOpen.current) return; handledOpen.current = id;
     if (!id) { pendingNote.current = null; return; }
+    if (openedFigure) { pendingNote.current = id; if (view === 'text') switchView('original'); }
     if (openedPage >= 0 && openedPage !== position.current.pageIndex) { pendingNote.current = id; jump(openedPage, true); }
   }, [annotationProps.openAnnotationId, openedPage]);
   const changeZoom = (value: number, point?: { x: number; y: number }) => {
@@ -268,7 +292,7 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
   useEffect(() => {
     const root = rootRef.current, element = viewportRef.current; if (!root || !element) return;
     let width = 0;
-    const rootObserver = new ResizeObserver(([entry]) => setNarrow(entry.contentRect.width < 900)); rootObserver.observe(root);
+    const rootObserver = new ResizeObserver(([entry]) => { setNarrow(entry.contentRect.width < 900); setFigureStacked(entry.contentRect.width < 720); }); rootObserver.observe(root);
     const observer = new ResizeObserver(([entry]) => {
       const next = Math.round(entry.contentRect.width); if (next <= 0 || next === width) return;
       width = next; captureRef.current(); setAvailableWidth(next);
@@ -333,7 +357,16 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
     for (const annotation of annotationProps.annotations) { const page = pages.get(annotation.messageId); if (page?.versionId !== annotation.versionId) continue; const group = groups.get(page.index) || []; group.push(annotation); groups.set(page.index, group); }
     return groups;
   }, [source.pages, annotationProps.annotations]);
-  const renderPage = (index: number) => <PdfAnnotatedPage {...annotationProps} readerStyle={palette} annotations={annotationsByPage.get(index) || []} messageId={source.pages[index].messageId} version={version(index)} pdf={pdf!} pageNumber={source.pages[index].pageNumber} availableWidth={availableWidth} zoom={zoom} appearance={appearance} compareOriginal={compareOriginal} onPageReady={() => ready(index)} queue={queue} scrollViewport={viewportRef} maxPixels={continuous ? 8_000_000 : 16_000_000} search={search?.pageIndex === index ? search : null} onSearchLocated={locateSearch} onPdfLink={link => void followPdfLink(link)} />;
+  const selectFigure = (index: number, rect: FigureRect) => {
+    if (annotationProps.disabled) return;
+    const timestamp = Date.now(), page = source.pages[index];
+    const used = new Set((annotationProps.reservedColors || []).map(color => color.toLowerCase()));
+    const colors = ['#f3cf67', '#a9c6f6', '#b7ddba', '#e6b4d7', '#c9baf1', '#f3ba95', '#94d5d3', '#d7d68d'];
+    const annotation: Annotation = { id: crypto.randomUUID(), conversationId: annotationProps.conversationId, messageId: page.messageId, versionId: page.versionId, quote: t('图片选区 · 第 {0} 页', [page.pageNumber]), anchor: { type: 'pdf-region' }, color: colors.find(color => !used.has(color)) || colors[0], question: '', answer: '', mode: 'ask', status: 'draft', edited: false, createdAt: timestamp, updatedAt: timestamp, figure: { documentId: source.id, pageNumber: page.pageNumber, rect, strokes: [] } };
+    try { annotationProps.onCreate(annotation); setFigureSelecting(false); setNavigationOpen(false); pendingNote.current = annotation.id; }
+    catch (error) { annotationProps.onNotify(error instanceof Error ? error.message : '无法创建图片批注。'); }
+  };
+  const renderPage = (index: number) => <PdfAnnotatedPage {...annotationProps} figureSelecting={figureSelecting} onSelectFigure={onFigureAsk ? rect => selectFigure(index, rect) : undefined} readerStyle={palette} annotations={annotationsByPage.get(index) || []} messageId={source.pages[index].messageId} version={version(index)} pdf={pdf!} pageNumber={source.pages[index].pageNumber} availableWidth={availableWidth} zoom={zoom} appearance={appearance} compareOriginal={compareOriginal} onPageReady={() => ready(index)} queue={queue} scrollViewport={viewportRef} maxPixels={continuous ? 8_000_000 : 16_000_000} search={search?.pageIndex === index ? search : null} onSearchLocated={locateSearch} onPdfLink={link => void followPdfLink(link)} />;
   const commitPage = () => {
     if (!/^\d+$/u.test(pageInput)) { setPageInput(String(position.current.pageIndex + 1)); return; }
     const index = Math.max(0, Math.min(source.pages.length - 1, Number(pageInput) - 1));
@@ -342,13 +375,14 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
   };
   const original = compareOriginal || appearance.preset === 'original', paper = original ? '#ffffff' : appearance.paper, ink = original ? '#000000' : appearance.ink;
   const palette = readerTheme(paper, ink) as CSSProperties;
-  const detached = !continuous && openedPage >= 0 && openedPage !== pageIndex ? annotationProps.annotations.find(annotation => annotation.id === annotationProps.openAnnotationId && annotation.deletedAt === undefined) : undefined;
-  return <section ref={rootRef} className="document-reader" role="region" aria-label={t("文档阅读：{0}", [source.name])} data-testid="document-reader" data-reader-focused={focused} data-reader-dark={colorLuminance(paper) < .25 ? 'true' : 'false'} data-reader-narrow={narrow} data-reader-layout={continuous ? 'continuous' : 'paged'} style={palette}>
-    <ReaderToolbar onReturnFromLink={linkHistory.length ? returnFromLink : undefined} contextMode={contextMode} onContextMode={onContextMode} relevantContext={usesRelevantContext(source, contextMode)} onOpenFile={onOpenFile} name={source.name} kind={source.kind} pageCount={source.pages.length} pageIndex={pageIndex} pageInput={pageInput} pageInputRef={pageInputRef} onPageInput={setPageInput} onCommitPage={commitPage} onPage={selectPage} zoom={zoom} onZoom={changeZoom} view={view} onView={switchView} layout={layout} onLayout={switchLayout} appearance={appearance} onAppearance={value => { setCompareOriginal(false); setAppearance(value); }} saved={appearanceSaved && positionSaved} compareOriginal={compareOriginal} onCompareOriginal={() => setCompareOriginal(value => !value)} navigationOpen={navigationOpen} onToggleNavigation={() => setNavigationOpen(value => !value)} focused={focused} onToggleFocus={() => { flush(); onToggleFocus(); }} onClose={() => { flush(); onClose(); }} modelLabel={modelLabel} onOpenModelSettings={onOpenModelSettings} onBackup={onBackup} />
+  const detached = !continuous && openedPage >= 0 && openedPage !== pageIndex ? annotationProps.annotations.find(annotation => annotation.id === annotationProps.openAnnotationId && annotation.deletedAt === undefined && !annotation.figure) : undefined;
+  return <section ref={rootRef} className="document-reader" role="region" aria-label={t("文档阅读：{0}", [source.name])} data-testid="document-reader" data-reader-focused={focused} data-reader-figure={!!openedFigure && figureDocked} data-figure-layout={figureStacked ? 'stacked' : 'side'} data-reader-dark={colorLuminance(paper) < .25 ? 'true' : 'false'} data-reader-narrow={narrow} data-reader-layout={continuous ? 'continuous' : 'paged'} style={palette}>
+    <ReaderToolbar figureSelecting={figureSelecting} onToggleFigure={pdf && onFigureAsk ? toggleFigure : undefined} onReturnFromLink={linkHistory.length ? returnFromLink : undefined} contextMode={contextMode} onContextMode={onContextMode} relevantContext={usesRelevantContext(source, contextMode)} onOpenFile={onOpenFile} name={source.name} kind={source.kind} pageCount={source.pages.length} pageIndex={pageIndex} pageInput={pageInput} pageInputRef={pageInputRef} onPageInput={setPageInput} onCommitPage={commitPage} onPage={selectPage} zoom={zoom} onZoom={changeZoom} view={view} onView={switchView} layout={layout} onLayout={switchLayout} appearance={appearance} onAppearance={value => { setCompareOriginal(false); setAppearance(value); }} saved={appearanceSaved && positionSaved} compareOriginal={compareOriginal} onCompareOriginal={() => setCompareOriginal(value => !value)} navigationOpen={navigationOpen} onToggleNavigation={() => setNavigationOpen(value => !value)} focused={focused} onToggleFocus={() => { flush(); onToggleFocus(); }} onClose={() => { flush(); onClose(); }} modelLabel={modelLabel} onOpenModelSettings={onOpenModelSettings} onBackup={onBackup} />
+    {figureSelecting && <div className="figure-selection-hint" role="status">{t('框选整图，随后可画圈提问；按 Esc 或 Ctrl+Alt+A 取消。')}</div>}
     <div className="document-reader-body">
       <ReaderNavigation open={navigationOpen} source={source} annotations={annotationProps.annotations} pageIndex={pageIndex} outline={outline} outlineLoading={loading || outlineLoading} outlineError={outlineError || Boolean(fileError)} outlineTruncated={outlineTruncated} onClose={() => setNavigationOpen(false)} onPage={selectPage} onSearch={selectSearch} onClearSearch={clearSearch} onAnnotation={selectAnnotation} />
       <div ref={viewportRef} className={`document-reader-viewport ${view === 'text' ? 'document-reader-text-viewport' : ''}`} onScroll={scroll}>
-        {!hasText && !continuous && <p className="document-reader-warning">{t("这一页没有可提取的文字，可能是扫描页。可查看原页面；暂不支持 OCR 识别和图片内容询问。")}</p>}
+        {!hasText && !continuous && <p className="document-reader-warning">{t("这一页没有可提取的文字，可框选图片提问；暂不自动识别文字。")}</p>}
         {view === 'original' && loading && <div className="document-reader-empty" role="status">{t("正在打开 PDF…")}</div>}
         {view === 'original' && fileError && <div className="document-reader-empty" role="alert"><p>{t(fileError)}</p><button type="button" onClick={() => switchView('text')}>{t("打开已保存文字")}</button></div>}
         {view === 'original' && pdf && (continuous ? <div className="reader-continuous-pages">{source.pages.map((p, index) => {
@@ -356,8 +390,9 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
           const active = nearPages.has(index) || forcedPage === index || openedPage === index || translationPage === index;
           return <ReaderPageSlot key={p.versionId} index={index} number={p.pageNumber} width={size.width} height={size.height} empty={!p.text.trim()} register={registerSlot}>{active ? renderPage(index) : null}</ReaderPageSlot>;
         })}</div> : <div key={`${source.id}:${pageIndex}:pdf`}>{renderPage(pageIndex)}</div>)}
-        {page && view === 'text' && hasText && <article ref={textRef} className="document-page-text" key={`${source.id}:${pageIndex}:text`}><p className="document-text-page-label">{t("第 {0} 页 · 提取文字", [page.pageNumber])}</p><AnnotatedAnswer {...annotationProps} readerStyle={palette} annotations={annotationsByPage.get(pageIndex) || []} messageId={page.messageId} version={version(pageIndex)} plainText /></article>}
+        {page && view === 'text' && hasText && <article ref={textRef} className="document-page-text" key={`${source.id}:${pageIndex}:text`}><p className="document-text-page-label">{t("第 {0} 页 · 提取文字", [page.pageNumber])}</p><AnnotatedAnswer {...annotationProps} readerStyle={palette} annotations={(annotationsByPage.get(pageIndex) || []).filter(annotation => !annotation.figure)} messageId={page.messageId} version={version(pageIndex)} plainText /></article>}
       </div>
+      {openedFigure && pdf && figureSettings && onFigureAsk && <FigureAnnotationPanel key={openedFigure.id} docked={figureDocked} onDockChange={setFigureDocked} annotation={openedFigure} pdf={pdf} palette={palette} settings={figureSettings} disabled={annotationProps.disabled} onClose={() => annotationProps.onOpen(null)} onLocate={() => { pendingNote.current = openedFigure.id; if (openedPage !== pageIndex) jump(openedPage, true); else locateNoteRef.current(); }} onUpdate={patch => annotationProps.onUpdate(openedFigure.id, patch)} onStrokes={strokes => onFigureStrokes?.(openedFigure.id, strokes)} onAsk={(image, profileId) => onFigureAsk(openedFigure.id, image, profileId)} onStop={() => annotationProps.onStop(openedFigure.id)} onReask={action => annotationProps.onReask(openedFigure.id, action)} onDelete={() => annotationProps.onDelete(openedFigure.id)} onSettings={onOpenModelSettings} />}
     </div>
     {detached && createPortal(<MovableAnnotationPopup key={detached.id} popupRef={detachedPopup} style={{ ...palette, width: Math.min(390, window.innerWidth - 24), maxHeight: window.innerHeight - 32, left: Math.max(12, window.innerWidth - 414), top: 90 }}><AnnotationCard key={detached.id} annotation={detached} onClose={() => annotationProps.onOpen(null)} onUpdate={patch => annotationProps.onUpdate(detached.id, patch)} onAsk={() => annotationProps.onAsk(detached.id)} onStop={() => annotationProps.onStop(detached.id)} onReask={action => annotationProps.onReask(detached.id, action)} onDelete={() => annotationProps.onDelete(detached.id)} disabled={annotationProps.disabled} /></MovableAnnotationPopup>, document.body)}
   </section>;

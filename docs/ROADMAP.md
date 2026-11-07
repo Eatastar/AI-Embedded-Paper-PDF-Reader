@@ -24,7 +24,7 @@
 - [x] 14 按需打开批注总览，按页码、类型和内容筛选并返回原句。
 - [ ] 15 AI 回答附带可点击的原文文件、页码和引用片段。
 - [ ] 16 提取文字预览，以及双栏、断词、上下标和公式的阅读顺序检查。
-- [ ] 17 对支持图片的模型提供主动发送选中区域或当前页的入口。
+- [x] 17 对支持图片的模型提供主动发送 PDF 选中区域的入口，支持圈画和紧凑图片批注；整页可通过选区覆盖，不自动上传页面。
 - [ ] 18 OCR 及识别结果提示，作为扫描资料扩展。
 - [ ] 19 文档导入进度、取消，以及先阅读后后台提取的方案。
 - [ ] 20 大图、长论文、密集公式下的性能测量和针对性优化。
@@ -55,10 +55,16 @@
 - [x] 应用内中文 / English 切换并记忆。 / Remembered in-app Chinese/English selection.
 - [x] 新名称、双语介绍、GPT 实现署名与衍生项目说明。 / New name, bilingual introductions, GPT implementation credit and derivative guidance.
 
-Next priorities remain request controls, clearer source references, extraction quality, thumbnails/bookmarks and optional OCR/image workflows. These are plans rather than released capabilities. Existing completed items above record earlier storage, recovery and reading improvements.
+Next priorities remain request controls, clearer source references, extraction quality, thumbnails/bookmarks and optional OCR and deeper image workflows. These are plans rather than released capabilities. Existing completed items above record earlier storage, recovery and reading improvements.
 
 ## 0.1.16 已落实 / Completed in 0.1.16
 
 - [x] 独立 API / 提示词 / 快捷键划词翻译，Alt+1 默认，临时结果可转普通笔记。 / Independent selection translation; Alt+1 by default, temporary results can become plain notes.
 - [x] PDF 原生引用、图号链接、页内定位和返回，保留正常拖选。 / Embedded PDF reference/figure links with within-page positions and return navigation.
 - [x] 深色背景下彩色字边缘去除白色残影。 / Remove white mattes around colored text on dark paper.
+
+## 0.1.26 已落实 / Completed in 0.1.26
+
+- [x] PDF 图片框选、默认画圈和可选画笔、紧凑问答面板。 / PDF image selection, circles by default, optional pen and compact Q&A.
+- [x] 三种图片协议、共享连接独立选择与明确的错误提示。 / Three image protocols, independent shared-connection selection and clear error handling.
+- [x] 矢量持久化、图片按需重建和有界临时缓存。 / Vector persistence, on-demand image regeneration and bounded transient caching.

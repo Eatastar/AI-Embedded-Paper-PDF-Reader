@@ -3,7 +3,7 @@ import { sortDiscoveredModels, type DiscoveredModel } from '../domain/model-list
 export type { DiscoveredModel } from '../domain/model-list';
 
 export type SettingsUpdate = Partial<Omit<ModelSettings, 'hasApiKey'>> & { apiKey?: string; clearApiKey?: boolean };
-export interface ReplyRequest { messages: InputMessage[]; kind: 'main' | 'annotation'; quote?: string; variant?: number; profileId?: string | null }
+export interface ReplyRequest { messages: InputMessage[]; kind: 'main' | 'annotation'; quote?: string; variant?: number; profileId?: string | null; image?: { dataURL: string; width: number; height: number } }
 export interface TranslationRequest { profileId: string; text: string; prompt: string; targetLanguage: string }
 
 async function readFailure(response: Response): Promise<string> {

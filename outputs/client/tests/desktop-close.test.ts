@@ -20,10 +20,11 @@ test('native menu language accepts only supported values from the trusted top-le
   const accepted: string[] = [], { ipc, event, bridge } = harness(1000, locale => accepted.push(locale));
   ipc.emit('learn:locale', event, 'en');
   ipc.emit('learn:locale', event, 'zh-CN');
-  ipc.emit('learn:locale', event, 'fr');
+  for (const locale of ['es', 'ja', 'zh-TW', 'de', 'ar', 'fr']) ipc.emit('learn:locale', event, locale);
+  ipc.emit('learn:locale', event, 'xx');
   ipc.emit('learn:locale', { ...event, sender: {} }, 'en');
   ipc.emit('learn:locale', { ...event, senderFrame: { url: event.senderFrame.url } }, 'en');
-  assert.deepEqual(accepted, ['en', 'zh-CN']);
+  assert.deepEqual(accepted, ['en', 'zh-CN', 'es', 'ja', 'zh-TW', 'de', 'ar', 'fr']);
   bridge.dispose(); assert.equal(ipc.listenerCount('learn:locale'), 0);
 });
 

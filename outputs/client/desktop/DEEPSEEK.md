@@ -1,31 +1,25 @@
-# 用 DeepSeek 测试（0.1.6）
+# 配置自己的 API / Configure your API (0.1.31)
 
-先关闭正在运行的旧版客户端，将 `LearnSomething-0.1.6-Windows-x64.zip` 全部解压到新文件夹，再打开其中的 `LearnSomething.exe`，保留同文件夹全部文件。顶部版本标记应显示 0.1.6。原有模型配置、加密密钥和聊天继续保留。无法打开时可运行同目录「启动诊断.cmd」。
+完整解压 Windows x64 ZIP，正常退出旧版后运行 AI-Embedded-Paper-PDF-Reader.exe，保留同目录全部文件。无法启动时运行“启动诊断.cmd”。
 
-桌面版会自动使用 Windows 系统代理。若使用 Clash，保持其运行并开启「系统代理」，客户端无需手填代理端口。失败时会显示更具体的原因与诊断编号；诊断元数据保存在 `%APPDATA%\MarginChat\logs\requests.jsonl`，不包含聊天正文与密钥。
+Fully extract the Windows x64 ZIP, exit the old app normally and run AI-Embedded-Paper-PDF-Reader.exe, keeping all files. Use the launch diagnostic script if needed.
 
-在客户端打开「模型与设置」，选择「DeepSeek」模板，给连接取一个方便辨认的名称，输入你自己的 API Key，点击「保存并使用」后就可以开始聊天或批注提问。也可以先不填密钥保存，之后进入该配置补充。
+首页“配置 API / 获取模型”可保存模型连接。按服务商实际说明选择 Chat Completions、Responses 或 Claude Messages 格式，填写基础地址、密钥并获取模型列表；模板不保证所选模型支持图片。所有功能共用连接列表，图片问答和翻译可各自选择连接。
 
-预设使用 `https://api.deepseek.com`、`deepseek-flash` 和 OpenAI 兼容 Chat Completions 格式。模型名称可以按你账户可用的模型修改。配置已根据 [DeepSeek 官方接入说明](https://api-docs.deepseek.com/zh-cn/)及[模型列表](https://api-docs.deepseek.com/zh-cn/quick_start/pricing/)于 2026 年 10 月 19 日核对；后续以官方信息为准。
+Use API setup / Fetch models on the home screen to save a connection. Choose Chat Completions, Responses or Claude Messages according to the provider, enter its base URL and key, then fetch models. A template does not guarantee image support. Connections are shared; image Q&A and translation can select their own connection.
 
-保存后，输入框左下角的模型菜单可以直接选用这项连接。你也可以新增 GPT 官方、Claude 官方或中转站配置；中转站的地址、模型名和接口格式按其说明填写，GPT 与 Claude 官方的模型名按账户权限填写。不同配置的密钥独立，套用另一个模板不会继承原密钥。
+在 PDF 工具栏点击“框选图片”，选中整幅图及坐标、图例或图注，在紧凑批注中点击“圈出疑问”。默认画圈，也可选择画笔、颜色和粗细，支持撤销与清空。保留圈画后输入问题，选择已保存的视觉模型连接即可提问。点击缩略图可临时放大，默认侧栏宽度约 280–320px；窄窗口移到页面下方。批注可拖动，用 × 或 Esc 收起，再点原图选区重新打开。
 
-0.1.3 起，桌面版将密钥经 Windows 本机系统加密后保存到 `%APPDATA%\MarginChat\model-profiles.json`，正常重启后仍可使用。若加密不可用，设置页会明确提示密钥仅本次运行有效，不会明文保存。普通网页版只持久化连接配置，密钥在本地服务重启后需重新填写。聊天 JSON 备份不包含密钥和模型配置，请勿将 `model-profiles.json` 作为诊断材料发送。
+Choose Select image in the PDF toolbar, include the figure with its axes, legend or caption, then choose Circle a detail in the compact annotation. Circle is the default; pen, colors, widths, undo and clear are available. Keep the markings, enter a question and select a saved image-capable connection. Click the thumbnail to enlarge it. The default panel is about 280–320px wide and moves below the page in narrow windows. Drag the panel or close it with × or Esc; click its source region to reopen it.
 
-本版展示最终回答；DeepSeek 默认开启思考模式时，正式回答出现前可能需要等待。当前聊天没有启用工具调用，按[官方说明](https://api-docs.deepseek.com/zh-cn/guides/thinking_mode/)无需把历史思考内容回传给服务商。
+只有主动发送图片问题时，才向所选连接发送本次原始配色选图、圈画、问题及所属文档的文字资料；小文件默认全文，大文件按需引用，不带聊天及其他批注。重新提问成功后才替换原问答和圈画。明确只支持文字的连接可在设置中标记并提前阻止请求；未知能力依据上游明确错误提示，不会自动发送测试图片或产生探测调用。
 
-保存和切换连接都不会调用 API。发送聊天、批注问题或手动重试时才会发起请求。协议适配使用模拟服务验证，本次打包没有使用真实密钥进行付费调用；实际连通性取决于地址、模型权限和网络。
+Only sending an image question transmits its original-color crop, markings, question and source-document text to the selected connection. Small files use full text and large files use relevant excerpts by default, without chat or other annotations. A successful re-question replaces the old Q&A and markings; failures keep them. Mark known text-only connections in settings to block image requests. Unknown capabilities are classified from explicit upstream errors, without automatic probe images or billable test calls.
 
-## 阅读论文与批注
+文本提问保留原功能。小文件默认全文，大文件按需引用；PDF 批注只引用所属文档、选段和问题，不带主聊天及其他批注。原 PDF 不作为文件上传。普通笔记、阅读、换色与搜索不请求 AI。
 
-输入框左下角「上传」支持 PDF、TXT 和 Markdown，文件只导入本机。每个对话最多 10 份文件；单个文件最多 25 MiB，PDF 最多 300 页，每份文件提取文字最多 100 万字符。TXT / Markdown 需使用 UTF-8 编码，有密码的 PDF 请先解锁。
+Text questions retain existing behavior. Small files use full text and large files relevant excerpts. PDF annotations use only their document, selection and question, without main chat or other notes. Original PDF files are not uploaded. Plain notes, reading, colors and search make no AI request.
 
-点击文件名后，可使用「PDF 原排版」翻页、缩放并直接划选文字批注，也可切换「可批注文本」。扫描件可查看原页面，目前不支持 OCR 或图片内容询问。选中文字后点击「添加批注」，草稿可选「询问 AI」或「只写批注」；普通笔记可以直接保存和编辑，不请求 API。
+Windows 桌面版沿用系统代理并使用系统加密保存密钥；加密不可用时密钥只留在本次内存，不写明文。聊天备份不包含密钥或连接配置。失败后可修正连接并重试，原问题和成功回答保留。
 
-发送聊天或 AI 批注问题时，会向所选服务发送当前对话所有附件的全部提取文字；PDF 原文件和页面图片留在本机，不上传给模型。资料较多、超过模型上下文限制时，可拆到不同对话中使用。
-
-## 整理、备份与连接失败
-
-对话旁的删除图标可将其移入「已删除的对话」，展开后点击「恢复」即可找回对话、附件及批注。完整 JSON 备份包含附件原文件字节（含 PDF）、提取文字、所有回答版本、批注和可恢复记录，不包含模型密钥或配置。
-
-网络或 API 出错、回答中断后，可以直接发新问题，无需先重新生成；也可以修正密钥、切换可用模型后继续。残缺回答仍保留显示，但不会作为成功回答带入后续上下文。未完成请求不会自动重发，手动重试才会再次调用 API。
+The Windows desktop app uses the system proxy and operating-system encryption for saved keys. If encryption is unavailable, keys stay in session memory without plaintext storage. Backups exclude keys and connection configuration. Correct the connection and retry after failure; your question and previous successful answer are retained.

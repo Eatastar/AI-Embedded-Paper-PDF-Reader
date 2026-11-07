@@ -1,9 +1,19 @@
 import { english } from './messages';
+import { additional } from './additional';
+import { traditional } from './traditional';
 
-export type Locale = 'zh-CN' | 'en';
+export const LANGUAGES = [
+  { code: 'zh-CN', name: '简体中文' }, { code: 'en', name: 'English' },
+  { code: 'es', name: 'Español' }, { code: 'ja', name: '日本語' },
+  { code: 'zh-TW', name: '繁體中文' }, { code: 'de', name: 'Deutsch' },
+  { code: 'ar', name: 'العربية' }, { code: 'fr', name: 'Français' },
+] as const;
+export type Locale = typeof LANGUAGES[number]['code'];
+export const localeDirection = (locale: Locale) => locale === 'ar' ? 'rtl' : 'ltr';
 export const LOCALE_STORAGE_KEY = 'ai-paper-pdf-reader.ui-locale.v1';
 type PreferenceStorage = Pick<Storage, 'getItem' | 'setItem'>;
-export function isLocale(value: unknown): value is Locale { return value === 'zh-CN' || value === 'en'; }
+export function isLocale(value: unknown): value is Locale { return LANGUAGES.some(item => item.code === value); }
+export const catalogs: Partial<Record<Locale, Record<string, string>>> = { en: english, 'zh-TW': traditional, ...additional };
 
 /** This preference is separate from conversations, credentials and backup data. */
 export function createLocaleStore(storage?: PreferenceStorage) {
@@ -41,6 +51,8 @@ const patterns = Object.entries(english).filter(([key]) => /\{\d+\}/.test(key)).
 }).sort((a, b) => b.key.length - a.key.length);
 export function translate(source: string, locale: Locale, values: readonly unknown[] = []): string {
   if (locale === 'zh-CN') return interpolate(source, values);
+  const catalog = catalogs[locale] || english;
+  if (Object.prototype.hasOwnProperty.call(catalog, source)) return interpolate(catalog[source], values);
   if (Object.prototype.hasOwnProperty.call(english, source)) return interpolate(english[source], values);
   if (!values.length) for (const pattern of patterns) {
     const match = pattern.regexp.exec(source);
@@ -52,7 +64,7 @@ export function translate(source: string, locale: Locale, values: readonly unkno
       // Other interpolations can be filenames or quoted user text.
       captured[index] = index === 0 && (pattern.key === '{0}\n诊断编号：{1}' || pattern.key === '备份格式无效：{0}') ? translate(raw, locale) : raw;
     });
-    return interpolate(pattern.translation, captured);
+    return interpolate(catalog[pattern.key] || pattern.translation, captured);
   }
   return interpolate(source, values);
 }

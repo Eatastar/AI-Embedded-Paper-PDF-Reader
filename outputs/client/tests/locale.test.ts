@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createLocaleStore, LOCALE_STORAGE_KEY, translate } from '../src/i18n/locale';
+import { createLocaleStore, LOCALE_STORAGE_KEY, translate, LANGUAGES, localeDirection, catalogs, isLocale } from '../src/i18n/locale';
 import { english } from '../src/i18n/messages';
 
 test('language preference defaults to Chinese, survives restart and only touches its own key', () => {
@@ -21,7 +21,30 @@ test('unavailable storage and invalid saved preferences keep the interface usabl
   const denied = createLocaleStore({ getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); } });
   assert.equal(denied.get(), 'zh-CN'); assert.equal(denied.set('en'), false); assert.equal(denied.get(), 'en');
   const invalid = createLocaleStore({ getItem: () => 'invalid-language', setItem() {} });
-  assert.equal(invalid.get(), 'zh-CN'); assert.throws(() => invalid.set('fr' as 'en')); assert.equal(invalid.get(), 'zh-CN');
+  assert.equal(invalid.get(), 'zh-CN'); assert.throws(() => invalid.set('xx' as 'en')); assert.equal(invalid.get(), 'zh-CN');
+});
+
+test('all eight languages persist with native names and Arabic has RTL direction', () => {
+  assert.deepEqual(LANGUAGES.map(language => language.code), ['zh-CN', 'en', 'es', 'ja', 'zh-TW', 'de', 'ar', 'fr']);
+  let saved: string | null = null; const storage = { getItem: () => saved, setItem: (_: string, value: string) => { saved = value; } };
+  for (const language of LANGUAGES) { assert.ok(isLocale(language.code)); createLocaleStore(storage).set(language.code); assert.equal(createLocaleStore(storage).get(), language.code); assert.equal(localeDirection(language.code), language.code === 'ar' ? 'rtl' : 'ltr'); }
+  assert.ok(!isLocale('xx'));
+});
+
+test('new locale catalogs preserve every placeholder and leave user text unconverted', () => {
+  const tokens = (text: string) => [...text.matchAll(/\{\d+\}/g)].map(match => match[0]).sort();
+  for (const [locale, catalog] of Object.entries(catalogs)) {
+    for (const [key, value] of Object.entries(catalog)) { assert.ok(value.trim(), `${locale}: ${key}`); assert.deepEqual(tokens(value), tokens(key), `${locale}: ${key}`); }
+  }
+  for (const { code } of LANGUAGES) {
+    const source = '用户原文.pdf العربية α \\LaTeX';
+    assert.ok(translate('打开批注 {0}：{1}', code, [1, source]).endsWith(source));
+    assert.equal(translate(source, code), source);
+  }
+  assert.equal(translate('界面语言', 'zh-TW'), '介面語言');
+  assert.equal(translate('设置', 'fr'), 'Paramètres'); assert.equal(translate('设置', 'ja'), '設定');
+  assert.equal(translate('设置', 'es'), 'Ajustes'); assert.equal(translate('设置', 'de'), 'Einstellungen'); assert.equal(translate('设置', 'ar'), 'الإعدادات');
+  assert.ok(translate('API 密钥验证失败，请检查这份连接的密钥是否有效。', 'fr').startsWith('API key'));
 });
 
 test('every English translation preserves all interpolation placeholders', () => {

@@ -6,7 +6,7 @@ function installDesktopBridge({ ipcMain, window, isLocalPage, backupStore, timeo
   const trusted = event => event.sender === window.webContents && event.senderFrame === window.webContents.mainFrame && isLocalPage(event.senderFrame?.url || '');
   const onReady = event => { if (trusted(event)) ready = true; };
   const onNotReady = event => { if (trusted(event)) ready = false; };
-  const onLanguage = (event, locale) => { if (trusted(event) && (locale === 'zh-CN' || locale === 'en')) onLocale(locale); };
+  const onLanguage = (event, locale) => { if (trusted(event) && ['zh-CN', 'en', 'es', 'ja', 'zh-TW', 'de', 'ar', 'fr'].includes(locale)) onLocale(locale); };
   const onResult = (event, result) => {
     if (!trusted(event) || !pending || result?.id !== pending.id) return;
     clearTimeout(pending.timer);

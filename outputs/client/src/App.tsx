@@ -1,4 +1,4 @@
-import { t, getLocale } from './i18n/locale';
+import { t, getLocale, localeDirection } from './i18n/locale';
 import { useLocale } from './i18n/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AssistantRuntimeProvider, ComposerPrimitive, ThreadPrimitive, useExternalStoreRuntime } from '@assistant-ui/react';
@@ -10,6 +10,7 @@ import { exportWorkspaceWithFiles, importWorkspaceWithFiles, saveDocumentBytes, 
 import { deleteProfile, getSettings, saveProfile, selectProfile, streamReply } from './adapters/model';
 import { AnnotatedAnswer } from './components/AnnotatedAnswer';
 import { SettingsDialog } from './components/SettingsDialog';
+import { AppSettingsDialog } from './components/AppSettingsDialog';
 import { useWorkspace } from './hooks/useWorkspace';
 import { useChatPosition } from './hooks/useChatPosition';
 import { pruneChatPositions } from './adapters/chat-position';
@@ -37,8 +38,12 @@ import { NativeSelect } from './components/NativeSelect';
 import { ChatQuestionText, ChatTextReferencePreview, ChatTextReferenceProvider } from './components/ChatTextReference';
 import { captureChatTextReference, hasChatTextSource, type ChatTextSelection } from './domain/chat-text-reference';
 import type { ReaderSession } from './adapters/reader-session';
+import { figureImageKey, figureSourceKey, FIGURE_LIMITS } from './domain/figure';
+import { figureCache, figureDataURL, type PreparedFigureImage } from './adapters/figure';
+import { updateFigureStrokes } from './domain/workspace';
+import { DEFAULT_RESPONSE_PROMPT, responsePreference } from './domain/response-language';
 
-const DEFAULT_SETTINGS: ModelSettings = { mode: 'demo', baseURL: 'https://api.openai.com/v1', model: '', systemPrompt: '请用中文清晰地回答，解释概念时适当举例。', hasApiKey: false, apiFormat: 'openai-chat', profiles: [], activeProfileId: null, persistence: 'session' };
+const DEFAULT_SETTINGS: ModelSettings = { mode: 'demo', baseURL: 'https://api.openai.com/v1', model: '', systemPrompt: DEFAULT_RESPONSE_PROMPT, hasApiKey: false, apiFormat: 'openai-chat', profiles: [], activeProfileId: null, persistence: 'session' };
 type Busy = { conversationId: string; messageId: string; versionId: string; controller: AbortController };
 
 function updateConversation(workspace: Workspace, id: string, change: (c: Conversation) => Conversation) {
@@ -51,7 +56,7 @@ const errorText = (e: unknown) => e instanceof Error ? e.message : t("操作未�
 
 export default function App() {
   const locale = useLocale();
-  useEffect(() => { document.documentElement.lang = locale; document.title = 'AI-Embedded Paper PDF Reader'; desktop()?.setLocale?.(locale); }, [locale]);
+  useEffect(() => { document.documentElement.lang = locale; document.documentElement.dir = localeDirection(locale); document.title = 'AI-Embedded Paper PDF Reader'; desktop()?.setLocale?.(locale); }, [locale]);
   const { workspace, current, update, saveStatus, loadError, flush, checkpoint, recover, purge, removeChatTurn, backupWarning, lastBackup } = useWorkspace();
   const [turnBusy, setTurnBusy] = useState(false);
   const [trashOpen, setTrashOpen] = useState(false);
@@ -65,6 +70,7 @@ export default function App() {
   const onReaderLocation = useCallback((location: { documentId: string; pageNumber: number }) => { readerLocation.current = location; }, []);
   const changeContextMode = (value: DocumentContextMode) => { setContextMode(value); if (!saveDocumentContextMode(value)) notify('资料范围设置仅在本次有效。'); };
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [appSettingsOpen, setAppSettingsOpen] = useState(false);
   const [settingsIntent, setSettingsIntent] = useState<'configure' | 'discover'>('configure');
   const closeSettings = () => { setSettingsOpen(false); setSettingsIntent('configure'); };
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -217,7 +223,7 @@ export default function App() {
   }
   function newConversation() {
     if (fileOperation.current) return;
-    const conversation = createConversation();
+    const conversation = createConversation(t('新对话'));
     try { update(w => ({ ...w, conversations: [conversation, ...w.conversations], activeConversationId: conversation.id })); }
     catch (error) { notify(errorText(error)); return; }
     setOpenAnnotationId(null); setOpenDocumentId(null); setSidebarOpen(false); setReaderFocused(false);
@@ -264,7 +270,7 @@ export default function App() {
       if (references.length) user.annotationReferences = references;
       if (textReference) user.textReference = captureChatTextReference(conversation, textReference);
       const base = { ...conversation, messages: [...conversation.messages, user] };
-      const messages = buildMainContext(base, settings.systemPrompt, { mode: contextMode, location: readerLocation.current });
+      const messages = buildMainContext(base, responsePreference(settings.systemPrompt, getLocale()), { mode: contextMode, location: readerLocation.current });
       const assistant = createAssistantMessage();
       assistant.versions[0].context = freezeContext(messages);
       mutateConversation(conversationId, () => ({ ...base, title: conversation.messages.length === 0 ? question.trim().slice(0, 25) : conversation.title, updatedAt: Date.now(), messages: [...base.messages, assistant] }));
@@ -291,7 +297,7 @@ export default function App() {
     if (index !== conversation.messages.length - 1) { notify('请在最后一条回答上重新生成。旧回答仍可切换版本和查看批注。'); return; }
     try {
       const previous = activeVersion(conversation.messages[index]);
-      const messages = previous.status !== 'complete' && previous.context ? previous.context.slice() : buildMainContext({ ...conversation, messages: conversation.messages.slice(0, index) }, settings.systemPrompt, { mode: contextMode, location: readerLocation.current });
+      const messages = previous.status !== 'complete' && previous.context ? previous.context.slice() : buildMainContext({ ...conversation, messages: conversation.messages.slice(0, index) }, responsePreference(settings.systemPrompt, getLocale()), { mode: contextMode, location: readerLocation.current });
       const next = addAssistantVersion(conversation.messages[index]);
       next.versions[next.versions.length - 1].context = freezeContext(messages);
       mutateConversation(conversationId, c => ({ ...c, messages: c.messages.map(m => m.id === messageId ? next : m), updatedAt: Date.now() }));
@@ -330,6 +336,8 @@ export default function App() {
     if (annotationRequests.current.has(id)) { notify('请等批注回答完成后再删除。'); return; }
     try {
       mutateConversation(conversationId, c => deleteAnnotation(c, id));
+      const removed = current.current?.conversations.find(c => c.id === conversationId)?.annotations.find(annotation => annotation.id === id);
+      if (removed?.figure) figureCache.delete(figureSourceKey(removed.figure));
       if (openAnnotationId === id) setOpenAnnotationId(null);
       notify('已删除批注与高亮，可撤销。');
     } catch (e) { notify(errorText(e)); }
@@ -354,15 +362,19 @@ export default function App() {
     setOpenDocumentId(source?.id || null);
     notify('批注与高亮已恢复。');
   }
-  async function askAnnotation(conversationId: string, annotationId: string) {
+  async function askAnnotation(conversationId: string, annotationId: string, figureOptions?: { image: PreparedFigureImage; profileId?: string | null }) {
     if (closingRef.current) return;
     if (fileOperation.current) { notify('请等文件处理完成后再提问。'); return; }
     if (annotationRequests.current.has(annotationId)) return;
     if (mainRequest.current?.conversationId === conversationId) { notify('请等主回答完成后再发送批注问题。'); return; }
     const conversation = current.current?.conversations.find(c => c.id === conversationId);
     if (!conversation) return;
+    const sourceNote = conversation.annotations.find(annotation => annotation.id === annotationId);
+    if (sourceNote?.figure && (!figureOptions || figureOptions.image.key !== figureImageKey(sourceNote.figure, sourceNote.reask?.figureStrokes || sourceNote.figure.strokes) || figureOptions.image.blob.size > FIGURE_LIMITS.imageBytes)) { notify('提问图片已变化，请重新打开这条图片批注。'); return; }
+    if (!sourceNote?.figure && figureOptions) { notify('只有图片批注可以发送图片。'); return; }
+    const requestPreference = figureOptions?.profileId ? settings.profiles.find(profile => profile.id === figureOptions.profileId)?.systemPrompt ?? settings.systemPrompt : settings.systemPrompt;
     let prepared;
-    try { prepared = prepareAnnotationRequest(conversation, annotationId, settings.systemPrompt, { mode: contextMode }); }
+    try { prepared = prepareAnnotationRequest(conversation, annotationId, responsePreference(requestPreference, getLocale()), { mode: contextMode }); }
     catch (e) { notify(errorText(e)); return; }
     try { mutateConversation(conversationId, () => prepared.conversation); }
     catch (error) { notify(errorText(error)); return; }
@@ -370,12 +382,14 @@ export default function App() {
     annotationRequests.current.set(annotationId, controller);
     let answer = '';
     try {
-      await streamReply({ messages: prepared.messages, kind: 'annotation', quote: prepared.annotation.quote, ...(settings.activeProfileId ? { profileId: settings.activeProfileId } : settings.mode === 'demo' ? { profileId: null } : {}) }, delta => {
+      const image = figureOptions ? { dataURL: await figureDataURL(figureOptions.image, controller.signal), width: figureOptions.image.width, height: figureOptions.image.height } : undefined;
+      const profile = figureOptions ? (figureOptions.profileId === undefined ? {} : { profileId: figureOptions.profileId }) : settings.activeProfileId ? { profileId: settings.activeProfileId } : settings.mode === 'demo' ? { profileId: null } : {};
+      const result = await streamReply({ messages: prepared.messages, kind: 'annotation', quote: prepared.annotation.quote, ...profile, ...(image ? { image } : {}) }, delta => {
         const next = answer + delta;
         mutateConversation(conversationId, c => updateAnnotationRequest(c, annotationId, next));
         answer = next;
       }, controller.signal);
-      mutateConversation(conversationId, c => completeAnnotation(c, annotationId, answer));
+      mutateConversation(conversationId, c => completeAnnotation(c, annotationId, answer, prepared.annotation.figure ? result.modelLabel : undefined));
     } catch (e) {
       mutateConversation(conversationId, c => updateAnnotationRequest(c, annotationId, answer, { interrupted: controller.signal.aborted, error: controller.signal.aborted ? "回答已停止，可以用原问题和本次上下文重试。" : errorText(e) }));
     } finally { annotationRequests.current.delete(annotationId); }
@@ -492,7 +506,7 @@ export default function App() {
         <button className="sidebar-settings" disabled={fileBusy} onClick={() => setTrashOpen(true)}><Trash2 size={16} /><span>{t("回收站（")}{deletedConversations.length + workspace.conversations.filter(c => c.deletedAt === undefined).reduce((sum, c) => sum + c.annotations.filter(a => a.deletedAt !== undefined).length, 0)}）</span></button>
         {latestDeleted && <button className="sidebar-settings undo-deletion" onClick={undoDelete} disabled={mainBusyId !== null} title={t("恢复最近删除的批注与高亮，刷新后仍可使用")}><RotateCcw size={16} /><span>{t("撤销删除")}</span></button>}
         <div className="backup-actions"><button disabled={fileBusy} onClick={() => fileInput.current?.click()}><FileUp size={15} />{t("导入")}</button><button onClick={() => setRecoveryOpen(true)}><RotateCcw size={15} />{t("备份与恢复")}</button></div>
-        <button className="sidebar-settings" onClick={() => setSettingsOpen(true)}><Settings2 size={17} /><span>{t("模型与设置")}</span></button>
+        <button className="sidebar-settings app-settings-trigger" aria-label={t('设置')} onClick={() => setAppSettingsOpen(true)}><Settings2 size={17} /><span>{t('设置')}</span></button>
         <div className={'save-status ' + (saveStatus.startsWith("保存失败") ? 'save-error' : '')}><span />{t(saveStatus)}</div>
         {lastBackup && <div className="backup-time">{t("自动备份")}{new Date(lastBackup).toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit', hour12: false })}</div>}
       </div>
@@ -506,7 +520,7 @@ export default function App() {
       <div className="conversation-pane">
       <ChatView key={active.id} visible={!readerFocused} fileGroups={activeFileGroups} filesLoading={library.loading} conversation={active} isRunning={mainBusyId === active.id} globallyBusy={mainBusyId !== null || modelSwitchBusy || fileBusy || turnBusy} turnDeleteDisabled={workspace.conversations.some(conversation => conversation.annotations.some(isAnnotationGenerating))} textReference={chatTextReference} onClearTextReference={() => setChatTextReference(null)} modelSwitchDisabled={modelSwitchBusy || mainBusyId !== null || turnBusy || active.annotations.some(isAnnotationGenerating)} onChooseModel={id => { void chooseModel(id).catch(e => notify(errorText(e))); }} onManageModels={() => setSettingsOpen(true)} settings={settings} openAnnotationId={openAnnotationId} onOpen={setOpenAnnotationId} onSend={(q, ids) => sendMain(active.id, q, ids, chatTextReference || undefined)} onDeleteTurn={id => removeTurn(active.id, id)} onStop={() => mainRequest.current?.controller.abort()} onRegenerate={id => regenerate(active.id, id)} onVersion={(messageId, versionId) => setVersion(active.id, messageId, versionId)} onCreate={a => addAnnotation(active.id, a)} onUpdate={(id, patch) => editAnnotation(active.id, id, patch)} onAsk={id => askAnnotation(active.id, id)} onReask={(id, action) => reaskAnnotation(active.id, id, action)} onStopAnnotation={id => annotationRequests.current.get(id)?.abort()} onDelete={id => removeAnnotation(active.id, id)} onNotify={notify} onUpload={() => uploadInput.current?.click()} onOpenDocument={id => { const document = active.documents?.find(d => d.id === id); if (document) openReaderReference({ conversationId: active.id, document }, 'split'); }} fileBusy={fileBusy} />
       </div>
-      {(openDocument || readerFocused) && <div className="document-pane">{openDocument ? <DocumentReader contextMode={contextMode} onContextMode={changeContextMode} onLocation={onReaderLocation} key={openDocument.id} modelLabel={settings.mode === 'demo' ? t("演示模式") : settings.model || t("连接模型")} onOpenModelSettings={() => setSettingsOpen(true)} onBackup={() => void downloadBackup(active.id)} focused={readerFocused} onOpenFile={chooseReaderFile} onToggleFocus={() => setReaderFocused(value => !value)} source={openDocument} conversationId={active.id} annotations={readerAnnotations} reservedColors={active.annotations.map(a => a.color)} openAnnotationId={openAnnotationId} onOpen={setOpenAnnotationId} onCreate={a => addAnnotation(active.id, a)} onUpdate={(id, patch) => editAnnotation(active.id, id, patch)} onAsk={id => askAnnotation(active.id, id)} onReask={(id, action) => reaskAnnotation(active.id, id, action)} onStop={id => annotationRequests.current.get(id)?.abort()} onDelete={id => removeAnnotation(active.id, id)} onNotify={notify} disabled={mainBusyId !== null || fileBusy || turnBusy} onClose={closeReader} /> : <ReaderHome onDiscoverModels={() => { setSettingsIntent('discover'); setSettingsOpen(true); }} settings={settings} onChooseModel={id => { void chooseModel(id).catch(error => notify(errorText(error))); }} groups={library.groups} conversations={workspace.conversations} busy={fileBusy || modelSwitchBusy || mainBusyId !== null || annotationRequests.current.size > 0} loading={library.loading} onOpenFile={chooseReaderFile} onOpenDocument={openLibraryDocument} onChat={() => setReaderFocused(false)} onSettings={() => setSettingsOpen(true)} />}</div>}
+      {(openDocument || readerFocused) && <div className="document-pane">{openDocument ? <DocumentReader figureSettings={settings} onFigureAsk={(id, image, profileId) => void askAnnotation(active.id, id, { image, profileId })} onFigureStrokes={(id, strokes) => { try { mutateConversation(active.id, c => updateFigureStrokes(c, id, strokes)); } catch (error) { notify(errorText(error)); } }} contextMode={contextMode} onContextMode={changeContextMode} onLocation={onReaderLocation} key={openDocument.id} modelLabel={settings.mode === 'demo' ? t("演示模式") : settings.model || t("连接模型")} onOpenModelSettings={() => setSettingsOpen(true)} onBackup={() => void downloadBackup(active.id)} focused={readerFocused} onOpenFile={chooseReaderFile} onToggleFocus={() => setReaderFocused(value => !value)} source={openDocument} conversationId={active.id} annotations={readerAnnotations} reservedColors={active.annotations.map(a => a.color)} openAnnotationId={openAnnotationId} onOpen={setOpenAnnotationId} onCreate={a => addAnnotation(active.id, a)} onUpdate={(id, patch) => editAnnotation(active.id, id, patch)} onAsk={id => askAnnotation(active.id, id)} onReask={(id, action) => reaskAnnotation(active.id, id, action)} onStop={id => annotationRequests.current.get(id)?.abort()} onDelete={id => removeAnnotation(active.id, id)} onNotify={notify} disabled={mainBusyId !== null || fileBusy || turnBusy} onClose={closeReader} /> : <ReaderHome onDiscoverModels={() => { setSettingsIntent('discover'); setSettingsOpen(true); }} settings={settings} onChooseModel={id => { void chooseModel(id).catch(error => notify(errorText(error))); }} groups={library.groups} conversations={workspace.conversations} busy={fileBusy || modelSwitchBusy || mainBusyId !== null || annotationRequests.current.size > 0} loading={library.loading} onOpenFile={chooseReaderFile} onOpenDocument={openLibraryDocument} onChat={() => setReaderFocused(false)} onSettings={() => setSettingsOpen(true)} />}</div>}
       </div>
     </main>
     <input ref={fileInput} className="visually-hidden" type="file" accept=".json,application/json" onChange={e => { const file = e.target.files?.[0]; if (file) void importBackup(file); }} aria-label={t("导入聊天备份")} />
@@ -515,6 +529,7 @@ export default function App() {
     {fileProgress && <div className="file-open-progress" role="status"><span>{fileProgress.total ? t("正在提取文字：{0} / {1} 页", [fileProgress.page, fileProgress.total]) : t("正在读取本地文件…")}</span><progress max={fileProgress.total || 1} value={fileProgress.page} /><button type="button" onClick={() => fileController.current?.abort()}>{t("取消打开")}</button></div>}
     {notice && <div role="status" className="toast">{t(notice)}{notice === "已删除批注与高亮，可撤销。" && latestDeleted && <button className="undo-toast" onClick={undoDelete}>{t("撤销")}</button>}<button className="icon-button" aria-label={t("关闭提示")} onClick={() => setNotice('')}><X size={15} /></button></div>}
     {saveStatus.startsWith("保存失败") && <div className="save-failure" role="alert">{t(saveStatus)}<button onClick={() => void downloadBackup()}>{t("导出备份")}</button></div>}
+    {appSettingsOpen && <AppSettingsDialog onClose={() => setAppSettingsOpen(false)} onModels={() => { setAppSettingsOpen(false); setSettingsIntent('configure'); setSettingsOpen(true); }} />}
     {settingsOpen && <SettingsDialog settings={settings} initialIntent={settingsIntent} onClose={closeSettings} onSaveProfile={storeProfile} onDeleteProfile={removeProfile} onSelectProfile={chooseModel} />}
     {recoveryDialog}
     {trashOpen && <TrashDialog workspace={workspace} busy={fileBusy || mainBusyId !== null || annotationRequests.current.size > 0} onClose={() => setTrashOpen(false)} onPurge={purgeTrash} onRestore={restoreTrash} />}

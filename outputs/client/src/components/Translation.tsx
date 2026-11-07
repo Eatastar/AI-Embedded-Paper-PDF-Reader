@@ -2,10 +2,10 @@ import { createContext, useCallback, useContext, useEffect, useLayoutEffect, use
 import type { CSSProperties, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Copy, GripHorizontal, Languages, Pin, RefreshCw, X } from 'lucide-react';
-import { t } from '../i18n/locale';
+import { t, getLocale, LANGUAGES } from '../i18n/locale';
 import { useLocale } from '../i18n/react';
 import type { ModelSettings, ProfileInput } from '../domain/types';
-import { DEFAULT_TRANSLATION_PREFERENCES, DEFAULT_TRANSLATION_SHORTCUT, shortcutFromEvent, shortcutLabel, TRANSLATION_TEXT_LIMIT, TRANSLATION_PROMPT_LIMIT } from '../domain/translation';
+import { DEFAULT_TRANSLATION_PREFERENCES, DEFAULT_TRANSLATION_SHORTCUT, localizedTranslationPrompt, translationTargetLanguage, shortcutFromEvent, shortcutLabel, TRANSLATION_TEXT_LIMIT, TRANSLATION_PROMPT_LIMIT } from '../domain/translation';
 import type { TranslationPreferences } from '../domain/translation';
 import { loadTranslationPreferences, saveTranslationPreferences } from '../adapters/translation';
 import { streamTranslation } from '../adapters/model';
@@ -63,7 +63,7 @@ export function TranslationProvider({ settings, scope, enabled, onSaveProfile, o
     if (!profile) { dismiss(); setSettingsOpen(true); onNotify('请先选择独立的翻译 API 连接。'); return; }
     controller.current?.abort(); const current = new AbortController(); controller.current = current;
     const id = ++sequence.current;
-    const request = frozen || { profileId: profile.id, text: source.text, prompt: prefs.prompt, targetLanguage: prefs.targetLanguage };
+    const request = frozen || { profileId: profile.id, text: source.text, prompt: localizedTranslationPrompt(prefs.prompt, getLocale()), targetLanguage: translationTargetLanguage(prefs, getLocale()) };
     const initial: Result = { id, source, request, text: '', model: profile.model, status: 'streaming' };
     resultRef.current = initial; setResult(initial); setManualCopy(false);
     let text = '';
@@ -146,7 +146,7 @@ export function TranslationProvider({ settings, scope, enabled, onSaveProfile, o
 function TranslationSettings({ settings, value, onSave, onClose, onSaveProfile, onDeleteProfile }: {
   settings: ModelSettings; value: TranslationPreferences; onSave: (value: TranslationPreferences) => void; onClose: () => void; onSaveProfile: (value: ProfileInput) => Promise<ModelSettings>; onDeleteProfile: (id: string) => Promise<void>;
 }) {
-  useLocale();
+  const locale = useLocale();
   const [readerStyle] = useState(() => {
     const reader = document.querySelector('.document-reader');
     if (!reader) return {};
@@ -164,8 +164,9 @@ function TranslationSettings({ settings, value, onSave, onClose, onSaveProfile, 
       <label className="field-label">{t('翻译 API / 模型')}<NativeSelect value={selected?.id || ''} onChange={event => setDraft({ ...draft, profileId: event.target.value || null })}><option value="">{draft.profileId && !selected ? t('原翻译连接已删除，请重新选择') : t('请选择独立的翻译连接') }</option>{settings.profiles.map(profile => <option key={profile.id} value={profile.id}>{profile.name} · {profile.model}</option>)}</NativeSelect></label>
       <div className="translation-connection-actions"><button type="button" className="document-tool-button" onClick={() => setManage({ profileId: null })}>{t('新建共享 API 连接')}</button><button type="button" className="document-tool-button" disabled={!settings.profiles.length} onClick={() => setManage({ profileId: draft.profileId ?? undefined })}>{t('管理共享连接')}</button></div>
       <p className="field-help">{t('连接与聊天、批注共用；此处选择只改变翻译模型，不切换聊天模型。')}</p>
-      <label className="field-label">{t('目标语言')}<input className="field-input" list="translation-languages" value={draft.targetLanguage} maxLength={80} required onChange={event => setDraft({ ...draft, targetLanguage: event.target.value })} /><datalist id="translation-languages"><option value="简体中文" /><option value="English" /></datalist></label>
-      <p className="field-help">{t('自动识别原文语言；也可填写其他目标语言，与界面语言分开。')}</p>
+      <label className="field-label">{t('目标语言')}<NativeSelect value={draft.targetLanguageMode} onChange={event => setDraft({ ...draft, targetLanguageMode: event.target.value === 'custom' ? 'custom' : 'interface' })}><option value="interface">{t('跟随界面语言（{0}）', [translationTargetLanguage({ ...draft, targetLanguageMode: 'interface' }, locale)])}</option><option value="custom">{t('自定义目标语言')}</option></NativeSelect></label>
+      {draft.targetLanguageMode === 'custom' && <label className="field-label">{t('自定义目标语言')}<input className="field-input" list="translation-languages" value={draft.targetLanguage} maxLength={80} required onChange={event => setDraft({ ...draft, targetLanguage: event.target.value })} /><datalist id="translation-languages">{LANGUAGES.map(language => <option key={language.code} value={language.name} />)}</datalist></label>}
+      <p className="field-help">{t('自动识别原文语言。默认目标和默认提示词跟随界面；自定义目标与提示词会保留。')}</p>
       <label className="field-label">{t('翻译快捷键')}<input className="field-input translation-shortcut" aria-label={t('翻译快捷键')} readOnly value={recording ? t('请按组合键…') : shortcutLabel(draft.shortcut)} onClick={() => { setRecording(true); setError(''); }} onBlur={() => setRecording(false)} onKeyDown={event => {
         if (event.key === 'Tab') { setRecording(false); return; }
         if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); setRecording(false); return; }
@@ -177,7 +178,7 @@ function TranslationSettings({ settings, value, onSave, onClose, onSaveProfile, 
       }} /></label>
       <button type="button" className="profile-text-button" onClick={() => { setDraft({ ...draft, shortcut: { ...DEFAULT_TRANSLATION_SHORTCUT } }); setRecording(false); setError(''); }}>{t('恢复 Alt+1')}</button>
       <p className="field-help">{t('快捷键仅在程序内选中正文时生效，不影响输入框。')}</p>
-      <label className="field-label">{t('翻译提示词')}<textarea className="field-input" rows={5} value={draft.prompt} maxLength={TRANSLATION_PROMPT_LIMIT} required onChange={event => setDraft({ ...draft, prompt: event.target.value })} /></label>
+      <label className="field-label">{t('翻译提示词')}<textarea className="field-input" rows={5} value={localizedTranslationPrompt(draft.prompt, locale)} maxLength={TRANSLATION_PROMPT_LIMIT} required onChange={event => setDraft({ ...draft, prompt: event.target.value })} /></label>
       <button type="button" className="profile-text-button" onClick={() => setDraft({ ...draft, prompt: DEFAULT_TRANSLATION_PREFERENCES.prompt })}>{t('恢复默认提示词')}</button>
       <p className="field-help">{t('可用 {targetLanguage} 表示目标语言。只发送选中文字和翻译提示词，不发送全文、所在页或聊天历史。')}</p>
       <p className="field-help">{t('译文关闭即丢弃，不进入聊天、批注列表或备份；点击保留后按普通批注保存。')}</p>

@@ -1,44 +1,56 @@
-# AI-Embedded Paper PDF Reader v0.1.25
+# AI-Embedded Paper PDF Reader v0.1.31
 
-面向文献、教材与 PDF 书籍精读的本地阅读器。接入自己的 API，在原文旁批注提问、划词翻译，需要展开讨论时再打开聊天。支持自定义纸张与文字颜色，适合希望减少刺眼白底、按个人感受调整阅读显示的读者。
+面向文献、教材与 PDF 书籍精读的本地阅读器。接入自己的 API，在原文旁批注提问、圈图询问或快速翻译，需要展开讨论时再打开聊天；纸张与文字颜色可按个人感受调整。
 
-A local reader for close reading of papers, textbooks and PDF books. Connect your own API to ask in annotations and translate selected text beside the source, then open chat for deeper discussion. Customize paper and text colors to reduce bright white backgrounds and suit your reading preferences.
+A local reader for close reading of papers, textbooks and PDF books. Connect your own API to ask beside a passage, mark a figure for image Q&A or translate selected text. Open chat for deeper discussion and adjust paper and text colors to suit your reading preferences.
 
-[查看功能截图与完整介绍 / Screenshots and overview](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader#readme)
+## 从 v0.1.25 以来的更新 / Changes since v0.1.25
 
-## 从 v0.1.21 以来的更新 / Changes since v0.1.21
+- **图片圈画问答**：在 PDF 中按 **Ctrl+Alt+A** 或点击框选图片，选中图表、坐标、图例或图注。默认画圈，也可切换画笔、颜色和粗细，再使用自己保存的视觉模型提问。问答、选区和笔迹保存在本机；重新提问成功后才替换原内容。
+  **Marked-image Q&A**: press **Ctrl+Alt+A** or use Select image to capture a PDF figure with its axes, legend or caption. Circle a detail by default, or use the pen, colors and widths, then ask a saved image-capable model. Q&A, regions and markings stay local; re-questioning replaces the original only after a successful answer.
+- **清楚处理模型能力与缓存**：可标记只支持文字的连接，提前阻止图片请求；上游拒绝图片时显示对应提示并保留问题与原问答。图片只在主动提问时发送，不自动探测；派生选图使用最多 **32 MiB / 24 项**的临时缓存，不为每条批注持久保存截图副本。
+  **Model capability and bounded image caching**: mark text-only connections to block image requests before sending. Explicit image-rejection errors retain the question and existing Q&A. Images are sent only on an explicit question, without automatic probe calls. Derived crops use a transient cache capped at **32 MiB / 24 entries**, without a persistent screenshot copy per annotation.
+- **八种界面语言**：支持简体中文、English、西班牙语、日语、繁体中文、德语、阿拉伯语及法语。阿拉伯语界面支持从右向左排列，PDF、图表和公式保留各自方向。主要操作已本地化，部分帮助和技术诊断回退英文。
+  **Eight interface languages**: Simplified Chinese, English, Spanish, Japanese, Traditional Chinese, German, Arabic and French. Arabic uses a right-to-left interface while PDFs, figures and formulas keep their own directions. Core controls are localized; some help and technical diagnostics fall back to English.
+- **回答与翻译跟随语言**：聊天、文字/图片批注的默认回答语言，以及默认翻译目标和默认提示词，跟随界面语言。翻译可设置固定目标语言；自定义提示词保留，明确指定的回答语言优先。切换不改写已有内容，失败重试保留原请求。
+  **Language-aware answers and translation**: default chat and annotation answers, translation targets and built-in prompts follow the interface. Translation can use a fixed target. Custom prompts remain intact and explicit answer-language requests take priority. Existing content and frozen failed-request retries stay unchanged.
+- **批注框可拖动、缩放及停靠**：文字、图片和翻译面板可从边角调整大小。图片批注拖走或缩放后自动释放原停靠区域，不再留下大片空白；图钉可重新停靠。聊天左下角新增设置入口。
+  **Move, resize and dock popups**: resize text, image and translation panels from their edges or corners. Moving or resizing image Q&A releases its reserved dock area, removing the blank space; use the pin to dock again. Chat now has a settings entry at the bottom left.
+- **修复遮挡与溢出**：重新提问的发送按钮与输入框保留明确间距，窄面板下操作栏自动换行；修复模型/翻译设置、语言选择框和长接口错误信息溢出。
+  **Fix overlapping and overflowing controls**: a clear gap separates re-ask inputs from Send and replace. Actions wrap in narrow panels. Model/translation settings, the language picker and long upstream errors stay within their bounds.
 
-- **记住聊天阅读位置**：每段对话独立保存，正常退出后恢复到上次段落或底部；切换对话、PDF 布局及窗口宽度时尽量保持阅读位置。
-  **Resume chat reading**: each conversation remembers its paragraph or bottom position across normal restarts, conversation switches, PDF layout changes and window resizing.
-- **更方便地切换 PDF 与聊天**：关闭 PDF 后可快速重新展开，也可直接回到专注阅读模式，保留页码和缩放。
-  **Switch between PDF and chat**: quickly reopen a closed PDF or return directly to focused reading while retaining the page and zoom.
-- **引用文字继续提问**：选择 PDF、AI 回答或聊天问题中的文字，预览后附在下一次提问中。
-  **Quote text in chat**: select a passage in a PDF, AI answer or chat question, preview it and attach it to your next question.
-- **批注在讨论时保持打开**：点击聊天、正文或翻页继续查看原文问答，用 × 或 Esc 收起。聊天中可主动选择已有批注继续讨论。
-  **Keep annotations open while discussing**: consult source Q&A while interacting with chat or turning pages, then close with × or Esc. Explicitly select saved annotations as chat references.
-- **修复公式显示和鼠标反馈**：修复聊天、批注和翻译中不等号等否定符号的斜线错位；光标按文字、按钮、空白和拖动操作切换。
-  **Correct math and cursor feedback**: fix misplaced negation slashes in chat, annotation and translation formulas, with appropriate cursors for text, controls, whitespace and dragging.
-- **更新双语首页介绍**：用四张真实客户端截图展示批注问答、引用批注、并排讨论及快速翻译；截图使用虚构文档和本地模拟回复。
-  **Refresh the bilingual homepage**: four actual client screenshots show annotation Q&A, references, side-by-side discussion and quick translation, using a fictional document and local mock responses.
+## 原有精读功能 / Existing close-reading features
 
-## 划词翻译 / Quick translation
+本地 PDF 阅读、自选 API、自定义纸张与文字颜色、划词翻译（默认 **Alt+1**）、文字批注、主动引用批注到聊天、聊天阅读位置恢复等功能继续保留。
 
-选中单词或段落后，按默认 **Alt+1** 或右键翻译，在原文旁查看临时译文；可保留为普通批注。翻译 API、提示词和快捷键可独立设置，只发送选中文字和翻译提示词。
-
-Select a word or passage and press **Alt+1** or right-click to translate beside the source. Optionally keep the result as a plain note. Configure the translation API, prompt and shortcut separately; only the selected text and translation prompt are sent.
+Local PDF reading, your own API, adjustable paper/text colors, quick translation (**Alt+1**), text annotations, explicit annotation references in chat and restored chat reading positions remain available.
 
 ## 下载与更新 / Download and update
 
-下载 Windows x64 ZIP 并完整解压，正常退出旧版后运行新目录中的 `AI-Embedded-Paper-PDF-Reader.exe`。配置和阅读成果保存在本机；提问资料会发送给你自己配置的服务。阅读位置偏好不进入聊天备份，也不发送给 AI。
+下载 Assets 中的 **AI-Embedded-Paper-PDF-Reader-0.1.31-Windows-x64.zip**，完整解压，正常退出旧版后运行新目录内的 **AI-Embedded-Paper-PDF-Reader.exe**，保留同目录文件。原本机聊天、批注、阅读数据与 API 连接继续使用。GitHub 自动生成的 Source code 压缩包用于查看或构建源码，Windows 用户请选择完整客户端 ZIP。建议用本版恢复包含图片批注的新备份。
 
-Download and fully extract the Windows x64 ZIP, exit the old app normally and run `AI-Embedded-Paper-PDF-Reader.exe` from the new folder. Settings and reading work stay local; question material is sent to your configured service. Reading-position preferences are excluded from conversation backups and model requests.
+Download **AI-Embedded-Paper-PDF-Reader-0.1.31-Windows-x64.zip** from Assets, fully extract it, exit the old app normally and run **AI-Embedded-Paper-PDF-Reader.exe** from the new folder, keeping all accompanying files. Existing local chat, annotations, reading data and API connections remain in use. GitHub's automatic source archives are for inspecting or building the code; Windows users should choose the full client ZIP. Use this version to restore new backups containing image annotations.
+
+## 本地数据与 AI 请求 / Local data and AI requests
+
+API 配置保存在本机；系统加密可用时，保存的密钥使用系统加密，密钥不进入聊天备份。项目不运行文档、凭证托管或使用统计服务。主动调用 AI 时，认证信息与本次选中的文字、图片或对应资料会发送给你配置的服务。PDF 批注不自动带入聊天及其他批注；翻译只发送选中文字与翻译设置。详见[隐私说明](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/blob/main/docs/PRIVACY.md)。
+
+API settings stay local. Saved keys use operating-system encryption when available and are excluded from conversation backups. The project operates no document hosting, credential hosting or usage analytics service. Explicit AI requests send authentication and their scoped text, image or source material to your configured provider. PDF annotations do not automatically include chat or other annotations; translation sends only selected text and translation settings. See [Privacy](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/blob/main/docs/PRIVACY.md).
+
+## 验证与校验 / Validation and checksum
+
+318 项自动测试、125 项完整客户端交互检查、107 项图片问答检查、97 项原有界面检查、19 项停靠检查、432 组布局检查及 18 组长文本检查通过；实际 EXE 启动、保存、备份及正常退出验证通过。测试使用虚构资料和本地模拟接口。
+
+Validation passed: 318 automated tests, 125 full-client interaction checks, 107 image Q&A checks, 97 existing UI checks, 19 docking checks, 432 layout cases and 18 long-text cases, plus real EXE startup, save, backup and normal-exit verification. Tests use synthetic data and local mock endpoints.
 
 ZIP SHA-256:
 
 ```text
-f082f7f8309243862269e89bbbc8ee0a432c3936d16dbaaa094ec79ba60bef88
+c712cd5a7e15b63580bf1afb7ddae8595baf207a07859b5e7fb310d87a5c873d
 ```
 
-应用验证：282 项自动检查、97 项既有界面检查、30 项聊天位置检查，以及真实 EXE 启动、保存和正常退出验证通过。首页截图另在当前客户端中实际操作并逐图审阅；客户端功能代码和已核对的 Windows ZIP 未因本次文档更新而修改。
+## 实现与复用 / Implementation and reuse
 
-Application validation: 282 automated tests, 97 existing UI checks, 30 chat-position checks and real EXE startup/save/normal-exit verification passed. Homepage screenshots were captured through actual client interactions and individually reviewed. This documentation update leaves the validated client code and Windows ZIP unchanged.
+本项目原创应用代码全部由 GPT 通过 Codex 实现；人类发起者负责想法、需求及功能取舍。第三方组件保留各自作者与许可证。项目采用 MIT 许可证，欢迎下载并通过 AI agent 或 vibe coding 改成适合自己的版本；发布衍生项目时，请链接[本项目](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader)。
+
+Original application code was implemented entirely by GPT through Codex; the human initiator provides ideas, requirements and product decisions. Third-party authorship and licenses remain distinct. The project uses MIT: download it and adapt it with an AI agent or vibe coding. Please link to [this project](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader) when publishing a derivative.

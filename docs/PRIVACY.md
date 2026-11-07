@@ -17,7 +17,7 @@ AI-Embedded Paper PDF Reader 在本机保存阅读资料、聊天、批注和 AP
 
 聊天发送尚未删除的有效主对话及所选文档资料，默认不读取批注；点击输入框下方工具栏“引用批注”后，只把手动选择的问答或笔记加入该次问题。PDF 批注只引用所属文档、选段和本次问题，不带聊天及其他批注；在 AI 回答上提问时，仅引用批注绑定的那一版原回答。
 
-文档范围继续支持自动、全文或按需引用：自动模式下，小文件发送全文提取文字，超过 25 MiB、300 页或 12 万提取字符时在本机检索，每份文档最多引用 2.4 万片段字符，选段和问题另计。原 PDF 和页面图片不作为文件上传。资料不足时明确提示，全文仍受请求和模型容量限制。批注失败重试保留本次问题、回答偏好和文档范围，从同一份不可变来源重新组装请求，不保存整段聊天快照。
+文档范围继续支持自动、全文或按需引用：自动模式下，小文件发送全文提取文字，超过 25 MiB、300 页或 12 万提取字符时在本机检索，每份文档最多引用 2.4 万片段字符，选段和问题另计。普通文字提问不会上传原 PDF 或页面图片；主动图片提问的发送范围见下文。资料不足时明确提示，全文仍受请求和模型容量限制。批注失败重试保留本次问题、回答偏好和文档范围，从同一份不可变来源重新组装请求，不保存整段聊天快照。
 
 引用批注会在发送时保存一份可查看的内容副本，之后编辑或删除原批注不会静默改写已经发送的聊天；删除对应聊天轮次会删除这份副本。每轮回答下方的“删除本轮”会直接删除本轮问题、全部回答版本及这些回答上的批注，不进入回收站；PDF 原文批注和文件保留。同时清除剩余失败回答的旧请求快照，后续聊天中对被删回答批注的手动引用也会移除，重试不会通过这些缓存带回已删内容。以前的自动备份、迁移存档和导出文件可能仍含旧内容。
 
@@ -57,7 +57,7 @@ The app stores original document bytes, extracted text, conversations, annotatio
 
 Reading, turning pages, recoloring, searching, writing personal notes and saving/switching connections make no AI requests. Chat sends the remaining valid main conversation and document material, without automatically reading annotations. Reference annotations in the composer toolbar adds only the Q&A or notes you select to that question. A PDF annotation uses only its own document, selection and current question, without chat or other annotations. An annotation on an AI answer uses only its bound original answer version.
 
-Document scope still supports Auto, Full text and Relevant excerpts. Auto sends full extracted text for small files; above 25 MiB, 300 pages or 120,000 extracted characters, local retrieval sends at most 24,000 excerpt characters per document, with the selection and question additional. Original PDFs and page images are not uploaded as files. Missing evidence is disclosed, and full text remains subject to request/model limits. Failed annotation retries retain the question, answer preference and document scope and rebuild from the same immutable source, without storing a full-chat snapshot.
+Document scope still supports Auto, Full text and Relevant excerpts. Auto sends full extracted text for small files; above 25 MiB, 300 pages or 120,000 extracted characters, local retrieval sends at most 24,000 excerpt characters per document, with the selection and question additional. Ordinary text questions do not upload original PDFs or page images; explicit image questions are described below. Missing evidence is disclosed, and full text remains subject to request/model limits. Failed annotation retries retain the question, answer preference and document scope and rebuild from the same immutable source, without storing a full-chat snapshot.
 
 An explicit annotation reference stores a visible copy at sending time. Later edits or deletion of the source annotation do not silently rewrite an already sent discussion; deleting its chat round removes the copy. Delete round under each answer permanently removes that question, all answer versions and annotations attached to those answers, without Trash. PDF annotations and files remain. Remaining failed-answer snapshots and later manual references to the removed answer annotations are also cleared, so retries cannot restore deleted content through these caches. Earlier automatic backups, migration archives and exports may still contain old content.
 
@@ -82,3 +82,34 @@ External PDF web links open their HTTP/HTTPS addresses in the system browser, wh
 聊天阅读位置只在本机保存对话/回答标识及显示位置，不复制聊天正文、PDF 文字或密钥，不进入聊天备份，也不发送给 AI。回收站中的对话可继续保留位置以供恢复，永久删除对话时清理其位置记录。
 
 Chat reading preferences store only local conversation/reply identifiers and display positions. They contain no message text, PDF text or credentials, are excluded from conversation backups and are never sent to AI. Recycled conversations retain their preferences for recovery; permanent conversation removal clears the saved position.
+
+## 图片批注问答 / Image Q&A annotations
+
+只有主动发送图片问题时，才向所选连接发送本次原始配色选图、圈画、问题及所属文档的文字资料；小文件默认全文，大文件按需引用，不带聊天及其他批注。重新提问成功后才替换原问答和圈画。明确只支持文字的连接可在设置中标记并提前阻止请求；未知能力依据上游明确错误提示，不会自动发送测试图片或产生探测调用。
+
+Only sending an image question transmits its original-color crop, markings, question and source-document text to the selected connection. Small files use full text and large files use relevant excerpts by default, without chat or other annotations. A successful re-question replaces the old Q&A and markings; failures keep them. Mark known text-only connections in settings to block image requests. Unknown capabilities are classified from explicit upstream errors, without automatic probe images or billable test calls.
+
+保存和备份只新增文档关联、页码、相对选区及矢量笔迹，不为每条图片批注持久保存截图或 Base64。重新打开时从已保存 PDF 还原选图；原 PDF 仍按原附件机制保留。派生原色选图采用最多 32 MiB / 24 项的临时缓存，发送图片最多 1 MiB、最长边 1800px、200 万像素；活动预览、合成画布与 PDF 页面内存另计，收起或关闭后释放相应资源。图片批注备份请用 v0.1.26 或更新版本恢复。
+
+Storage and backups add only the document association, page, normalized region and vector markings, without a persisted screenshot or Base64 copy for each annotation. Images are regenerated from the saved PDF; the original PDF remains an attachment. Derived original-color crops use a transient cache capped at 32 MiB / 24 entries. A transmitted image is capped at 1 MiB, 1800px per edge and two million pixels. Active previews, compositing canvases and PDF page memory are separate and released when no longer needed. Restore image-annotation backups with v0.1.26 or newer.
+
+圈画、预览和切换连接不发起模型请求。图片内容和 Base64 不写入文字上下文快照、API 配置或诊断日志。图片问答的连接选择只另存一个本机共享连接标识，不复制密钥，不进入聊天备份。所选服务会接收到主动发送的图片与资料，应依其数据处理规则使用。
+
+Drawing, previewing and switching connections make no model request. Image bytes and Base64 are excluded from text context snapshots, API configuration and diagnostic logs. The image-model preference stores only a local shared-connection ID, without duplicating keys or entering conversation backups. Your chosen service receives images and material you explicitly send and applies its own data-processing rules.
+
+## 新增界面语言 / Additional interface languages
+
+语言选择框改为单层轻边框，去掉原来的棕色焦点框。界面新增西班牙语、日语、繁体中文、德语、阿拉伯语和法语，含简体中文及英语共八种语言；主要操作界面本地化，部分帮助和技术诊断回退英文。阿拉伯语界面从右向左排列，PDF、图表、公式、代码及原始内容保留各自方向。语言选择仅保存在本机，不会翻译或改写论文、聊天与批注正文。
+
+The language picker uses one subtle border, replacing the brown focus frame. Spanish, Japanese, Traditional Chinese, German, Arabic and French join Simplified Chinese and English. Core controls are localized; some help and technical diagnostics fall back to English. Arabic uses a right-to-left interface while PDFs, figures, formulas, code and source content retain their own direction. Language preferences stay local and do not translate or rewrite papers, conversations or annotation content.
+
+浮窗大小只在界面内存中使用，不复制批注正文、图像或模型凭证，不进入聊天备份。
+
+Popup sizes stay only in UI memory, without copying annotation text, images or credentials or entering conversation backups.
+
+
+## 请求语言偏好 / Request language preferences
+
+界面语言和翻译目标模式仍保存在本机，不进入聊天备份。下一次 AI 提问会在请求提示词中带入默认回答语言；翻译请求带入实际目标语言和所用提示词。只切换语言不联网、不自动翻译已有内容，不修改密钥、地址或自定义偏好。失败请求的重试保留原请求语言。
+
+Interface language and translation target mode remain local preferences outside conversation backups. Fresh AI requests include a default answer-language instruction; translation requests include their resolved target language and prompt. Switching language alone makes no network request, translates no existing content and changes no keys, endpoints or custom preferences. Failed retries retain their original request language.

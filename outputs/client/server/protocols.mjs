@@ -1,4 +1,5 @@
-/** Native text transports. Keys and untrusted provider messages never enter Error.message. */
+import { imageMessages } from './vision.mjs';
+/** Native transports. Keys and untrusted provider messages never enter Error.message. */
 export class ProtocolError extends Error {
   constructor(code, { statusCode, responseBody, upstreamError } = {}) {
     super(code);
@@ -127,9 +128,9 @@ function responseText(response) {
     .map(part => part?.type === 'output_text' && typeof part.text === 'string' ? part.text : part?.type === 'refusal' && typeof part.refusal === 'string' ? part.refusal : '').join('');
 }
 
-async function openAIResponses({ baseURL, model, apiKey, messages, annotationInstruction, signal, fetcher, onText }) {
+async function openAIResponses({ baseURL, model, apiKey, messages, image, annotationInstruction, signal, fetcher, onText }) {
   const input = annotationInstruction ? [{ role: 'system', content: annotationInstruction }, ...messages] : messages;
-  const response = await fetchStream(endpointURL(baseURL, 'responses'), { model, input: input.map(message => ({ role: message.role, content: message.content })), stream: true, store: false }, apiKey ? { Authorization: `Bearer ${apiKey}` } : {}, signal, fetcher);
+  const response = await fetchStream(endpointURL(baseURL, 'responses'), { model, input: imageMessages(input, image, 'openai-responses').map(message => ({ role: message.role, content: message.content })), stream: true, store: false }, apiKey ? { Authorization: `Bearer ${apiKey}` } : {}, signal, fetcher);
   let text = '';
   const emit = async chunk => { aborted(signal); text += chunk; await onText(chunk); aborted(signal); };
   for await (const event of streamEvents(response.body, signal)) {
@@ -160,12 +161,12 @@ async function openAIResponses({ baseURL, model, apiKey, messages, annotationIns
 
 const anthropicErrorStatus = { authentication_error: 401, permission_error: 403, rate_limit_error: 429, not_found_error: 404, invalid_request_error: 400, overloaded_error: 529, api_error: 500 };
 
-async function anthropicMessages({ baseURL, model, apiKey, messages, annotationInstruction, signal, fetcher, onText }) {
+async function anthropicMessages({ baseURL, model, apiKey, messages, image, annotationInstruction, signal, fetcher, onText }) {
   const system = [
     ...(annotationInstruction ? [{ type: 'text', text: annotationInstruction }] : []),
     ...messages.filter(message => message.role === 'system').map(message => ({ type: 'text', text: message.content })),
   ];
-  const body = { model, ...(system.length ? { system } : {}), messages: messages.filter(message => message.role !== 'system').map(message => ({ role: message.role, content: message.content })), max_tokens: 4096, stream: true };
+  const body = { model, ...(system.length ? { system } : {}), messages: imageMessages(messages.filter(message => message.role !== 'system'), image, 'anthropic-messages').map(message => ({ role: message.role, content: message.content })), max_tokens: 4096, stream: true };
   const response = await fetchStream(endpointURL(baseURL, 'messages'), body, { ...(apiKey ? { 'x-api-key': apiKey } : {}), 'anthropic-version': '2023-06-01' }, signal, fetcher);
   let text = '';
   let stopReason;
@@ -199,9 +200,29 @@ async function anthropicMessages({ baseURL, model, apiKey, messages, annotationI
 }
 
 /** @param {{apiFormat: string, baseURL: string, model: string, apiKey?: string, messages: {role: string, content: string}[], annotationInstruction?: string, signal?: AbortSignal, fetch?: typeof fetch, onText: (text: string) => unknown}} options */
-export async function streamProtocolReply({ apiFormat, baseURL, model, apiKey = '', messages, annotationInstruction = '', signal, fetch: customFetch, onText }) {
-  if (!['openai-responses', 'anthropic-messages'].includes(apiFormat)) throw new ProtocolError('unsupported_api_format');
+export async function streamProtocolReply({ apiFormat, baseURL, model, apiKey = '', messages, image, annotationInstruction = '', signal, fetch: customFetch, onText }) {
+  if (!['openai-chat', 'openai-responses', 'anthropic-messages'].includes(apiFormat)) throw new ProtocolError('unsupported_api_format');
   if (!Array.isArray(messages) || messages.some(message => !message || !['system', 'user', 'assistant'].includes(message.role) || typeof message.content !== 'string')) throw new ProtocolError('invalid_messages');
-  const options = { baseURL, model, apiKey, messages, annotationInstruction, signal, fetcher: customFetch || globalThis.fetch, onText };
-  return apiFormat === 'openai-responses' ? openAIResponses(options) : anthropicMessages(options);
+  const options = { baseURL, model, apiKey, messages, image, annotationInstruction, signal, fetcher: customFetch || globalThis.fetch, onText };
+  return apiFormat === 'openai-chat' ? openAIChat(options) : apiFormat === 'openai-responses' ? openAIResponses(options) : anthropicMessages(options);
+}
+
+async function openAIChat({ baseURL, model, apiKey, messages, image, annotationInstruction, signal, fetcher, onText }) {
+  const input = annotationInstruction ? [{ role: 'system', content: annotationInstruction }, ...messages] : messages;
+  const response = await fetchStream(endpointURL(baseURL, 'chat/completions'), { model, messages: imageMessages(input, image, 'openai-chat'), stream: true }, apiKey ? { Authorization: `Bearer ${apiKey}` } : {}, signal, fetcher);
+  let text = '';
+  for await (const event of streamEvents(response.body, signal)) {
+    if (event.data === '[DONE]') break;
+    const data = eventJSON(event);
+    if (data.error) throw providerError('upstream_stream_error', data);
+    const choice = data.choices?.[0]; if (!choice) continue;
+    const chunk = choice.delta?.content ?? choice.message?.content;
+    if (chunk !== undefined && chunk !== null) { if (typeof chunk !== 'string') throw new ProtocolError('invalid_stream_event'); text += chunk; await onText(chunk); aborted(signal); }
+    if (choice.finish_reason) {
+      if (choice.finish_reason !== 'stop') throw new ProtocolError(choice.finish_reason === 'length' ? 'output_limit' : 'model_incomplete');
+      if (!text.trim()) throw new ProtocolError('empty_response');
+      return { ...(data.usage ? { usage: usageTotals(data.usage.prompt_tokens, data.usage.completion_tokens, data.usage.total_tokens) } : {}) };
+    }
+  }
+  throw new ProtocolError('stream_incomplete');
 }
