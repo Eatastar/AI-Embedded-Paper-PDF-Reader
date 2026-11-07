@@ -1,4 +1,4 @@
-# 配置自己的 API / Configure your API (0.1.31)
+# 配置自己的 API / Configure your API (0.1.32)
 
 完整解压 Windows x64 ZIP，正常退出旧版后运行 AI-Embedded-Paper-PDF-Reader.exe，保留同目录全部文件。无法启动时运行“启动诊断.cmd”。
 

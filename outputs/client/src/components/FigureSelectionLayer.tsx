@@ -1,20 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Circle } from 'lucide-react';
 import { t } from '../i18n/locale';
 import { useLocale } from '../i18n/react';
 import type { Annotation } from '../domain/types';
 import { coordinate, type FigureRect } from '../domain/figure';
-import { StrokeOverlay } from './FigureDrawingEditor';
 
 const style = (rect: FigureRect) => ({ left: `${rect.x * 100}%`, top: `${rect.y * 100}%`, width: `${rect.width * 100}%`, height: `${rect.height * 100}%` });
 export function FigureSelectionLayer({ enabled, annotations, openedId, onSelect, onOpen, onNotify }: { enabled: boolean; annotations: Annotation[]; openedId: string | null; onSelect: (rect: FigureRect) => void; onOpen: (id: string) => void; onNotify: (message: string) => void }) {
   useLocale();
-  const root = useRef<HTMLDivElement>(null), start = useRef<{ x: number; y: number } | null>(null);
-  const [selection, setSelection] = useState<FigureRect | null>(null), [size, setSize] = useState({ width: 600, height: 800 });
-  useEffect(() => { const element = root.current; if (!element) return; const observer = new ResizeObserver(() => setSize({ width: element.clientWidth, height: element.clientHeight })); observer.observe(element); return () => observer.disconnect(); }, []);
+  const start = useRef<{ x: number; y: number } | null>(null);
+  const [selection, setSelection] = useState<FigureRect | null>(null);
   const figures = annotations.filter(annotation => annotation.figure && annotation.deletedAt === undefined);
-  return <div ref={root} className="figure-page-layer" aria-hidden={!enabled && !figures.length}>
-    {!enabled && figures.map(annotation => <div key={annotation.id} className={`figure-region${openedId === annotation.id ? ' is-open' : ''}`} data-figure-annotation={annotation.id} style={{ ...style(annotation.figure!.rect), borderColor: annotation.color }}><StrokeOverlay strokes={annotation.reask?.figureStrokes || annotation.figure!.strokes} width={size.width * annotation.figure!.rect.width} height={size.height * annotation.figure!.rect.height} /><button type="button" style={{ background: annotation.color }} aria-label={t('打开图片批注：{0}', [annotation.question || annotation.quote])} onClick={event => { event.stopPropagation(); onOpen(annotation.id); }}><Circle size={11} />{t('图片问答')}</button></div>)}
+  return <div className="figure-page-layer" aria-hidden={!enabled && !figures.length}>
+    {/* Keep only the source locator here; question markings belong to the cropped image. */}
+    {!enabled && figures.map(annotation => <div key={annotation.id} className={`figure-region${openedId === annotation.id ? ' is-open' : ''}`} data-figure-annotation={annotation.id} style={{ ...style(annotation.figure!.rect), borderColor: annotation.color }}><button type="button" style={{ background: annotation.color }} aria-label={t('打开图片批注：{0}', [annotation.question || annotation.quote])} onClick={event => { event.stopPropagation(); onOpen(annotation.id); }}><Circle size={11} />{t('图片问答')}</button></div>)}
     {enabled && <div className="figure-crop-layer" data-testid="figure-crop-layer" onPointerDown={event => {
       if (event.button !== 0) return; event.preventDefault(); event.stopPropagation(); window.getSelection()?.removeAllRanges();
       const r = event.currentTarget.getBoundingClientRect(); start.current = { x: coordinate((event.clientX - r.left) / r.width), y: coordinate((event.clientY - r.top) / r.height) }; setSelection({ ...start.current, width: 0, height: 0 }); event.currentTarget.setPointerCapture(event.pointerId);
