@@ -41,7 +41,8 @@ button svg { flex-shrink: 0; }
 .sidebar { width: 254px; flex: 0 0 254px; padding: 31px 18px 18px; display: flex; flex-direction: column; background: var(--ls-sidebar); border-right: 1px solid var(--ls-border); z-index: 20; }
 .brand { display: flex; align-items: center; gap: 9px; padding: 0 4px; color: var(--ls-ink); }
 .brand-mark { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 34px; height: 38px; border-radius: 10px 10px 10px 3px; background: var(--ls-selected); color: var(--ls-accent-strong); }
-.brand-name { min-width: 0; white-space: nowrap; font-family: system-ui, sans-serif; font-size: 16px; font-weight: 650; letter-spacing: -.35px; }
+.brand-name { flex: 1; min-width: 0; white-space: normal; font-family: system-ui, sans-serif; font-size: 16px; font-weight: 650; letter-spacing: -.35px; }
+.brand-title { display: block; overflow-wrap: anywhere; }
 .brand small { display: block; margin-top: 5px; font-family: "Microsoft YaHei", sans-serif; font-size: 9px; font-weight: 400; letter-spacing: 1.4px; color: var(--ls-muted); line-height: 1.2; }
 .new-conversation { display: flex; align-items: center; gap: 9px; margin-top: 34px; width: 100%; padding: 12px 13px; border: 1px solid var(--ls-border); border-radius: 8px; background: var(--ls-panel); font-size: 13px; font-weight: 550; }
 .new-conversation:hover { border-color: var(--ls-border-strong); background: var(--ls-panel); }
@@ -264,6 +265,9 @@ button svg { flex-shrink: 0; }
 .profile-dialog-footer > div { display: flex; align-items: center; gap: 7px; }
 .profile-form-fields:disabled .field-input, .profile-form-fields:disabled .password-field { opacity: .65; }
 .topbar-actions { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
+.reopen-document-button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 9px; border: 1px solid var(--ls-border); border-radius: 7px; background: var(--ls-panel); color: var(--ls-text); font: inherit; font-size: 11px; white-space: nowrap; }
+.reopen-document-button:hover { background: var(--ls-surface); }
+@media (max-width: 760px) { .reopen-document-button > span { display: none; } }
 .conversation-row { display: flex; align-items: center; border-radius: 7px; margin-bottom: 5px; }
 .conversation-row:hover { background: var(--ls-surface); }
 .conversation-row.active { background: var(--ls-hover); }

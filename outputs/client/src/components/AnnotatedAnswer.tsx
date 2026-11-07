@@ -3,8 +3,9 @@ import { useLocale } from '../i18n/react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, Clipboard, Copy, Languages, MessageSquare, MessageSquarePlus, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Clipboard, Copy, Languages, MessageSquare, MessageSquarePlus, MessageSquareQuote, Trash2, X } from 'lucide-react';
 import { useTranslation } from './Translation';
+import { useChatTextReference } from './ChatTextReference';
 import { matchesTranslationShortcut, shortcutLabel } from '../domain/translation';
 import { MathMarkdown } from './MathMarkdown';
 import { createTextAnnotator, rangeToSelector } from '@recogito/text-annotator';
@@ -84,6 +85,7 @@ function popupPosition(rect: DOMRect | null, height = 440, preferredWidth = 390)
 export function AnnotatedAnswer({ conversationId, messageId, version, annotations, reservedColors = [], openAnnotationId, onOpen, onCreate, onUpdate, onAsk, onStop, onReask, onDelete, onNotify, disabled, plainText = false, content, contentReadyKey, contentClassName = '', readerStyle, onSourceClick }: AnnotatedAnswerProps) {
   useLocale();
   const translation = useTranslation();
+  const chatText = useChatTextReference();
   const sourceKey = `${conversationId}:${messageId}:${version.id}`;
   const proseRef = useRef<HTMLDivElement>(null);
   const annotatorRef = useRef<TextAnnotator<TextAnnotation, TextAnnotation> | null>(null);
@@ -253,7 +255,6 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
     if (matching.length) {
       lastRectRef.current = new DOMRect(event.clientX, event.clientY, 1, 18);
       if (matching.length > 1) {
-        onOpen(null);
         setAnnotationChoice({ ids: matching.map((annotation) => annotation.id), rect: lastRectRef.current });
       } else {
         setAnnotationChoice(null);
@@ -285,10 +286,16 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
 
   const translateSelection = (draft: SelectionDraft) => {
     if (!translation?.enabled || !isComplete || !proseRef.current) return;
-    setSelectionDraft(null); setAnswerMenu(null); setAnnotationChoice(null); onOpen(null);
+    setSelectionDraft(null); setAnswerMenu(null); setAnnotationChoice(null);
     translation.translate({ sourceKey, text: draft.selector.quote, element: proseRef.current, rect: draft.rect, style: readerStyle, save: (text, model) => {
       if (!createAnnotation(draft, { text, model })) throw new Error('原文位置已变化，请重新选词翻译。');
     } });
+  };
+  const quoteSelection = (draft: SelectionDraft) => {
+    if (!chatText?.enabled || !isComplete) return;
+    chatText.quote({ conversationId, messageId, versionId: version.id, text: draft.selector.quote });
+    setSelectionDraft(null); setAnswerMenu(null); setAnnotationChoice(null);
+    window.getSelection()?.removeAllRanges();
   };
   useEffect(() => () => translation?.releaseSource(sourceKey), [sourceKey, translation?.releaseSource]);
   useEffect(() => {
@@ -382,14 +389,10 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
         ><span className="annotation-color-dot" style={{ background: annotation.color }} /><span className="annotation-choice-copy"><span className="annotation-choice-ordinal">{t("批注")}{visibleAnnotations.findIndex((entry) => entry.id === annotation.id) + 1}</span><span className="annotation-choice-preview">{(annotation.mode === 'note' ? annotation.note?.trim() : annotation.question.trim()) || annotation.quote}</span></span></button>)}
       </details>}
       {selectionDraft && isComplete && createPortal(
-        <button
-          type="button"
-          className="annotation-selection-button"
-          data-testid="create-annotation"
-          style={{ ...readerStyle, left: Math.max(12, Math.min(window.innerWidth - 146, selectionDraft.rect.left + selectionDraft.rect.width / 2 - 67)), top: Math.max(12, selectionDraft.rect.top - 45) }}
-          onPointerDown={(event) => event.preventDefault()}
-          onClick={() => createAnnotation()}
-        ><MessageSquarePlus size={15} />{t("添加批注")}</button>, document.body,
+        <div className="annotation-selection-toolbar" style={{ ...readerStyle, left: Math.max(12, Math.min(window.innerWidth - 270, selectionDraft.rect.left + selectionDraft.rect.width / 2 - 100)), top: Math.max(12, selectionDraft.rect.top - 45) }}>
+          <button type="button" className="annotation-selection-button" data-testid="create-annotation" onPointerDown={event => event.preventDefault()} onClick={() => createAnnotation()}><MessageSquarePlus size={15} />{t("添加批注")}</button>
+          {chatText?.enabled && <button type="button" className="annotation-selection-button quote-selection-button" onPointerDown={event => event.preventDefault()} onClick={() => quoteSelection(selectionDraft)}><MessageSquareQuote size={15} />{t('引用到聊天')}</button>}
+        </div>, document.body,
       )}
       {annotationChoice && choices.length > 1 && createPortal(
         <div
@@ -434,6 +437,7 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
           onClick={(event) => event.stopPropagation()}
         >
           {answerMenu.selection && <>
+            {chatText?.enabled && <button type="button" role="menuitem" onClick={() => quoteSelection(answerMenu.selection!)}><MessageSquareQuote size={15} /><span>{t('引用到聊天')}</span></button>}
             {translation && <button type="button" role="menuitem" disabled={!translation.enabled} onClick={() => translateSelection(answerMenu.selection!)}><Languages size={15} /><span>{t('翻译选中文字')}</span><small>{shortcutLabel(translation.preferences.shortcut)}</small></button>}
             <button type="button" role="menuitem" onClick={() => void copyText(answerMenu.selection!.selector.quote)}><Copy size={15} /><span>{t("复制选中文字")}</span></button>
             <button type="button" role="menuitem" onClick={() => createAnnotation(answerMenu.selection)}><MessageSquarePlus size={15} /><span>{t("为选中文字添加批注")}</span></button>

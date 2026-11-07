@@ -1,0 +1,9 @@
+.chat-text-reference { margin: 0 0 12px; border: 1px solid var(--ls-border); border-left: 3px solid var(--ls-border-strong); border-radius: 8px; padding: 7px 10px; background: var(--ls-surface); color: var(--ls-text); font-size: 11px; white-space: normal; }
+.chat-text-reference > div { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.chat-text-reference strong { flex: none; font-weight: 500; }
+.chat-text-reference > div > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ls-muted); }
+.chat-text-reference .icon-button { margin-left: auto; flex: none; width: 24px; height: 24px; }
+.chat-text-reference blockquote { margin: 5px 0 0; padding: 0; max-height: 76px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 1.6; }
+.user-message .chat-text-reference { margin-top: 10px; margin-bottom: 0; }
+.chat-question-text { display: block; }
+.chat-text-selection { position: fixed; z-index: 120; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 11px; border: 1px solid var(--ls-border-strong); border-radius: 7px; background: var(--ls-panel); color: var(--ls-text); font: inherit; font-size: 12px; box-shadow: 0 4px 18px #62471622; }

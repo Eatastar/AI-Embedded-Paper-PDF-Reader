@@ -55,7 +55,7 @@ export class WorkspaceCodec {
     });
   }
   private message(value: ChatMessage): Group {
-    return this.memo(value, () => this.group('message', value.id, { ...pick(value, ['id', 'role', 'activeVersionId', 'annotationReferences']), versionIds: value.versions.map(v => v.id) }, value.versions.map(v => this.version(v))));
+    return this.memo(value, () => this.group('message', value.id, { ...pick(value, ['id', 'role', 'activeVersionId', 'annotationReferences', 'textReference']), versionIds: value.versions.map(v => v.id) }, value.versions.map(v => this.version(v))));
   }
   private page(value: DocumentPage): Group { return this.memo(value, () => this.group('page', value.messageId, pick(value, ['pageNumber', 'text', 'messageId', 'versionId']))); }
   private document(value: DocumentAttachment): Group {
@@ -154,7 +154,7 @@ export function unpackWorkspace(input: unknown): unknown {
     const data = read('conversation', id);
     const messages = ids(data.messageIds, 10000).map(messageId => {
       const m = read('message', messageId);
-      return { ...pick(m, ['id', 'role', 'activeVersionId', 'annotationReferences']), versions: ids(m.versionIds, 1000).map(versionId => withContext(read('version', versionId), ['id', 'content', 'status', 'createdAt', 'modelLabel', 'error'])) };
+      return { ...pick(m, ['id', 'role', 'activeVersionId', 'annotationReferences', 'textReference']), versions: ids(m.versionIds, 1000).map(versionId => withContext(read('version', versionId), ['id', 'content', 'status', 'createdAt', 'modelLabel', 'error'])) };
     });
     const documents = data.documentIds === undefined ? undefined : ids(data.documentIds, 10).map(documentId => {
       const d = read('document', documentId);

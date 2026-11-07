@@ -1,10 +1,10 @@
 # AI-Embedded Paper PDF Reader 项目总纲 / Project outline
 
-当前版本：客户端 0.1.21，构建 20261107.1，2026年11月7日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
+当前版本：客户端 0.1.22，构建 20261107.2，2026年11月7日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
 
 首个公开正式版沿用 v0.1.11 和现有构建，使用 MIT 许可证。公开范围包括已核对的源码及通用 Windows 发行包；历史检查范围见 [公开发布说明](OPEN_SOURCE_RELEASE.md)，本地数据和请求边界见 [隐私说明](PRIVACY.md)。
 
-Current source: **0.1.21 / 20261107.1**. A local paper reader with optional AI questions and personal notes. Public introductions and release notes are bilingual. Users can select Chinese or English in the app; interface language never rewrites their documents, messages, notes or answer preferences.
+Current source: **0.1.22 / 20261107.2**. A local paper reader with optional AI questions and personal notes. Public introductions and release notes are bilingual. Users can select Chinese or English in the app; interface language never rewrites their documents, messages, notes or answer preferences.
 
 PDF 显示保留有像素上限的整页底图；可视区域按屏幕密度重绘独立高清层，每页高清缓冲最多 800 万像素，仅在可见时保留。滚动复用边缘缓存并丢弃过期任务，页面移出视野或关闭时释放。高清层不接收鼠标事件，文字选取、引用跳转、批注及临时翻译继续使用原文字层。
 
@@ -23,7 +23,7 @@ Keep questions beside their source. Select, ask and take notes directly in AI an
 1. 划选后创建批注，草稿可选“询问 AI”或“只写批注”。
 2. 每处高亮保留一组当前问答，成功后可编辑或重新提问；新回答成功后覆盖旧问答，失败或停止保留旧问答。本次重试固定本次问题与上下文，主动修改问题后才建立新的尝试。
 3. 普通笔记不请求 API；批注框内不创建嵌套批注。
-4. 平时只保留不同颜色的高亮，点击打开弹框。× 或框外点击收起，内容继续保存；独立的“停止回答”可中断生成并重试原问题。
+4. 平时只保留不同颜色的高亮，点击打开弹框。× 或 Esc 收起，点击正文和聊天不关闭，内容继续保存；独立的“停止回答”可中断生成并重试原问题。
 5. 批注框可拖动，正文和高亮保持文字光标。编辑时关闭会保存修改，取消编辑则放弃本次修改。
 6. 重新生成主回答得到独立版本，旧批注留在原版本，新版本不继承旧批注。
 7. 聊天发送尚未删除的有效主对话及所选文档资料，默认不读取批注；点击输入框下方工具栏“引用批注”后，只把手动选择的问答或笔记加入该次问题。PDF 批注只引用所属文档、选段和本次问题，不带聊天及其他批注；在 AI 回答上提问时，仅引用批注绑定的那一版原回答。文档范围继续支持自动、全文或按需引用：自动模式下，小文件发送全文提取文字，超过 25 MiB、300 页或 12 万提取字符时在本机检索，每份文档最多引用 2.4 万片段字符，选段和问题另计。原 PDF 和页面图片不作为文件上传。资料不足时明确提示，全文仍受请求和模型容量限制。批注失败重试保留本次问题、回答偏好和文档范围，从同一份不可变来源重新组装请求，不保存整段聊天快照。失败残文不作为成功回答加入上下文。
@@ -53,6 +53,18 @@ English: Delete round under each answer permanently removes that question, all a
 
 The composer keeps typing above one lower toolbar for local files, annotation references, model selection and Send. The reference button includes a count badge; labels adapt to the composer width. Model management remains available from the final selector option or the top settings control.
 
+聊天模式关闭 PDF 后保持聊天可见，顶部“展开 PDF”及聊天文件名可一键恢复并排阅读，沿用原页码与缩放。左上角长项目名按侧栏宽度换行。选中 PDF、AI 回答或聊天问题中的文字，可通过浮动按钮或右键“引用到聊天”，在输入框预览选段、补充问题再发送，不创建批注或自动调用 API。每次引用一段，重新选择会替换待发送段落，可用 × 取消。
+
+Closing a PDF in chat keeps the conversation visible. Open PDF at the top, or the file name in chat, restores side-by-side reading with the saved page and zoom. Long branding wraps inside the sidebar. Select text in a PDF, AI answer or chat question and use Quote in chat from the selection action or context menu, preview the excerpt, add a question and send. This creates no annotation and makes no automatic API call. One pending excerpt can be replaced or removed with ×.
+
+批注在点击聊天、正文、翻页和切换阅读布局时保持打开，用 × 或 Esc 收起；编辑中的修改在关闭或切换来源时保存。切换文件或对话会收起批注。临时翻译继续保持原来的框外点击、Esc / × 关闭及滚动保留规则；同时展开时，Esc 优先关闭翻译。
+
+Annotations stay open while clicking chat/source text, turning pages or changing reading layout; use × or Esc to close. Pending edits are saved when closing or leaving the source. Switching documents or conversations dismisses the annotation. Temporary translation retains outside-click, Esc/× dismissal and scroll retention; when both panels are open, Esc dismisses translation first.
+
+文字引用与本轮问题一起保存和备份，聊天仍按原设置带入有效聊天与文档资料。它与“只发送选段”的翻译功能不同；批注提问仍不引用聊天或其他批注。删除被引用的聊天轮次时，后续问题中的相关文字引用副本与旧重试缓存也会清除，PDF 引用和原文批注保留。新版本可读取旧备份，含文字引用的备份请使用 v0.1.22 或更新版本恢复。
+
+Text quotations are saved and backed up with the question. Chat still uses valid history and document material according to existing scope settings, unlike selection-only translation. Annotation questions still exclude chat and other annotations. Deleting a quoted chat round clears its later quotation copies and stale retry snapshots while retaining PDF quotations and annotations. Older backups remain readable; restore backups with text quotations using v0.1.22 or newer.
+
 ## 模块职责 / Modules
 
 | 模块 | 实现位置 | 职责 |
@@ -79,6 +91,7 @@ The composer keeps typing above one lower toolbar for local files, annotation re
 | 连续页面与目录 | `src/components/PdfAnnotatedPage.tsx`、`src/adapters/pdf-navigation.ts`、`src/components/DocumentReader.tsx` | 附近页面绘制、串行任务取消、混合页尺寸、目录内部位置解析与阅读点保持 |
 | 阅读配色与进度 | `src/domain/reader.ts`、`src/adapters/reader.ts` | 显示副本换色、本机配色和按文档保存位置 |
 | 本机保存与备份 | `src/adapters/storage.ts`、`src/hooks/useWorkspace.ts` | Dexie 元数据、独立文档字节表、保存屏障、容量门槛及完整 JSON |
+| 文字引用与阅读重开 / Text quotations and reader reopening | `src/domain/chat-text-reference.ts`、`src/components/ChatTextReference.tsx`、`src/adapters/reader-session.ts` | 选段副本、来源版本、恢复并排模式与旧状态兼容 / Quoted snapshots, source versions, split-mode recovery and legacy sessions |
 | 批注引用与逐轮删除 / Annotation references and round deletion | `src/domain/chat-references.ts`、`src/components/ChatAnnotations.tsx`、`src/domain/workspace.ts` | 主动选择、内容副本、整轮删除与失败缓存清理 / Explicit selection, visible copies, round removal and stale retry cleanup |
 | 共享快照与增量保存 | `src/domain/context-pool.ts`、`src/domain/workspace-codec.ts`、`src/adapters/record-store.ts` | 失败聊天的不可变快照、批注小型重试设置、成功快照清理、内容去重及事务迁移 |
 | 模型预载与协议 | `src/domain/model-presets.ts`、`src/components/SettingsDialog.tsx`、`src/adapters/model.ts`、`server/` | 原生下拉选择连接、其他服务及本地模型快捷填写，配置管理和三种文字流式协议 |

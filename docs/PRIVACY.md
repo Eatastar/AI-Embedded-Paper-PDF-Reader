@@ -25,6 +25,16 @@ AI-Embedded Paper PDF Reader 在本机保存阅读资料、聊天、批注和 AP
 
 因此，“文件保存在本机”不代表提取文字不会发送给模型，“密钥保存在本机”也不代表调用 API 时无需发送认证。本地保存避免向项目方托管凭证，但不能保证所有环境下绝无泄露；所选服务、中转站及本机环境仍需可信。服务商如何保存请求数据，以服务商规则为准。处理私密资料前，请确认选择的服务和问题范围。
 
+## 主动引用聊天文字 / Explicit text quotations
+
+文字引用与本轮问题一起保存和备份，聊天仍按原设置带入有效聊天与文档资料。它与“只发送选段”的翻译功能不同；批注提问仍不引用聊天或其他批注。删除被引用的聊天轮次时，后续问题中的相关文字引用副本与旧重试缓存也会清除，PDF 引用和原文批注保留。新版本可读取旧备份，含文字引用的备份请使用 v0.1.22 或更新版本恢复。
+
+Text quotations are saved and backed up with the question. Chat still uses valid history and document material according to existing scope settings, unlike selection-only translation. Annotation questions still exclude chat and other annotations. Deleting a quoted chat round clears its later quotation copies and stale retry snapshots while retaining PDF quotations and annotations. Older backups remain readable; restore backups with text quotations using v0.1.22 or newer.
+
+未发送的引用仅在当前界面内存中，关闭程序后不恢复；已发送引用保存所选文字、来源名称及文档/消息版本标识，不包含 API 配置。每次最多 20000 字符，超出时提示缩小选区。阅读重开仅另存本机的文档标识和界面模式，原文件和页码/缩放继续按原机制保存。
+
+Unsent quotations stay only in UI memory and do not survive app closure. Sent quotations store selected text, a source label and document/message version identifiers, without API settings. A selection is limited to 20,000 characters with an explicit error for longer excerpts. Reader reopening stores document identifiers and layout mode separately as local preferences; source files, page and zoom continue using existing storage.
+
 ## 代理与 IP
 
 Windows 桌面版通过 Electron / Chromium 网络组件读取系统代理设置，每次模型请求前刷新配置。程序不内置代理订阅、代理账号、固定节点或固定公网 IP。

@@ -47,7 +47,7 @@ export function DeleteChatTurnDialog({ question, annotationCount, referenceCount
     <header className="dialog-header"><h2 id="chat-turn-delete-title">{t('删除本轮对话？')}</h2><button type="button" className="icon-button" aria-label={t('关闭删除确认')} disabled={working} onClick={onClose}><X size={19} /></button></header>
     <blockquote>{question.slice(0, 500)}</blockquote><p>{t('将删除本轮问题、回答及所有回答版本，之后的提问不再引用这一轮。此操作不进入回收站。')}</p>
     {annotationCount > 0 && <p>{t('这轮回答上的 {0} 条批注也会删除，PDF 原文上的批注保留。', [annotationCount])}</p>}
-    {referenceCount > 0 && <p>{t('后续聊天中对这些批注的手动引用也会移除。')}</p>}
+    {referenceCount > 0 && <p>{t('后续聊天中对本轮内容的文字和批注引用也会移除。')}</p>}
     <p className="trash-backup-note">{t('以前的自动备份和导出备份仍可能保留这些内容。')}</p>
     {error && <p role="alert" className="recovery-message">{t(error)}</p>}
     <footer className="chat-annotation-picker-actions"><button type="button" className="secondary-button" disabled={working} onClick={onClose}>{t('取消')}</button><button type="button" className="danger-button" disabled={busy} onClick={() => { setWorking(true); setError(''); void onDelete().catch(failure => { setError(failure instanceof Error ? failure.message : '操作未完成，请重试。'); setWorking(false); }); }}><Trash2 size={14} />{t(working ? '正在删除…' : '确认删除本轮')}</button></footer>

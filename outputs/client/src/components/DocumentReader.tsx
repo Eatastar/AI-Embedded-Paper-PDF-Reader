@@ -2,6 +2,7 @@ import { t } from '../i18n/locale';
 import { useLocale } from '../i18n/react';
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import type { DocumentAttachment, MessageVersion } from '../domain/types';
 import { loadPdfDocument } from '../adapters/documents';
@@ -25,6 +26,8 @@ import { PdfAnnotatedPage } from './PdfAnnotatedPage';
 import { AnnotatedAnswer } from './AnnotatedAnswer';
 import type { AnnotatedAnswerProps } from './AnnotatedAnswer';
 import { useTranslation } from './Translation';
+import { AnnotationCard } from './AnnotationCard';
+import { MovableAnnotationPopup } from './MovableAnnotationPopup';
 import './documents.css';
 
 export interface DocumentReaderProps extends Omit<AnnotatedAnswerProps, 'messageId' | 'version' | 'plainText' | 'content' | 'contentReadyKey' | 'contentClassName'> {
@@ -64,6 +67,7 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
   const [search, setSearch] = useState<SearchFocus | null>(null), [navigationRevision, setNavigationRevision] = useState(0);
   const [queue] = useState(() => new PdfRenderQueue());
   const rootRef = useRef<HTMLElement>(null), viewportRef = useRef<HTMLDivElement>(null), textRef = useRef<HTMLElement>(null);
+  const detachedPopup = useRef<HTMLDivElement>(null);
   const pageInputRef = useRef<HTMLInputElement>(null), slots = useRef(new Map<number, HTMLDivElement>());
   const registerSlot = useCallback((index: number, element: HTMLDivElement | null) => { if (element) slots.current.set(index, element); else slots.current.delete(index); }, []);
   const position = useRef<ReaderPosition>(initial), pendingPosition = useRef<ReaderPosition | null>(initial);
@@ -152,7 +156,7 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
     position.current = { ...position.current, pageIndex: index, pageOffset: 0, scrollY: 0, scrollX: 0 };
     pendingPosition.current = { ...position.current }; setPageIndex(index); setPageInput(String(index + 1)); setForcedPage(index);
     setNavigationRevision(value => value + 1);
-    if (!keepAnnotation) { pendingNote.current = null; annotationProps.onOpen(null); }
+    if (!keepAnnotation) pendingNote.current = null;
   };
   const clearSearch = () => { pendingSearch.current = null; setSearch(null); };
   const locateLink = () => {
@@ -235,14 +239,14 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
     const saved = readPosition(); captureAnchor();
     position.current = { ...saved, layout: value, scrollY: 0, pageOffset: value === 'continuous' ? saved.pageOffset || saved.scrollY : undefined };
     pendingPosition.current = { ...position.current }; restoring.current = true;
-    setForcedPage(saved.pageIndex); setLayout(value); annotationProps.onOpen(null);
+    setForcedPage(saved.pageIndex); setLayout(value);
   };
   const switchView = (value: 'original' | 'text') => {
     if (value === view) return;
     if (search?.pageIndex === position.current.pageIndex) pendingSearch.current = search.request;
     position.current = { ...readPosition(), view: value, scrollY: 0, pageOffset: 0, scrollX: 0 };
     pendingPosition.current = { ...position.current }; anchor.current = null; restoring.current = true;
-    setView(value); annotationProps.onOpen(null);
+    setView(value);
   };
   const appearanceRef = useRef(appearance); appearanceRef.current = appearance;
   useEffect(() => {
@@ -338,6 +342,7 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
   };
   const original = compareOriginal || appearance.preset === 'original', paper = original ? '#ffffff' : appearance.paper, ink = original ? '#000000' : appearance.ink;
   const palette = readerTheme(paper, ink) as CSSProperties;
+  const detached = !continuous && openedPage >= 0 && openedPage !== pageIndex ? annotationProps.annotations.find(annotation => annotation.id === annotationProps.openAnnotationId && annotation.deletedAt === undefined) : undefined;
   return <section ref={rootRef} className="document-reader" role="region" aria-label={t("文档阅读：{0}", [source.name])} data-testid="document-reader" data-reader-focused={focused} data-reader-dark={colorLuminance(paper) < .25 ? 'true' : 'false'} data-reader-narrow={narrow} data-reader-layout={continuous ? 'continuous' : 'paged'} style={palette}>
     <ReaderToolbar onReturnFromLink={linkHistory.length ? returnFromLink : undefined} contextMode={contextMode} onContextMode={onContextMode} relevantContext={usesRelevantContext(source, contextMode)} onOpenFile={onOpenFile} name={source.name} kind={source.kind} pageCount={source.pages.length} pageIndex={pageIndex} pageInput={pageInput} pageInputRef={pageInputRef} onPageInput={setPageInput} onCommitPage={commitPage} onPage={selectPage} zoom={zoom} onZoom={changeZoom} view={view} onView={switchView} layout={layout} onLayout={switchLayout} appearance={appearance} onAppearance={value => { setCompareOriginal(false); setAppearance(value); }} saved={appearanceSaved && positionSaved} compareOriginal={compareOriginal} onCompareOriginal={() => setCompareOriginal(value => !value)} navigationOpen={navigationOpen} onToggleNavigation={() => setNavigationOpen(value => !value)} focused={focused} onToggleFocus={() => { flush(); onToggleFocus(); }} onClose={() => { flush(); onClose(); }} modelLabel={modelLabel} onOpenModelSettings={onOpenModelSettings} onBackup={onBackup} />
     <div className="document-reader-body">
@@ -354,5 +359,6 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
         {page && view === 'text' && hasText && <article ref={textRef} className="document-page-text" key={`${source.id}:${pageIndex}:text`}><p className="document-text-page-label">{t("第 {0} 页 · 提取文字", [page.pageNumber])}</p><AnnotatedAnswer {...annotationProps} readerStyle={palette} annotations={annotationsByPage.get(pageIndex) || []} messageId={page.messageId} version={version(pageIndex)} plainText /></article>}
       </div>
     </div>
+    {detached && createPortal(<MovableAnnotationPopup key={detached.id} popupRef={detachedPopup} style={{ ...palette, width: Math.min(390, window.innerWidth - 24), maxHeight: window.innerHeight - 32, left: Math.max(12, window.innerWidth - 414), top: 90 }}><AnnotationCard key={detached.id} annotation={detached} onClose={() => annotationProps.onOpen(null)} onUpdate={patch => annotationProps.onUpdate(detached.id, patch)} onAsk={() => annotationProps.onAsk(detached.id)} onStop={() => annotationProps.onStop(detached.id)} onReask={action => annotationProps.onReask(detached.id, action)} onDelete={() => annotationProps.onDelete(detached.id)} disabled={annotationProps.disabled} /></MovableAnnotationPopup>, document.body)}
   </section>;
 }

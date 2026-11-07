@@ -19,6 +19,16 @@ export interface ChatMessage {
   versions: MessageVersion[];
   activeVersionId: string;
   annotationReferences?: AnnotationReference[];
+  textReference?: ChatTextReference;
+}
+
+/** An explicit selection copied into one chat question, without creating a note. */
+export interface ChatTextReference {
+  conversationId: string;
+  messageId: string;
+  versionId: string;
+  label: string;
+  text: string;
 }
 
 /** A user-selected copy of an annotation, attached to one chat question. */

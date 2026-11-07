@@ -34,6 +34,10 @@
 .annotation-markdown .katex-display { max-width: 100%; overflow-x: auto; overflow-y: hidden; padding: .35em 0; }
 .annotation-selection-button { position: fixed; z-index: 110; display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 35px; padding: 0 14px; border: 1px solid var(--ls-accent); border-radius: 9px; color: var(--ls-on-accent); background: var(--ls-accent-strong); box-shadow: 0 5px 20px #62471626; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1.2; cursor: pointer; animation: annotation-rise .13s ease-out; white-space: nowrap; }
 .annotation-selection-button:hover { background: var(--ls-accent-strong); }
+.annotation-selection-toolbar { position: fixed; z-index: 110; display: inline-flex; flex-wrap: wrap; max-width: calc(100vw - 24px); padding: 3px; gap: 3px; border: 1px solid var(--ls-border-strong); border-radius: 10px; background: var(--ls-panel); box-shadow: 0 5px 20px #62471626; }
+.annotation-selection-toolbar .annotation-selection-button { position: static; height: 32px; padding: 0 9px; border: 0; border-radius: 6px; box-shadow: none; }
+.annotation-selection-toolbar .quote-selection-button { color: var(--ls-text); background: transparent; }
+.annotation-selection-toolbar .quote-selection-button:hover { background: var(--ls-surface); }
 .annotation-popup { position: fixed; z-index: 105; animation: annotation-rise .16s ease-out; }
 .annotation-choice-popup { position: fixed; z-index: 108; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--ls-border); border-radius: 12px; background: var(--ls-panel); color: var(--ls-ink); box-shadow: 0 9px 32px #62471626; font-family: Inter, 'PingFang SC', 'Microsoft YaHei', sans-serif; animation: annotation-rise .13s ease-out; }
 .annotation-choice-header { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; padding: 8px 9px 7px 14px; border-bottom: 1px solid var(--ls-border); }

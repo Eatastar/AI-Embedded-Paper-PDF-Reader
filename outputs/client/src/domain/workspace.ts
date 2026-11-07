@@ -9,6 +9,7 @@ import { freezeContext, internMessage } from './context-pool';
 import { buildDocumentMessages, type DocumentContextOptions } from './document-context';
 import { documentByteLimit, documentTextLimit, MAX_DOCUMENT_PAGES } from './document-limits';
 import { chatQuestionContent, chatRound, MAX_CHAT_REFERENCES } from './chat-references';
+import { parseChatTextReference } from './chat-text-reference';
 
 const now = () => Date.now();
 export const makeId = () => globalThis.crypto?.randomUUID?.() ?? `id-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
@@ -90,7 +91,7 @@ function selectedMainContext(conversation: Conversation, override?: { messageId:
 
 export function buildMainContext(conversation: Conversation, systemPrompt = '', options: DocumentContextOptions = {}): InputMessage[] {
   const latestQuestion = conversation.messages.slice().reverse().find(message => message.role === 'user');
-  const query = options.query ?? (latestQuestion ? [activeVersion(latestQuestion).content, ...(latestQuestion.annotationReferences || []).flatMap(reference => [reference.quote, reference.question, reference.note || ''])].join('\n') : '');
+  const query = options.query ?? (latestQuestion ? [activeVersion(latestQuestion).content, latestQuestion.textReference?.text || '', ...(latestQuestion.annotationReferences || []).flatMap(reference => [reference.quote, reference.question, reference.note || ''])].join('\n') : '');
   return [...(systemPrompt.trim() ? [{ role: 'system' as const, content: systemPrompt }] : []), ...selectedMainContext(conversation, undefined, { ...options, query })];
 }
 
@@ -161,6 +162,7 @@ export function deleteChatTurn(workspace: Workspace, conversationId: string, mes
   const messages = source.messages.filter(message => !removed.has(message.id)).map(message => {
     const versions = message.versions.map(version => { if (version.context === undefined) return version; const next = { ...version }; delete next.context; return next; });
     const next = { ...message, versions };
+    if (message.textReference && removed.has(message.textReference.messageId)) delete next.textReference;
     if (message.annotationReferences) {
       next.annotationReferences = message.annotationReferences.filter(reference => !removedAnnotations.has(reference.annotationId));
       if (!next.annotationReferences.length) delete next.annotationReferences;
@@ -406,7 +408,7 @@ export function validateImport(input: unknown, cache?: ImportValidationCache): W
     };
     if (c.deletedAt !== undefined) conversation.deletedAt = timestamp(c.deletedAt, '对话删除时间');
     conversation.messages = list(c.messages, '消息', WORKSPACE_LIMITS.messages).map(rawMessage => memo<ChatMessage>(rawMessage, 'message', () => {
-      const m = obj(rawMessage, ['id', 'role', 'versions', 'activeVersionId', 'annotationReferences'], '消息');
+      const m = obj(rawMessage, ['id', 'role', 'versions', 'activeVersionId', 'annotationReferences', 'textReference'], '消息');
       if (m.role !== 'user' && m.role !== 'assistant') invalid('消息角色不受支持。');
       const messageId = id(m.id, '消息 ID');
       const versions = list(m.versions, '消息版本', WORKSPACE_LIMITS.versions).map(rawVersion => memo<MessageVersion>(rawVersion, 'version', () => {
@@ -430,6 +432,11 @@ export function validateImport(input: unknown, cache?: ImportValidationCache): W
       const activeVersionId = str(m.activeVersionId, '当前版本 ID');
       if (!versions.some(v => v.id === activeVersionId)) invalid('当前消息版本不存在。');
       const message: ChatMessage = { id: messageId, role: m.role, versions, activeVersionId };
+      if (m.textReference !== undefined) {
+        if (m.role !== 'user') invalid('只有用户问题可以引用文字。');
+        message.textReference = parseChatTextReference(m.textReference);
+        if (message.textReference.conversationId !== conversation.id) invalid('引用文字不属于当前对话。');
+      }
       if (m.annotationReferences !== undefined) {
         if (m.role !== 'user') invalid('只有用户问题可以主动引用批注。');
         const referenced = new Set<string>();
@@ -565,6 +572,7 @@ export function mergeImportedWorkspace(current: Workspace, imported: Workspace, 
       ...m, id: remap(m.id), activeVersionId: remap(m.activeVersionId),
       versions: m.versions.map(v => ({ ...v, id: remap(v.id) })),
       ...(m.annotationReferences ? { annotationReferences: m.annotationReferences.map(reference => ({ ...reference, annotationId: remappedIds.get(reference.annotationId) || reference.annotationId })) } : {}),
+      ...(m.textReference ? { textReference: { ...m.textReference, conversationId: remap(c.id), messageId: remappedIds.get(m.textReference.messageId) || m.textReference.messageId, versionId: remappedIds.get(m.textReference.versionId) || m.textReference.versionId } } : {}),
     })),
     ...(c.documents !== undefined ? { documents: c.documents.map(d => ({ ...d, id: remap(d.id), pages: d.pages.map(p => ({ ...p, messageId: remap(p.messageId), versionId: remap(p.versionId) })) })) } : {}),
     annotations: c.annotations.map(a => ({
