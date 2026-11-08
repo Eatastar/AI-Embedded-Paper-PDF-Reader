@@ -2,9 +2,13 @@
 
 **AI 嵌入式论文 PDF 阅读器**
 
+读论文时，你是否也厌倦了在 PDF 和 AI 聊天窗口之间来回切换？想回顾某个概念的解释，却又得在冗长的对话里反复翻找？
+
 **面向文献与书籍精读：接入自己的 API，把批注提问与快速翻译留在原文旁。**
 
 这是一个以本地 PDF 阅读为主的桌面阅读器，适合逐段理解论文的概念、公式与论证，也适合精读教材、专业书籍和外语 PDF 书籍。你可以连接自选的 AI 服务、中转 API，或自行部署的本地模型服务；划选原文，在批注框里提问、查看回答，或快速翻译选中的单词和段落。需要把某个疑问展开讨论时，选择引用已有批注，在聊天中继续追问，同时对照 PDF 和原文批注。纸张与文字颜色可以自由调整。
+
+Tired of switching back and forth between a paper and an AI chat window? Or scrolling through a long conversation just to find an explanation you want to revisit?
 
 **Close reading for papers and PDF books, with your own API, annotation Q&A and quick translation beside the source.**
 
