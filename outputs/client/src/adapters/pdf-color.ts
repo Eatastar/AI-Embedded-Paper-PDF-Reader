@@ -9,9 +9,11 @@ export class PdfColorProcessor {
   private waiting: Job | undefined;
   private revision = 0;
   private disposed = false;
+  private idle?: ReturnType<typeof setTimeout>;
   constructor(private factory = () => new Worker(new URL('./pdf-color.worker.ts', import.meta.url), { type: 'module' })) {}
   prepare(source: PixelFrame, appearance: ReaderAppearance, preview = false): Promise<PixelFrame | null> {
     if (this.disposed) return Promise.resolve(null);
+    clearTimeout(this.idle);
     const id = ++this.revision;
     this.waiting?.resolve(null);
     return new Promise((resolve, reject) => {
@@ -19,10 +21,13 @@ export class PdfColorProcessor {
     });
   }
   cancel() { ++this.revision; this.waiting?.resolve(null); this.waiting = undefined; }
-  dispose() { this.disposed = true; this.cancel(); this.active?.resolve(null); this.active = undefined; this.worker?.terminate(); this.worker = undefined; this.sentSource = undefined; }
-  private finish(frame: PixelFrame) {
-    const job = this.active; this.active = undefined;
+  release() { clearTimeout(this.idle); this.cancel(); this.active?.resolve(null); this.active = undefined; this.worker?.terminate(); this.worker = undefined; this.sentSource = undefined; }
+  dispose() { this.disposed = true; this.release(); }
+  private finish(frame: PixelFrame, job = this.active) {
+    if (!job || this.active !== job) return;
+    this.active = undefined;
     job?.resolve(job.id === this.revision && !this.disposed ? frame : null); this.pump();
+    if (!this.active && !this.waiting) this.idle = setTimeout(() => this.release(), 1000);
   }
   private pump() {
     if (this.active || !this.waiting || this.disposed) return;
@@ -47,14 +52,14 @@ export class PdfColorProcessor {
       const data = new Uint8ClampedArray(source.data.length);
       const rows = Math.max(1, Math.floor(65536 / source.width));
       for (let row = 0; row < source.height; row += rows) {
-        if (this.disposed || job.id !== this.revision) { this.finish(source); return; }
+        if (this.disposed || job.id !== this.revision) { this.finish(source, job); return; }
         const end = Math.min(source.height, row + rows), from = Math.max(0, row - 1), to = Math.min(source.height, end + 1);
         const linkText = source.linkText?.map(rect => ({ ...rect, top: rect.top - from }));
         const colored = recolorPagePixels(source.data.subarray(from * source.width * 4, to * source.width * 4), job.appearance, undefined, source.width, linkText);
         data.set(colored.subarray((row - from) * source.width * 4, (end - from) * source.width * 4), row * source.width * 4);
         await new Promise(resolve => setTimeout(resolve, 0));
       }
-      this.finish({ width: source.width, height: source.height, data });
-    } catch (error) { this.active = undefined; job.reject(error); this.pump(); }
+      this.finish({ width: source.width, height: source.height, data }, job);
+    } catch (error) { if (this.active === job) { this.active = undefined; job.reject(error); this.pump(); } }
   }
 }

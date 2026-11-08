@@ -20,10 +20,11 @@ export async function saveDocumentBytes(id: string, bytes: Uint8Array): Promise<
 
 export async function getDocumentBytes(id: string): Promise<Uint8Array | undefined> {
   const saved = await database.documents.get(id);
-  return saved ? new Uint8Array(saved.bytes) : undefined;
+  // IndexedDB already returns an owned structured clone; do not copy the file again.
+  return saved ? saved.bytes instanceof Uint8Array ? saved.bytes : new Uint8Array(saved.bytes) : undefined;
 }
 
-export function loadWorkspace(beforeMigration?: (workspace: Workspace) => Promise<void>): Promise<Workspace> { return records.load(beforeMigration); }
+export function loadWorkspace(beforeMigration?: (workspace: Workspace) => Promise<void>, beforeOpen?: (workspace: Workspace) => Promise<void>): Promise<Workspace> { return records.load(beforeMigration, beforeOpen); }
 
 export async function saveWorkspace(workspace: Workspace, options: { trusted?: boolean } = {}): Promise<void> {
   // Persist only known data fields. Running copies are stored as interrupted because
@@ -64,19 +65,36 @@ function base64(bytes: Uint8Array): string {
 
 /** Binary files are read only for a backup; streaming chat saves never clone them. */
 export async function exportWorkspaceWithFiles(workspace: Workspace, options: { compact?: boolean } = {}): Promise<string> {
+  const parts: string[] = []; for await (const part of workspaceFileParts(workspace, options)) parts.push(part);
+  return parts.join('');
+}
+export async function exportWorkspaceBlob(workspace: Workspace, options: { compact?: boolean } = {}): Promise<Blob> {
+  const parts: Blob[] = [];
+  for await (const part of workspaceFileParts(workspace, options)) parts.push(new Blob([part]));
+  return new Blob(parts, { type: 'application/json' });
+}
+async function* workspaceFileParts(workspace: Workspace, options: { compact?: boolean }) {
   const clean = validateImport(workspace);
   const packed = options.compact ? backupCodec.pack(clean) : undefined;
   const metadata = packed ? { ...packed.header, records: packed.rows } : clean;
   const metadataSize = packed?.bytes ?? new TextEncoder().encode(JSON.stringify(clean)).byteLength;
   const binarySize = clean.conversations.flatMap(c => c.documents || []).reduce((sum, document) => sum + Math.ceil(document.size / 3) * 4 + new TextEncoder().encode(JSON.stringify(document.id)).byteLength + 64, 0);
   if (metadataSize + binarySize + 64 > 350_000_000) throw new Error('完整备份超过 350 MB。请分别备份较小范围的对话，附件原文件仍保存在本机。');
-  const documentFiles = [];
+  const documents = clean.conversations.flatMap(item => item.documents || []);
+  const text = JSON.stringify(metadata);
+  yield documents.length ? text.slice(0, -1) + ',"documentFiles":[' : text;
+  let index = 0;
   for (const conversation of clean.conversations) for (const document of conversation.documents || []) {
     const bytes = await getDocumentBytes(document.id);
     if (!bytes || bytes.length !== document.size) throw new Error(`无法读取附件“${document.name}”，未生成不完整备份。`);
-    documentFiles.push({ documentId: document.id, data: base64(bytes) });
+    yield `${index++ ? ',' : ''}{"documentId":${JSON.stringify(document.id)},"data":"`;
+    for (let offset = 0; offset < bytes.length; offset += 192 * 1024) {
+      yield base64(bytes.subarray(offset, offset + 192 * 1024));
+      if (offset % (3 * 1024 * 1024) === 0) await new Promise(resolve => setTimeout(resolve, 0));
+    }
+    yield '"}';
   }
-  return JSON.stringify({ ...metadata, ...(documentFiles.length ? { documentFiles } : {}) });
+  if (documents.length) yield ']}';
 }
 
 async function decodeWorkspaceWithFiles(text: string) {

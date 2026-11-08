@@ -10,7 +10,7 @@ import { apiFormatOptions, connectionPresets, otherConnectionPresets, profileFro
 import { discoverModels, type DiscoveredModel } from '../adapters/model';
 import { NativeSelect as SettingsSelect } from './NativeSelect';
 // @ts-expect-error Pure URL helper shared with the local server.
-import { modelListEndpoint } from '../../server/model-endpoint.mjs';
+import { modelListEndpoint } from '../../shared/model-endpoint.mjs';
 
 function editProfile(profile: ModelProfile): ProfileInput {
   return {

@@ -18,6 +18,8 @@
 !/docs/THIRD_PARTY.md
 !/docs/OPEN_SOURCE_RELEASE.md
 !/docs/ATTRIBUTION.md
+!/docs/UPDATING.md
+!/docs/PERFORMANCE.md
 !/docs/images/
 /docs/images/*
 !/docs/images/annotation-qa.png
@@ -46,6 +48,7 @@
 !/outputs/client/停止客户端.cmd
 !/outputs/client/src/
 !/outputs/client/server/
+!/outputs/client/shared/
 !/outputs/client/desktop/
 !/outputs/client/scripts/
 !/outputs/client/tests/

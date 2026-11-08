@@ -1,6 +1,7 @@
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { FIGURE_LIMITS, figureImageKey, figureSourceKey, paintFigureStrokes, readFigure, type FigureSelection, type FigureStroke } from '../domain/figure';
 import { FigureCache } from '../domain/figure-cache';
+import { acquirePdfPage, pdfRenderQueue } from './pdf-resources';
 
 export interface FigureImage { blob: Blob; width: number; height: number }
 export interface PreparedFigureImage extends FigureImage { key: string }
@@ -18,7 +19,9 @@ async function encoded(canvas: HTMLCanvasElement, signal: AbortSignal): Promise<
 }
 async function renderBase(pdf: PDFDocumentProxy, input: FigureSelection, signal: AbortSignal): Promise<FigureImage> {
   const figure = readFigure(input); signal.throwIfAborted();
-  const page = await pdf.getPage(figure.pageNumber); signal.throwIfAborted();
+  const lease = await acquirePdfPage(pdf, figure.pageNumber, signal);
+  try {
+  const page = lease.page; signal.throwIfAborted();
   const base = page.getViewport({ scale: 1 }), r = figure.rect;
   const cropWidth = base.width * r.width, cropHeight = base.height * r.height;
   const scale = Math.min(3, (FIGURE_LIMITS.edge - 2) / Math.max(cropWidth, cropHeight), Math.sqrt((FIGURE_LIMITS.pixels - 4000) / (cropWidth * cropHeight)));
@@ -32,6 +35,7 @@ async function renderBase(pdf: PDFDocumentProxy, input: FigureSelection, signal:
   const cancel = () => task.cancel(); signal.addEventListener('abort', cancel, { once: true });
   try { await task.promise; return await encoded(canvas, signal); }
   finally { signal.removeEventListener('abort', cancel); canvas.width = 0; canvas.height = 0; }
+  } finally { lease.release(); }
 }
 export async function getFigureBase(pdf: PDFDocumentProxy, figure: FigureSelection, signal: AbortSignal): Promise<FigureImage> {
   signal.throwIfAborted(); const key = figureSourceKey(figure), cached = figureCache.get(key); if (cached) return cached;
@@ -40,7 +44,7 @@ export async function getFigureBase(pdf: PDFDocumentProxy, figure: FigureSelecti
     const controller = new AbortController();
     entry = { sourceId: figure.documentId, controller, users: 0, settled: false, promise: Promise.resolve(null as unknown as FigureImage) };
     const current = entry;
-    current.promise = renderBase(pdf, figure, controller.signal).then(image => { controller.signal.throwIfAborted(); figureCache.set(key, figure.documentId, image); return image; }).finally(() => { current.settled = true; if (pending.get(key) === current) pending.delete(key); });
+    current.promise = pdfRenderQueue(pdf).enqueue(() => renderBase(pdf, figure, controller.signal), controller.signal).then(image => { controller.signal.throwIfAborted(); figureCache.set(key, figure.documentId, image); return image; }).finally(() => { current.settled = true; if (pending.get(key) === current) pending.delete(key); });
     pending.set(key, current);
   }
   const current = entry; current.users++;

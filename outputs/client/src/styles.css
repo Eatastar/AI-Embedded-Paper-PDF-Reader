@@ -98,7 +98,10 @@ button svg { flex-shrink: 0; }
 .recovery-entry:last-child { border-bottom: 0; }
 .recovery-entry strong { display: block; font-size: 12px; font-weight: 550; }
 .recovery-entry span { display: block; font-size: 10px; color: var(--ls-muted); margin-top: 5px; }
-.recovery-entry-actions { display: flex; align-items: center; gap: 8px; }
+.recovery-entry-actions { display: flex; align-items: center; flex-wrap: wrap; max-width: 100%; gap: 8px; }
+.recovery-entry-actions .backup-delete-button { color: var(--ls-danger); }
+.recovery-entry-actions .secondary-button { min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.backup-delete-confirmation { font-size: 13px; overflow-wrap: anywhere; }
 .recovery-message { color: #965c28; font-size: 12px; line-height: 1.8; }
 .recovery-footer { font-size: 10px; color: var(--ls-muted); margin-top: 18px; }
 .closing-overlay { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; background: #fff8e7e8; color: var(--ls-ink); font-size: 16px; }
@@ -366,8 +369,13 @@ button svg { flex-shrink: 0; }
 .trash-confirm-label { padding: 12px 14px; border-radius: 8px; background: #f8edce; overflow-wrap: anywhere; }
 .trash-backup-note { color: var(--ls-muted); }
 .trash-confirm-actions { justify-content: flex-end; margin-top: 24px; }
-.backup-scope { display: flex; align-items: center; gap: 12px; font-size: 12px; margin-top: 20px; }
-.backup-scope select { border: 1px solid var(--ls-border); border-radius: 7px; color: var(--ls-ink); background: var(--ls-panel); font: inherit; padding: 8px 10px; }
+.backup-scope { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; font-size: 12px; margin-top: 20px; }
+.backup-scope > span:first-child { flex: 0 0 auto; }
+.backup-scope .backup-scope-select { flex: 0 1 260px; width: 260px; max-width: 100%; }
+.backup-scope .backup-scope-select > select.field-input { min-height: 36px; border: 1px solid var(--ls-border); border-radius: 7px; color: var(--ls-ink); background: var(--ls-panel); font: inherit; padding: 8px 38px 8px 12px; }
+.backup-scope-select > .settings-select-indicator { width: 30px; border: 0; background: transparent; }
+html[dir=rtl] .backup-scope .backup-scope-select > select.field-input { padding-inline: 12px 38px; }
+html[dir=rtl] .backup-scope-select > .settings-select-indicator { inset-inline-end: 1px; border: 0; }
 .language-preference { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; max-width: 100%; }
 .language-selector { display: inline-flex; align-items: center; gap: 6px; padding: 4px 7px; border: 1px solid var(--ls-border); border-radius: 7px; background: var(--ls-panel); color: var(--ls-text); font-size: 12px; }
 .language-selector select { min-width: 90px; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; padding: 3px 2px; }

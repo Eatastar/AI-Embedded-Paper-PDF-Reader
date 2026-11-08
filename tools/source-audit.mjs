@@ -17,6 +17,7 @@ const staticFiles = [
   '.gitignore', '.gitattributes', 'README.md', 'AGENTS.md', 'LICENSE', 'tools/source-audit.mjs',
   'docs/PROJECT.md', 'docs/ROADMAP.md', 'docs/REPOSITORY_POLICY.md', 'docs/CHANGELOG.md',
   'docs/PRIVACY.md', 'docs/RELEASE_NOTES.md', 'docs/THIRD_PARTY.md', 'docs/OPEN_SOURCE_RELEASE.md', 'docs/ATTRIBUTION.md',
+  'docs/UPDATING.md', 'docs/PERFORMANCE.md',
   'outputs/windows/开始使用.txt', ...demoImages,
   ...['.gitignore', '.gitattributes', '.env.example', 'README.md', 'package.json', 'pnpm-lock.yaml',
     'pnpm-workspace.yaml', 'index.html', 'tsconfig.json', 'vite.config.ts', '启动客户端.cmd', '停止客户端.cmd',
@@ -25,6 +26,7 @@ const staticFiles = [
 const directories = new Map([
   [app + 'src', new Set(['.ts', '.tsx', '.css'])],
   [app + 'server', new Set(['.mjs'])],
+  [app + 'shared', new Set(['.mjs'])],
   [app + 'scripts', new Set(['.mjs', '.ts', '.py'])],
   [app + 'tests', new Set(['.ts'])],
   [app + 'desktop', new Set(['.cjs', '.cmd', '.ps1', '.md', '.png', '.ico', '.bmp'])],

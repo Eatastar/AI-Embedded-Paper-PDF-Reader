@@ -18,7 +18,8 @@ function installDesktopBridge({ ipcMain, window, isLocalPage, backupStore, timeo
   ipcMain.on('learn:not-ready', onNotReady);
   ipcMain.on('learn:close-result', onResult);
   ipcMain.on('learn:locale', onLanguage);
-  for (const action of ['list', 'read', 'write', 'baseline']) ipcMain.handle(`learn:backups-${action}`, (event, value) => {
+  const backupActions = ['list', 'read', 'write', 'baseline', 'remove', 'begin', 'append', 'finish', 'abort', 'upgradeNeeded'];
+  for (const action of backupActions) ipcMain.handle(`learn:backups-${action}`, (event, value) => {
     if (!trusted(event)) throw new Error('此页面无法访问本机备份。');
     return backupStore[action](value);
   });
@@ -38,7 +39,8 @@ function installDesktopBridge({ ipcMain, window, isLocalPage, backupStore, timeo
       if (pending) { clearTimeout(pending.timer); pending.resolve(false); pending = undefined; }
       ipcMain.removeListener('learn:ready', onReady); ipcMain.removeListener('learn:not-ready', onNotReady); ipcMain.removeListener('learn:close-result', onResult);
       ipcMain.removeListener('learn:locale', onLanguage);
-      for (const action of ['list', 'read', 'write', 'baseline']) ipcMain.removeHandler(`learn:backups-${action}`);
+      for (const action of backupActions) ipcMain.removeHandler(`learn:backups-${action}`);
+      void backupStore.abort?.();
     },
   };
 }

@@ -12,7 +12,7 @@ function harness(timeoutMs = 1000, onLocale = (_locale: string) => {}) {
   const frame = { url: 'http://127.0.0.1:4327/' };
   const contents = { mainFrame: frame, send: (...args: unknown[]) => sent.push(args) };
   const event = { sender: contents, senderFrame: frame };
-  const bridge = installDesktopBridge({ ipcMain: ipc, window: { webContents: contents }, timeoutMs, onLocale, isLocalPage: (url: string) => url.startsWith('http://127.0.0.1:4327/'), backupStore: { list: async () => ['local-backup'], read: async (id: string) => id, write: async (text: string) => text } });
+  const bridge = installDesktopBridge({ ipcMain: ipc, window: { webContents: contents }, timeoutMs, onLocale, isLocalPage: (url: string) => url.startsWith('http://127.0.0.1:4327/'), backupStore: { list: async () => ['local-backup'], read: async (id: string) => id, write: async (text: string) => text, remove: async (id: string) => id } });
   return { ipc, handlers, sent, event, bridge };
 }
 
@@ -57,6 +57,14 @@ test('备份只向可信顶层页面开放，其他窗口、子页面和跨站�
   for (const invalid of [{ ...event, sender: {} }, { ...event, senderFrame: { url: event.senderFrame.url } }, { ...event, senderFrame: undefined }]) assert.throws(() => list(invalid), /无法访问/);
   event.senderFrame.url = 'https://foreign.example'; assert.throws(() => list(event), /无法访问/);
   bridge.dispose();
+});
+
+test('backup deletion is available only to the trusted top-level renderer and is removed on disposal', async () => {
+  const { event, bridge, handlers } = harness(), remove = handlers.get('learn:backups-remove')!;
+  assert.equal(await remove(event, 'local-backup'), 'local-backup');
+  for (const invalid of [{ ...event, sender: {} }, { ...event, senderFrame: { url: event.senderFrame.url } }, { ...event, senderFrame: undefined }]) assert.throws(() => remove(invalid, 'local-backup'), /无法访问/);
+  event.senderFrame.url = 'https://foreign.example'; assert.throws(() => remove(event, 'local-backup'), /无法访问/);
+  bridge.dispose(); assert.equal(handlers.has('learn:backups-remove'), false);
 });
 
 test('关闭先等待保存，再关本机服务；并发关闭只执行一次', async () => {

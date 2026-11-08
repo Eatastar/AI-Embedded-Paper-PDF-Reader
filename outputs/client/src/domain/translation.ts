@@ -1,5 +1,5 @@
 // @ts-expect-error Pure translation rules are shared with the native JavaScript server.
-import { DEFAULT_TRANSLATION_PROMPT, TRANSLATION_TEXT_LIMIT, TRANSLATION_PROMPT_LIMIT } from '../../server/translation.mjs';
+import { DEFAULT_TRANSLATION_PROMPT, TRANSLATION_TEXT_LIMIT, TRANSLATION_PROMPT_LIMIT } from '../../shared/translation.mjs';
 export { TRANSLATION_TEXT_LIMIT, TRANSLATION_PROMPT_LIMIT };
 import { LANGUAGES, type Locale } from '../i18n/locale';
 

@@ -1,7 +1,7 @@
 {
   "name": "ai-embedded-paper-pdf-reader-client",
-  "version": "0.1.32",
-  "buildId": "20261108.1",
+  "version": "0.1.37",
+  "buildId": "20261108.6",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -11,14 +11,15 @@
     "start": "node server/index.mjs",
     "test": "node --import tsx --test tests/*.test.ts",
     "benchmark:storage": "node --import tsx scripts/benchmark-storage.ts",
-    "build:desktop": "pnpm run build && node scripts/build-desktop.mjs"
+    "benchmark:memory": "node scripts/benchmark-memory.mjs",
+    "build:desktop": "pnpm run build && node scripts/build-desktop.mjs",
+    "benchmark:annotations": "node --expose-gc --import tsx scripts/benchmark-annotations.ts",
+    "benchmark:backups": "node --expose-gc --import tsx scripts/benchmark-backups.ts"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "3.0.71",
-    "@annotorious/react": "3.9.4",
     "@assistant-ui/react": "0.15.29",
     "@noble/hashes": "2.4.0",
-    "@recogito/react-text-annotator": "4.3.7",
     "@recogito/text-annotator": "4.3.7",
     "@streamdown/math": "1.0.3",
     "ai": "7.0.143",
@@ -43,5 +44,5 @@
     "typescript": "7.0.2",
     "vite": "8.3.4"
   },
-  "buildTime": "2026-11-07T16:12:54.383Z"
+  "buildTime": "2026-11-08T12:55:45.697Z"
 }

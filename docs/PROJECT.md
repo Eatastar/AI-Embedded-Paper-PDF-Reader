@@ -1,10 +1,14 @@
 # AI-Embedded Paper PDF Reader 项目总纲 / Project outline
 
-当前版本：客户端 0.1.32，构建 20261108.1，2026年11月8日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
+架构与内存整改、测试范围及后续边界见 [性能说明 / Performance](PERFORMANCE.md)；保留数据的更新与回退步骤见 [更新说明 / Updates](UPDATING.md)。
+
+See [performance and architecture](PERFORMANCE.md) for resource ownership and verification, and [updates](UPDATING.md) for data-preserving upgrade and rollback steps.
+
+当前源码：客户端 0.1.33，构建 20261108.2，2026年11月8日；尚未发布。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
 
 首个公开正式版沿用 v0.1.11 和现有构建，使用 MIT 许可证。公开范围包括已核对的源码及通用 Windows 发行包；历史检查范围见 [公开发布说明](OPEN_SOURCE_RELEASE.md)，本地数据和请求边界见 [隐私说明](PRIVACY.md)。
 
-Current source: **0.1.32 / 20261108.1**. A local PDF reader for close reading of papers and books, with optional AI questions, quick translation and personal notes. Public introductions and release notes are bilingual. Users can select one of eight interface languages in the app; interface language sets the default AI answer and translation languages without rewriting their documents, messages, notes or custom preferences.
+Current source: **0.1.33 / 20261108.2**. A local PDF reader for close reading of papers and books, with optional AI questions, quick translation and personal notes. Public introductions and release notes are bilingual. Users can select one of eight interface languages in the app; interface language sets the default AI answer and translation languages without rewriting their documents, messages, notes or custom preferences.
 
 PDF 显示保留有像素上限的整页底图；可视区域按屏幕密度重绘独立高清层，每页高清缓冲最多 800 万像素，仅在可见时保留。滚动复用边缘缓存并丢弃过期任务，页面移出视野或关闭时释放。高清层不接收鼠标事件，文字选取、引用跳转、批注及临时翻译继续使用原文字层。
 
@@ -314,3 +318,9 @@ Fixes the Send and replace button touching the re-ask input and covering its foc
 圈画只显示在图片问答预览与圈画编辑器中，并叠加到主动发送给 AI 的选图；PDF 原页不再显示提问用的圈线或画笔。已有圈画、问答与重新提问草稿继续保留，原页的选区入口仍可用于重新打开图片批注，无需重新导入 PDF。
 
 Question markings appear only in the image Q&A preview and drawing editor, and are included in the selected image explicitly sent to AI. The PDF source page no longer displays these circles or pen strokes. Existing markings, answers and replacement drafts remain intact; the source-region locator still reopens image annotations, without reimporting the PDF.
+
+## 共享附件自动备份 / Automatic backups with shared attachments
+
+v0.1.36 起，自动恢复点仅保存工作区记录和附件引用，附件以内容哈希在独立本地备份库共用。资料库的 PDF 原件与备份库的恢复副本保持独立，避免资料库损坏时失去唯一文件。旧自动备份采用有界分块读取、校验、发布替代副本和安全移除的流程转换；保留 5 个普通及最多 2 个升级恢复点，并在所有保留点都不再引用某附件时回收它。手动完整 JSON 导出保持自包含。详情与实测见 [性能和存储说明](PERFORMANCE.md)。
+
+Since v0.1.36, automatic recovery points store workspace records and file references, sharing content-addressed attachments in a separate local backup store. Library originals and backup copies remain independent so library damage cannot destroy the only copy. Older automatic backups convert through bounded reads, integrity checks, durable replacement and safe removal. Retain five ordinary and up to two upgrade points; collect an attachment only when no retained point references it. Manual complete JSON exports stay self-contained. See [performance and storage](PERFORMANCE.md) for details and measurements.

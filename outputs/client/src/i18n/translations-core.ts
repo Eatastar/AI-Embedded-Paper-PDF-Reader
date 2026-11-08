@@ -1,4 +1,5 @@
 export const core = String.raw`
+菜单|Menú|メニュー|Menü|القائمة|Menu
 设置|Ajustes|設定|Einstellungen|الإعدادات|Paramètres
 调整界面语言，管理模型连接。|Elige el idioma y gestiona las conexiones.|表示言語とモデル接続を設定します。|Sprache und Modellverbindungen verwalten.|اختر لغة الواجهة وأدر اتصالات النماذج.|Choisissez la langue et gérez les connexions.
 界面语言|Idioma de la interfaz|表示言語|Oberflächensprache|لغة الواجهة|Langue de l’interface

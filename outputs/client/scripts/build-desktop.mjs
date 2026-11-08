@@ -8,16 +8,20 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const work = resolve(root, '../../work/desktop-package');
+const metadata = JSON.parse(await readFile(resolve(root, 'package.json'), 'utf8'));
+if (!/^\d+\.\d+\.\d+(?:-[a-z0-9.-]+)?$/i.test(metadata.version)) throw new Error('Invalid package version');
+const work = resolve(root, `../../work/desktop-package-${metadata.version}`);
 const stage = resolve(work, 'app');
 const output = resolve(work, 'release');
 const delivery = resolve(root, '../windows');
 const require = createRequire(import.meta.url);
-const metadata = JSON.parse(await readFile(resolve(root, 'package.json'), 'utf8'));
 if (dirname(stage) !== work || basename(stage) !== 'app') throw new Error('Invalid generated staging path');
 await rm(stage, { recursive: true, force: true });
 await mkdir(stage, { recursive: true });
 await mkdir(delivery, { recursive: true });
+const updateGuideName = 'READ-ME-FIRST-Update-and-Data-Migration.txt';
+const updateGuide = await readFile(resolve(root, '../../docs/UPDATING.md'), 'utf8');
+await writeFile(resolve(stage, updateGuideName), updateGuide.replace(/^#{1,6}\s+/gm, '').replace(/\*\*/g, '').replace(/`/g, ''));
 await bundle({ entryPoints: [resolve(root, 'server/app.mjs')], outfile: resolve(stage, 'server.cjs'), bundle: true, platform: 'node', format: 'cjs', target: 'node22', legalComments: 'eof' });
 await cp(resolve(root, 'dist'), resolve(stage, 'dist'), { recursive: true });
 await copyFile(resolve(root, 'desktop/main.cjs'), resolve(stage, 'main.cjs'));
@@ -26,7 +30,7 @@ await copyFile(resolve(root, 'desktop/startup.cjs'), resolve(stage, 'startup.cjs
 await copyFile(resolve(root, 'desktop/profile-store.cjs'), resolve(stage, 'profile-store.cjs'));
 await copyFile(resolve(root, 'desktop/model-network.cjs'), resolve(stage, 'model-network.cjs'));
 await copyFile(resolve(root, 'desktop/request-log.cjs'), resolve(stage, 'request-log.cjs'));
-for (const name of ['preload.cjs', 'desktop-bridge.cjs', 'backup-store.cjs']) await copyFile(resolve(root, 'desktop', name), resolve(stage, name));
+for (const name of ['preload.cjs', 'desktop-bridge.cjs', 'backup-store.cjs', 'backup-stream.cjs', 'backup-files.cjs', 'backup-legacy.cjs']) await copyFile(resolve(root, 'desktop', name), resolve(stage, name));
 await copyFile(resolve(root, 'desktop/icon.png'), resolve(stage, 'icon.png'));
 // Include actual installed license texts, while keeping source, credentials,
 // package-manager links and personal runtime data out of the desktop payload.
@@ -64,13 +68,15 @@ const paths = await packageApp({
     directories: { app: stage, output },
     electronVersion: JSON.parse(await readFile(require.resolve('electron/package.json'), 'utf8')).version,
     electronDist: dirname(require('electron')),
-    files: ['main.cjs', 'startup.cjs', 'profile-store.cjs', 'model-network.cjs', 'request-log.cjs', 'preload.cjs', 'desktop-bridge.cjs', 'backup-store.cjs', 'server.cjs', 'icon.png', 'licenses/**/*', 'dist/**/*', 'package.json'],
+    files: ['main.cjs', 'startup.cjs', 'profile-store.cjs', 'model-network.cjs', 'request-log.cjs', 'preload.cjs', 'desktop-bridge.cjs', 'backup-store.cjs', 'backup-stream.cjs', 'backup-files.cjs', 'backup-legacy.cjs', 'server.cjs', 'icon.png', 'licenses/**/*', 'dist/**/*', 'package.json'],
     extraFiles: [
       { from: resolve(root, '../../LICENSE'), to: 'LICENSE' },
       { from: resolve(stage, 'THIRD-PARTY-NOTICES.txt'), to: 'THIRD-PARTY-NOTICES.txt' },
       { from: resolve(root, 'desktop/diagnose-launch.ps1'), to: 'diagnose-launch.ps1' },
       { from: resolve(root, 'desktop/启动诊断.cmd'), to: '启动诊断.cmd' },
       { from: resolve(delivery, '开始使用.txt'), to: '开始使用.txt' },
+      { from: resolve(root, '../../docs/UPDATING.md'), to: '升级与数据保留-Update-and-data.md' },
+      { from: resolve(stage, updateGuideName), to: updateGuideName },
     ],
     asar: true, npmRebuild: false, nodeGypRebuild: false,
     // The pinned builder writes an ASAR resource even when resource editing is
@@ -98,8 +104,8 @@ if (await runtimeHash(resolve(output, 'win-unpacked/AI-Embedded-Paper-PDF-Reader
 for (const source of paths.filter(path => /\.(exe|zip)$/.test(path))) {
   const target = resolve(delivery, basename(source));
   await copyFile(source, target);
-  const data = await readFile(target);
-  await writeFile(target + '.sha256', createHash('sha256').update(data).digest('hex') + '  ' + basename(target) + '\n');
+  await writeFile(target + '.sha256', await runtimeHash(target) + '  ' + basename(target) + '\n');
   console.log('Windows package: ' + target);
 }
 for (const name of ['diagnose-launch.ps1', '启动诊断.cmd']) await copyFile(resolve(root, 'desktop', name), resolve(delivery, name));
+await copyFile(resolve(stage, updateGuideName), resolve(delivery, updateGuideName));

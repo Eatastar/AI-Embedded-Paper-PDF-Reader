@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Workspace } from '../domain/types';
-import { exportWorkspaceWithFiles, loadWorkspace, restoreWorkspaceWithFiles, saveWorkspace, saveWorkspaceAndPruneFiles } from '../adapters/storage';
+import { loadWorkspace, restoreWorkspaceWithFiles, saveWorkspace, saveWorkspaceAndPruneFiles } from '../adapters/storage';
 import { WorkspaceSession } from '../adapters/workspace-session';
 import { desktop } from '../adapters/desktop';
 import { permanentlyDelete } from '../domain/trash';
 import type { TrashTarget } from '../domain/trash';
 import { deleteChatTurn } from '../domain/workspace';
+import { writeLocalCheckpoint } from '../adapters/checkpoint';
+
+export const AUTOMATIC_BACKUP_INTERVAL_MS = 10 * 60_000;
 
 export function useWorkspace() {
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
@@ -19,13 +22,13 @@ export function useWorkspace() {
   const backupRevision = useRef(-1);
   const backupQueue = useRef(Promise.resolve());
   const flush = useCallback(() => session.current!.flush(), []);
-  const checkpoint = useCallback(async () => {
+  const checkpoint = useCallback(async (options: { force?: boolean } = {}) => {
     if (!desktop() || !current.current) return;
     const result = backupQueue.current.catch(() => {}).then(async () => {
       await flush();
       const revision = session.current!.revision;
-      if (revision === backupRevision.current) return;
-      const entry = await desktop()!.backups.write(await exportWorkspaceWithFiles(current.current!, { compact: true }));
+      if (!options.force && revision === backupRevision.current) return;
+      const entry = await writeLocalCheckpoint(current.current!);
       backupRevision.current = revision;
       setLastBackup(entry.createdAt); setBackupWarning('');
     });
@@ -35,14 +38,16 @@ export function useWorkspace() {
   useEffect(() => {
     let alive = true;
     loadWorkspace(async previous => {
-      if (desktop()) await desktop()!.backups.baseline(await exportWorkspaceWithFiles(previous));
+      if (desktop()) await writeLocalCheckpoint(previous, { compact: false, baseline: true, upgrade: true });
+    }, async previous => {
+      if (await desktop()?.backups.upgradeNeeded?.()) await writeLocalCheckpoint(previous, { upgrade: true });
     }).then(data => {
       if (!alive) return;
       session.current!.load(data);
     }).catch(error => { if (alive) setLoadError(error instanceof Error && error.message.startsWith('升级前备份') ? error.message : '无法打开本地记录。原记录仍保留在本机，可以从备份恢复，或重启后再试。'); });
     const saveOnHide = () => { void flush().catch(() => {}); };
     window.addEventListener('pagehide', saveOnHide);
-    const interval = setInterval(() => { void checkpoint().catch(() => {}); }, 60_000);
+    const interval = setInterval(() => { void checkpoint().catch(() => {}); }, AUTOMATIC_BACKUP_INTERVAL_MS);
     return () => {
       alive = false;
       window.removeEventListener('pagehide', saveOnHide);
@@ -50,11 +55,7 @@ export function useWorkspace() {
       session.current!.dispose();
     };
   }, [flush, checkpoint]);
-  useEffect(() => {
-    if (!workspace || loadError) return;
-    const timer = setTimeout(() => { void checkpoint().catch(() => {}); }, 3000);
-    return () => clearTimeout(timer);
-  }, [workspace, loadError, checkpoint]);
+  const invalidateCheckpoint = useCallback(() => { backupRevision.current = -1; setLastBackup(undefined); }, []);
   const update = useCallback((change: (previous: Workspace) => Workspace) => session.current!.update(change), []);
   const purge = useCallback((target: TrashTarget) => session.current!.commit(previous => permanentlyDelete(previous, target), saveWorkspaceAndPruneFiles), []);
   const removeChatTurn = useCallback((conversationId: string, messageId: string) => session.current!.commit(previous => deleteChatTurn(previous, conversationId, messageId), saveWorkspaceAndPruneFiles, '正在删除本轮对话…'), []);
@@ -63,5 +64,5 @@ export function useWorkspace() {
     session.current!.load(restored);
     setLoadError(''); backupRevision.current = -1;
   }, []);
-  return { workspace, current, update, saveStatus, loadError, flush, checkpoint, recover, purge, removeChatTurn, backupWarning, lastBackup };
+  return { workspace, current, update, saveStatus, loadError, flush, checkpoint, invalidateCheckpoint, recover, purge, removeChatTurn, backupWarning, lastBackup };
 }

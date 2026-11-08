@@ -40,7 +40,7 @@ export class WorkspaceRecordStore {
   metrics?: StorageWriteMetrics;
   constructor(private database: WorkspaceDatabase) {}
 
-  load(beforeMigration?: (workspace: Workspace) => Promise<void>): Promise<Workspace> {
+  load(beforeMigration?: (workspace: Workspace) => Promise<void>, beforeOpen?: (workspace: Workspace) => Promise<void>): Promise<Workspace> {
     if (this.loading) return this.loading;
     const load = async () => {
       const saved = await this.database.transaction('r', this.database.workspaces, async () => {
@@ -50,10 +50,11 @@ export class WorkspaceRecordStore {
       });
       if (!saved.current) {
         if (saved.rows.length) throw new Error('备份格式无效：本机记录索引缺失，请从备份恢复。');
-        const initial = createWorkspace(); await this.write(initial, { expectedMissing: true }); return initial;
+        const initial = createWorkspace(); if (beforeOpen) await beforeOpen(initial); await this.write(initial, { expectedMissing: true }); return initial;
       }
       if (isHeader(saved.current.workspace)) {
         const clean = validateImport(unpackWorkspace({ ...saved.current.workspace, records: saved.rows }));
+        if (beforeOpen) { try { await beforeOpen(clean); } catch { throw new Error('升级前备份未完成，原记录尚未更改。请重试，或先用旧版导出完整备份。'); } }
         this.previous = this.codec.pack(clean); this.revision = saved.current.workspace.revision;
         const compact = compactRequestCaches(clean);
         if (compact !== clean) await this.write(compact, { trusted: true });
@@ -89,8 +90,8 @@ export class WorkspaceRecordStore {
       const forceRows = options.replace || options.archive === 'migration';
       const cached = !forceRows && actualRevision !== undefined && actualRevision === expectedRevision && expectedPlan;
       const oldRows = cached ? undefined : await this.database.workspaces.where('id').startsWith(RECORD_PREFIX).toArray();
-      const oldJson = cached ? new Map([...cached.groups].map(([id, group]) => [id, group.json]))
-        : new Map((oldRows || []).map(row => [row.id, forceRows ? '' : JSON.stringify(row)]));
+      const oldJson = cached ? new Map([...cached.groups].map(([id, group]) => [id, group.fingerprint]))
+        : new Map((oldRows || []).map(row => [row.id, forceRows ? '' : contentHash(JSON.stringify(row))]));
       if (options.archive && current) {
         const archiveRows = isHeader(current.workspace) ? oldRows || await this.database.workspaces.where('id').startsWith(RECORD_PREFIX).toArray() : undefined;
         await this.database.workspaces.put({ id: `${options.archive}-archive-${Date.now()}-${crypto.randomUUID()}`, workspace: current.workspace, ...(archiveRows ? { records: archiveRows } : {}) });
@@ -98,7 +99,7 @@ export class WorkspaceRecordStore {
         names.sort((a, b) => String(b).localeCompare(String(a)));
         await this.database.workspaces.bulkDelete(names.slice(options.archive === 'migration' ? 2 : 3));
       }
-      const changed = packed.rows.filter(row => forceRows || oldJson.get(row.id) !== packed.groups.get(row.id)!.json);
+      const changed = packed.rows.filter(row => forceRows || oldJson.get(row.id) !== packed.groups.get(row.id)!.fingerprint);
       const removed = [...oldJson.keys()].filter(id => !packed.groups.has(id));
       if (changed.length) await this.database.workspaces.bulkPut(changed);
       if (removed.length) await this.database.workspaces.bulkDelete(removed);

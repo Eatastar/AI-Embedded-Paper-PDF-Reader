@@ -1,5 +1,27 @@
 AI-Embedded Paper PDF Reader
-AI 嵌入式论文 PDF 阅读器 · 0.1.32 · 20261108.1
+AI 嵌入式论文 PDF 阅读器 · 0.1.37 · 20261108.6
+
+自动备份会共享相同 PDF 等附件，并校验转换旧备份；从菜单导出的完整 JSON 仍可单独恢复。不要只复制自动备份目录内的 .snapshot.json。
+Automatic backups share identical attachments and verify older backups before conversion. Complete JSON exported from the menu remains standalone; a .snapshot.json alone is not a full export.
+
+备份列表每条旁的垃圾桶可删除历史恢复点，不影响当前资料。聊天和批注照常保存，自动历史备份改为每 10 分钟检查，正常退出前也会备份。
+Use each backup’s trash icon to remove that recovery point without deleting current data. Chats and notes keep saving promptly; historical backups check for changes every 10 minutes and before normal exit.
+
+首页左上角“菜单”：设置 / API 连接 / 翻译设置 / 对话 / 备份与恢复 / 回收站。
+完整备份 JSON 不只包含聊天，也包含笔记、批注和 PDF；不含 API 连接配置与密钥。
+Start-page Menu: settings, API connections, translation settings, chats, backup and restore, and trash.
+Full backup JSON includes chats, notes, annotations and PDFs, excluding API profiles and keys.
+
+升级并删除旧版：先读这里 / Updating and removing the old app
+1. 推荐先在旧版打开“备份与恢复”，导出“全部记录（含回收站）”，把 JSON 备份放到桌面等旧程序文件夹以外的位置。
+2. 点击 × 正常退出旧版，等待保存完成，先不要删除旧文件夹。
+3. 把新版 ZIP 完整解压到一个新文件夹。不要在 ZIP 内运行，也不要只拖出 EXE。
+4. 运行新文件夹中的 AI-Embedded-Paper-PDF-Reader.exe，确认上方版本号为 0.1.37，检查以前的 PDF、批注、聊天和模型连接。
+5. 原资料已经出现就直接使用，不必再导入备份。确认后再删除旧程序文件夹、旧 ZIP 和旧校验文件；保留新版和导出的 JSON。自己放在旧文件夹中的论文、备份要先移出去。
+6. 没看到旧资料时，先不删旧版，在新版“备份与恢复”→“从文件恢复”中选择刚才的 JSON。以后从新版文件夹启动，旧快捷方式需要重新创建。
+详细分步说明见同目录“READ-ME-FIRST-Update-and-Data-Migration.txt”（中英双语）或“升级与数据保留-Update-and-data.md”。同机同账户更新会自动沿用资料，新版首次打开还会先建立升级检查点。不要删除 %APPDATA%\MarginChat 来清理旧程序。
+Recommended order: export an extra complete backup outside the old program folder, exit the old app, fully extract the new ZIP elsewhere, run it and check PDFs/notes/chats/connections, then remove the old folder and ZIP. If the old data appears, do not import it again. If it is missing, keep the old app and choose Backup & restore → Restore from file. Keep your exported JSON and the entire new folder; recreate shortcuts to the new EXE.
+See “READ-ME-FIRST-Update-and-Data-Migration.txt” (Chinese and English) or “升级与数据保留-Update-and-data.md”. Same-account updates reuse local data automatically and create an upgrade checkpoint. Do not delete %APPDATA%\MarginChat while cleaning old program versions.
 
 一、运行 / Run
 完整解压 ZIP，运行 AI-Embedded-Paper-PDF-Reader.exe，保留所有同目录文件。

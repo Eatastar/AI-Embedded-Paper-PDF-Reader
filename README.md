@@ -10,11 +10,23 @@
 
 A desktop reader built around local PDFs, for working through a paper's concepts, equations and arguments or studying textbooks, technical books and foreign-language PDF books in detail. Connect your preferred AI provider, relay API or self-hosted model service. Select a passage to ask in its annotation panel or quickly translate a word or paragraph. To develop a question further, reference selected annotations in chat while keeping the PDF and its original note in view. Adjust paper and text colors to your preference.
 
-[下载 / Downloads](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases) · [本版发布说明 / Release notes](docs/RELEASE_NOTES.md) · [隐私 / Privacy](docs/PRIVACY.md) · [版本记录 / Changelog](docs/CHANGELOG.md) · [项目总纲 / Project outline](docs/PROJECT.md)
+[下载 / Downloads](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases) · [已发布版本说明 / Published release notes](docs/RELEASE_NOTES.md) · [隐私 / Privacy](docs/PRIVACY.md) · [版本记录 / Changelog](docs/CHANGELOG.md) · [项目总纲 / Project outline](docs/PROJECT.md)
 
-当前源码版本：**0.1.32**。Windows x64 客户端请以 Releases 中实际发布的完整 ZIP 为准。支持八种界面语言，可在程序内切换并在本机记忆。
+当前源码版本：**0.1.37**。Windows x64 客户端请以 Releases 中实际发布的完整 ZIP 为准。支持八种界面语言，可在程序内切换并在本机记忆。[更新与数据保留](docs/UPDATING.md)：程序与个人资料分开保存，更新后继续使用原有聊天、笔记和批注。
 
-Current source version: **0.1.32**. Download the complete Windows x64 ZIP actually published on Releases. Choose from eight interface languages in the app; your choice is remembered locally.
+Current source version: **0.1.37**. Download the complete Windows x64 ZIP actually published on Releases. Choose from eight interface languages in the app; your choice is remembered locally. [Updates and your data](docs/UPDATING.md): program files are separate from your profile, so updates retain existing chats, notes and annotations.
+
+首页左上角“菜单”可直接进入设置、API 连接、翻译设置、聊天、备份恢复和回收站，无需先打开 PDF。完整 JSON 备份包含聊天、笔记、批注和已导入的 PDF，不含 API 连接配置与密钥。
+
+The top-left Menu on the start page opens settings, API connections, translation settings, chats, backup and restore, and trash without opening a PDF. A full JSON backup includes chats, notes, annotations and imported PDFs; it excludes API connection profiles and keys.
+
+自动备份按内容共享 PDF 等附件，多个恢复点只保存一份相同文件；旧自动备份会在校验成功后转换。手动导出的 JSON 仍包含原文件，可单独恢复。[备份与空间说明](docs/PERFORMANCE.md)。
+
+Automatic backups share identical PDF and other attachments across recovery points; older automatic backups are converted after verification. Manually exported JSON still includes the original files and can be restored on its own. [Backup storage details](docs/PERFORMANCE.md).
+
+聊天和批注照常及时保存；历史备份按 10 分钟间隔、手动操作及正常退出建立。备份列表支持逐条删除，包括升级前恢复点；删除备份不影响当前资料。
+
+Chats and annotations keep saving promptly. Historical backups are created at 10-minute intervals, manually, and on normal exit. Individual backups, including pre-upgrade points, can be deleted without removing current data.
 
 ## 精读场景 / Close-reading workflows
 

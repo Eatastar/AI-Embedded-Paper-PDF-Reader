@@ -11,6 +11,7 @@ import { FigureAnnotationPanel } from './FigureAnnotationPanel';
 import { loadPdfDocument } from '../adapters/documents';
 import { bindPdfZoom } from '../adapters/pdf-zoom';
 import { PdfRenderQueue, readPdfOutline } from '../adapters/pdf-navigation';
+import { pdfRenderQueue, pdfBasePixelLimit, releasePdfDocument } from '../adapters/pdf-resources';
 import { resolvePdfDestination, type PdfLink } from '../adapters/pdf-links';
 import { markReaderSearch } from '../adapters/reader-search';
 import { readerAnnotationRange } from '../adapters/reader-location';
@@ -76,7 +77,7 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
   const [nearPages, setNearPages] = useState(() => new Set([initial.pageIndex]));
   const [forcedPage, setForcedPage] = useState<number | null>(initial.pageIndex);
   const [search, setSearch] = useState<SearchFocus | null>(null), [navigationRevision, setNavigationRevision] = useState(0);
-  const [queue] = useState(() => new PdfRenderQueue());
+  const queue = useMemo(() => pdf ? pdfRenderQueue(pdf) : new PdfRenderQueue(), [pdf]);
   const rootRef = useRef<HTMLElement>(null), viewportRef = useRef<HTMLDivElement>(null), textRef = useRef<HTMLElement>(null);
   const toggleFigure = useCallback(() => { setFigureSelecting(value => !value); annotationProps.onOpen(null); }, [annotationProps.onOpen]);
   useEffect(() => {
@@ -302,14 +303,15 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
   useEffect(() => {
     if (source.kind !== 'pdf') { setLoading(false); return; }
     let cancelled = false, opened: PDFDocumentProxy | undefined;
+    const controller = new AbortController();
     const load = async () => {
       const bytes = await getDocumentBytes(source.id); if (cancelled) return;
-      if (!bytes) throw new Error('Missing document'); opened = await loadPdfDocument(bytes);
+      if (!bytes) throw new Error('Missing document'); opened = await loadPdfDocument(bytes, controller.signal);
       if (cancelled) { await opened.loadingTask.destroy(); return; }
       setPdf(opened); setLoading(false);
     };
     void load().catch(() => { if (!cancelled) { setLoading(false); setFileError('无法打开本地原文件，仍可在“可批注文本”里阅读已保存的文字。'); } });
-    return () => { cancelled = true; if (opened) void opened.loadingTask.destroy().catch(() => {}); };
+    return () => { cancelled = true; controller.abort(); if (opened) { releasePdfDocument(opened); void opened.loadingTask.destroy().catch(() => {}); } };
   }, [source.id, source.kind]);
   useEffect(() => {
     if (!pdf) return;
@@ -366,7 +368,7 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
     try { annotationProps.onCreate(annotation); setFigureSelecting(false); setNavigationOpen(false); pendingNote.current = annotation.id; }
     catch (error) { annotationProps.onNotify(error instanceof Error ? error.message : '无法创建图片批注。'); }
   };
-  const renderPage = (index: number) => <PdfAnnotatedPage {...annotationProps} figureSelecting={figureSelecting} onSelectFigure={onFigureAsk ? rect => selectFigure(index, rect) : undefined} readerStyle={palette} annotations={annotationsByPage.get(index) || []} messageId={source.pages[index].messageId} version={version(index)} pdf={pdf!} pageNumber={source.pages[index].pageNumber} availableWidth={availableWidth} zoom={zoom} appearance={appearance} compareOriginal={compareOriginal} onPageReady={() => ready(index)} queue={queue} scrollViewport={viewportRef} maxPixels={continuous ? 8_000_000 : 16_000_000} search={search?.pageIndex === index ? search : null} onSearchLocated={locateSearch} onPdfLink={link => void followPdfLink(link)} />;
+  const renderPage = (index: number) => <PdfAnnotatedPage {...annotationProps} figureSelecting={figureSelecting} onSelectFigure={onFigureAsk ? rect => selectFigure(index, rect) : undefined} readerStyle={palette} annotations={annotationsByPage.get(index) || []} messageId={source.pages[index].messageId} version={version(index)} pdf={pdf!} pageNumber={source.pages[index].pageNumber} availableWidth={availableWidth} zoom={zoom} appearance={appearance} compareOriginal={compareOriginal} onPageReady={() => ready(index)} queue={queue} scrollViewport={viewportRef} retainRaster={!continuous || nearPages.has(index) || forcedPage === index} maxPixels={pdfBasePixelLimit(nearPages.size + Number(forcedPage !== null && !nearPages.has(forcedPage)), continuous)} search={search?.pageIndex === index ? search : null} onSearchLocated={locateSearch} onPdfLink={link => void followPdfLink(link)} />;
   const commitPage = () => {
     if (!/^\d+$/u.test(pageInput)) { setPageInput(String(position.current.pageIndex + 1)); return; }
     const index = Math.max(0, Math.min(source.pages.length - 1, Number(pageInput) - 1));

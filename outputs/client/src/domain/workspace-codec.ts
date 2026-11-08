@@ -7,7 +7,7 @@ export type RecordKind = 'conversation' | 'message' | 'version' | 'annotation' |
 export interface WorkspaceRecord { id: string; kind: RecordKind; data: Record<string, unknown> }
 export interface CompactHeader { schemaVersion: 2; conversationIds: string[]; activeConversationId: string }
 export interface CompactWorkspace extends CompactHeader { records: WorkspaceRecord[] }
-interface Group { row: WorkspaceRecord; json: string; bytes: number; children: Group[] }
+interface Group { row: WorkspaceRecord; fingerprint: string; bytes: number; children: Group[] }
 interface ContextReference { prefix: string; tail: string }
 interface ContextGroup { reference: ContextReference; children: Group[] }
 export interface PackedWorkspace { header: CompactHeader; rows: WorkspaceRecord[]; groups: Map<string, Group>; bytes: number }
@@ -24,7 +24,7 @@ export class WorkspaceCodec {
   private prefixCleanup = new FinalizationRegistry<{ id: string; ref: WeakRef<Group> }>(entry => { if (this.prefixes.get(entry.id) === entry.ref) this.prefixes.delete(entry.id); });
   private group(kind: RecordKind, id: string, data: Record<string, unknown>, children: Group[] = []): Group {
     const row = { id: key(kind, id), kind, data }, json = JSON.stringify(row);
-    return { row, json, bytes: encoder.encode(json).byteLength, children };
+    return { row, fingerprint: contentHash(json), bytes: encoder.encode(json).byteLength, children };
   }
   private memo(value: object, create: () => Group): Group {
     const cached = this.cache.get(value); if (cached) return cached;
@@ -88,7 +88,7 @@ export class WorkspaceCodec {
     const visit = (group: Group) => {
       if (visited.has(group)) return; visited.add(group);
       const existing = groups.get(group.row.id);
-      if (existing && existing.json !== group.json) throw new Error('保存记录包含重复且不一致的标识。');
+      if (existing && existing.fingerprint !== group.fingerprint) throw new Error('保存记录包含重复且不一致的标识。');
       groups.set(group.row.id, group); group.children.forEach(visit);
     };
     workspace.conversations.forEach(c => visit(this.conversation(c)));

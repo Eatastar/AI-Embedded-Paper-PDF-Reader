@@ -11,6 +11,7 @@ const { installDesktopBridge, createCloseGuard } = require('./desktop-bridge.cjs
 
 const smoke = process.argv.includes('--smoke-test');
 const interactiveSmoke = smoke && process.argv.includes('--interactive');
+const hiddenSmoke = smoke && process.argv.includes('--hidden');
 const profile = smoke
   ? process.env.MARGIN_TEST_USER_DATA ? resolve(process.env.MARGIN_TEST_USER_DATA) : join(app.getPath('temp'), `LearnSomethingSmoke-${process.pid}`)
   : join(app.getPath('appData'), 'MarginChat');
@@ -139,10 +140,10 @@ if (!ownsLock) {
     refreshMenu();
     window = new BrowserWindow({
       width: 1280, height: 860, minWidth: 760, minHeight: 600, title: 'AI-Embedded Paper PDF Reader',
-      backgroundColor: '#fff8e7', show: !smoke || interactiveSmoke, autoHideMenuBar: true, icon: join(__dirname, 'icon.png'),
+      backgroundColor: '#fff8e7', show: !smoke || (interactiveSmoke && !hiddenSmoke), autoHideMenuBar: true, icon: join(__dirname, 'icon.png'),
       webPreferences: { preload: join(__dirname, 'preload.cjs'), nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, allowRunningInsecureContent: false, spellcheck: false, devTools: !app.isPackaged },
     });
-    desktopBridge = installDesktopBridge({ ipcMain, window, isLocalPage, backupStore: createBackupStore({ directory: join(profile, 'Backups') }), onLocale: locale => { interfaceLocale = locale; refreshMenu(); } });
+    desktopBridge = installDesktopBridge({ ipcMain, window, isLocalPage, backupStore: createBackupStore({ directory: join(profile, 'Backups'), version: app.getVersion() }), onLocale: locale => { interfaceLocale = locale; refreshMenu(); } });
     closeGuard = createCloseGuard({
       save: async () => { const saved = await desktopBridge.waitForSave(); report.exitSaveAcknowledged = saved; if (smoke && !saved) report.passed = false; return saved; }, shutdown,
       quit: () => { quitting = true; if (smoke) void saveSmokeReport().finally(() => app.quit()); else app.quit(); },
@@ -176,7 +177,7 @@ if (!ownsLock) {
     report.started = true;
     report.rendererLoaded = true;
     startupLog.write('page-ready');
-    if (!smoke || interactiveSmoke) { window.show(); return; }
+    if (!smoke || interactiveSmoke) { if (!hiddenSmoke) window.show(); return; }
     // Startup verification reads only the application's HTTP contract and its
     // lifecycle events. No renderer script or UI automation is injected.
     const headers = { 'X-Margin-Session': token };

@@ -1,5 +1,47 @@
 # 版本记录 / Changelog
 
+## 0.1.37 · 20261108.6 · 未发布 / Unreleased
+
+备份列表新增逐条删除，普通和升级前备份均可在确认后移除；当前聊天、笔记、批注和 PDF 不受影响。附件仅在没有其他恢复点引用时清理。保护信息变更与删除使用可恢复的本地操作记录，中断后会恢复原保护或完成已执行的删除；不确定状态暂停附件清理。
+
+Add confirmed per-backup deletion for ordinary and pre-upgrade recovery points, without changing current chats, notes, annotations or PDFs. Shared files are collected only after their final recovery-point reference disappears. A recoverable local journal protects index changes and deletion; after interruption, restore original protection or complete an already-executed deletion. Uncertain state blocks attachment cleanup.
+
+移除“内容变化停止 3 秒即备份”，改为有变化时每 10 分钟备份；正常退出和“立即备份”会核对、保存最新状态，内容完全相同时复用恢复点。主资料的及时自动保存不变。删除备份后刷新列表并使下次检查点重新核对，防止删空后仍误认为有有效备份。保留上限仍为 5 个普通和 2 个升级前恢复点，用户可逐条清理；八种界面语言同步更新。
+
+Replace backup creation three seconds after edits settle with changed-data backups every 10 minutes. Normal exit and Back up now verify and save the current state, reusing an identical point. Prompt saving of primary data is unchanged. Deletion refreshes the list and invalidates the cached checkpoint state, so clearing backups cannot leave a false assumption that a current point exists. Retention remains five ordinary and two pre-upgrade points, with individual deletion available. Update all eight UI languages.
+
+## 0.1.36 · 20261108.5 · 未发布 / Unreleased
+
+自动备份改为小型记录文件与共享附件库：同一文件按 SHA-256 内容标识只保存一份，即使它对应不同文档编号。逐份校验并转换旧自动备份，替代副本与保护索引持久化后才移除旧文件；不支持的旧布局或损坏文件保持原样，并继续遵循保留规则。仍保留最近 5 份普通恢复点及最多 2 份升级前恢复点；附件在最后一个引用消失后才清理。备份管理显示共享附件说明与记录大小，支持八种语言。
+
+Automatic backups now use small record files and a shared attachment store. SHA-256 content IDs keep one copy of identical files, even under different document IDs. Older automatic backups are verified and converted individually; originals are removed only after durable replacements and protection indexes exist. Unsupported layouts and damaged files remain intact, subject to normal retention. Five ordinary and up to two upgrade recovery points remain; attachments are collected only after their final reference disappears. Backup management explains shared files and record size in all eight languages.
+
+手动导出、从恢复点导出的 JSON 仍是自包含完整备份，可单独恢复并保持旧版导入兼容。主资料库、聊天、笔记、批注及 API 配置位置不变；本地共享恢复点本身需要 v0.1.36 或更新版本读取。新增故障、转换、去重和恢复测试及可重复空间测量脚本；没有新增运行依赖。
+
+Manual exports and exports from recovery points remain self-contained complete JSON backups, compatible with older importers. The primary library, chats, notes, annotations and API configuration keep their existing locations. Local shared recovery points themselves require v0.1.36 or later. Add fault, conversion, deduplication and restore coverage plus a reproducible space benchmark, without new runtime dependencies.
+
+## 0.1.35 · 20261108.4 · 未发布 / Unreleased
+
+备份导出范围改用统一下拉控件，为箭头保留独立空间并垂直居中；窄窗口可换行，阿拉伯语布局同步调整。补充安装包、个人资料、备份磁盘占用与运行内存的区别，增加纯虚构的批注体积测量脚本，不读取个人资料或调用 API。本轮没有新增运行依赖，也没有改变已有备份保留规则。
+
+Use the shared select control for backup export scope, with dedicated arrow space and vertical alignment, wrapping in narrow dialogs and correct RTL placement. Document package size, personal data, backup disk use and runtime memory separately. Add a synthetic annotation-size benchmark that reads no personal data and calls no API. No runtime dependencies or backup-retention rules change.
+
+## 0.1.34 · 20261108.3 · 未发布 / Unreleased
+
+首页左上角新增菜单，不打开 PDF 也可进入设置、模型与 API 连接、翻译设置、历史对话、备份恢复及回收站，或直接打开 PDF、新建聊天、导入备份。菜单支持键盘导航、Esc 收起、八种界面语言和窄窗口；沿用现有资料与备份格式。更新说明补充首页操作入口及旧版入口。
+
+Add a menu at the top left of the start page. Access settings, model/API connections, translation settings, conversations, backup and restore, and trash without opening a PDF; open a PDF, start a chat or import a backup directly. The menu supports keyboard navigation, Escape to dismiss, all eight interface languages and narrow windows. Existing data and backup formats remain unchanged. Update instructions now explain both the start-page menu and the older entry point.
+
+## 0.1.33 · 20261108.2 · 未发布 / Unreleased
+
+降低备份、PDF 和长聊天的内存占用，保留现有功能与 v0.1.32 数据兼容。完整备份改用 256 KiB 独立分块写盘与增量校验，手动导出使用分块 Blob；底图、高清补图和截图共用队列，页面按使用计数清理，旧加载和改色像素及时释放。聊天按视野挂载消息，保留正在使用的批注、翻译和选区；流式更新合并，搜索改为有上限的缓存与可取消分批处理，记录编码不再保留整份 JSON 文本。
+
+Reduce memory used by backups, PDFs and long chats while preserving features and v0.1.32 data compatibility. Complete backups use owned 256 KiB chunks, direct writes and incremental verification; manual exports use chunked Blobs. Base/detail/crop rasters share a queue; page leases govern cleanup and obsolete loads/color sources are released. Chat mounts nearby messages while retaining sources in use. Streaming updates are batched, search uses bounded caches and cancellable batches, and record encoding no longer retains complete JSON strings.
+
+新增升级前受保护检查点与双语[更新说明](UPDATING.md)。程序继续使用原资料目录、固定本机地址和相同数据库格式，新目录启动也能继续旧聊天、笔记与批注；本轮不覆盖或删除 v0.1.32 包。详见[性能测量与架构说明](PERFORMANCE.md)，其中数据为虚构场景的对照测量，不是整台客户端内存保证。
+
+Add protected upgrade checkpoints and bilingual [update instructions](UPDATING.md). The original profile, fixed local origin and database format remain stable, so an app extracted elsewhere retains existing chats, notes and annotations. This work does not replace or remove v0.1.32 packages. See [performance and architecture](PERFORMANCE.md) for synthetic comparisons, which are not guarantees about total desktop memory.
+
 ## 0.1.32 · 20261108.1 · 2026-11-08
 
 圈画只显示在图片问答预览与圈画编辑器中，并叠加到主动发送给 AI 的选图；PDF 原页不再显示提问用的圈线或画笔。已有圈画、问答与重新提问草稿继续保留，原页的选区入口仍可用于重新打开图片批注，无需重新导入 PDF。

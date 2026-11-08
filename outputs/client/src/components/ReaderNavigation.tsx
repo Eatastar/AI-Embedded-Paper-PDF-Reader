@@ -3,7 +3,7 @@ import { useLocale } from '../i18n/react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp, Search, X } from 'lucide-react';
 import type { Annotation, DocumentAttachment } from '../domain/types';
-import { buildDocumentSearch, documentNotes, filterDocumentNotes, searchDocument } from '../domain/reader-navigation';
+import { buildDocumentSearch, documentNotes, filterDocumentNotes, searchDocumentAsync } from '../domain/reader-navigation';
 import type { OutlineEntry, SearchHit } from '../domain/reader-navigation';
 
 type Tab = 'outline' | 'search' | 'notes';
@@ -24,17 +24,24 @@ export function ReaderNavigation({ open, source, annotations, pageIndex, outline
   const [notePage, setNotePage] = useState(''), [noteQuery, setNoteQuery] = useState('');
   const [noteLimit, setNoteLimit] = useState(100);
   const index = useRef<{ pages: DocumentAttachment['pages']; value: ReturnType<typeof buildDocumentSearch> } | null>(null);
+  const [result, setResult] = useState<{ hits: SearchHit[]; count: number }>({ hits: [], count: 0 });
+  const [searchBusy, setSearchBusy] = useState(false), [completedQuery, setCompletedQuery] = useState('');
+  useEffect(() => { if (!open || tab !== 'search') index.current?.value.cache.clear(); }, [open, tab]);
   useEffect(() => { const timer = setTimeout(() => setSettledQuery(query), 160); return () => clearTimeout(timer); }, [query]);
-  const result = useMemo(() => {
-    if (!open || tab !== 'search' || !settledQuery.trim()) return { hits: [], count: 0 };
+  useEffect(() => {
+    if (!open || tab !== 'search' || !settledQuery.trim()) { setResult({ hits: [], count: 0 }); setSearchBusy(false); setCompletedQuery(''); return; }
     if (index.current?.pages !== source.pages) index.current = { pages: source.pages, value: buildDocumentSearch(source.pages) };
-    return searchDocument(index.current.value, settledQuery);
+    const controller = new AbortController(); setSearchBusy(true);
+    void searchDocumentAsync(index.current.value, settledQuery, controller.signal).then(value => {
+      if (!controller.signal.aborted) { setResult(value); setCompletedQuery(settledQuery); setSearchBusy(false); }
+    }).catch(() => { if (!controller.signal.aborted) setSearchBusy(false); });
+    return () => controller.abort();
   }, [source.pages, settledQuery, open, tab]);
   const notes = useMemo(() => documentNotes(source, annotations), [source, annotations]);
   const filteredNotes = useMemo(() => filterDocumentNotes(notes, noteKind, notePage ? Number(notePage) : null, noteQuery), [notes, noteKind, notePage, noteQuery]);
   useEffect(() => setNoteLimit(100), [noteKind, notePage, noteQuery]);
   const current = result.hits.findIndex(hit => hit.key === selectedHit);
-  const searching = query !== settledQuery;
+  const searching = query !== settledQuery || searchBusy || Boolean(query.trim() && completedQuery !== settledQuery);
   const chooseHit = (hit: SearchHit) => { setSelectedHit(hit.key); onSearch(hit, settledQuery); };
   const stepHit = (direction: number) => {
     if (!result.hits.length || searching) return;

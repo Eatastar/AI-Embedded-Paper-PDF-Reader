@@ -9,6 +9,7 @@ import { paintPdfFrame, startPdfFrame } from '../adapters/pdf-frame';
 import { PdfColorProcessor } from '../adapters/pdf-color';
 import { bindPdfDetail } from '../adapters/pdf-detail';
 import { PdfRenderQueue } from '../adapters/pdf-navigation';
+import { acquirePdfPage, type PdfPageLease } from '../adapters/pdf-resources';
 import { markReaderSearch } from '../adapters/reader-search';
 import { pdfPageSize } from '../domain/pdf-zoom';
 import { pdfLinkTextRegions, type PixelFrame } from '../domain/pdf-color';
@@ -33,12 +34,13 @@ interface PdfAnnotatedPageProps extends AnnotatedAnswerProps {
   queue: PdfRenderQueue;
   scrollViewport: RefObject<HTMLDivElement | null>;
   maxPixels?: number;
+  retainRaster?: boolean;
   search: SearchFocus | null;
   onSearchLocated: (marker: HTMLElement | null, request: number) => void;
   onPdfLink: (link: PdfLink) => void;
 }
 
-export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appearance, compareOriginal, onPageReady, queue, scrollViewport, maxPixels = 16_000_000, search, onSearchLocated, onPdfLink, figureSelecting = false, onSelectFigure, ...annotationProps }: PdfAnnotatedPageProps) {
+export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appearance, compareOriginal, onPageReady, queue, scrollViewport, maxPixels = 16_000_000, retainRaster = true, search, onSearchLocated, onPdfLink, figureSelecting = false, onSelectFigure, ...annotationProps }: PdfAnnotatedPageProps) {
   useLocale();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const detailRef = useRef<HTMLCanvasElement>(null);
@@ -70,9 +72,9 @@ export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appear
   useLayoutEffect(preview, [availableWidth, zoom]);
   useLayoutEffect(() => {
     const source = detailSourceRef.current, stage = stageRef.current, canvas = detailRef.current, scroller = scrollViewport.current;
-    if (!readyKey || !source || !stage || !canvas || !scroller || !pageSize.current || source.viewport.scale !== pdfPageSize(pageSize.current, availableWidth, zoom).scale) return;
-    return bindPdfDetail({ ...source, stage, canvas, scrollViewport: scroller, appearance: compareOriginal ? { ...appearance, preset: 'original' } : appearance });
-  }, [readyKey, availableWidth, zoom, appearance.paper, appearance.ink, appearance.preserveColors, appearance.preset, compareOriginal, scrollViewport]);
+    if (!retainRaster || !readyKey || !source || !stage || !canvas || !scroller || !pageSize.current || source.viewport.scale !== pdfPageSize(pageSize.current, availableWidth, zoom).scale) return;
+    return bindPdfDetail({ ...source, queue, stage, canvas, scrollViewport: scroller, appearance: compareOriginal ? { ...appearance, preset: 'original' } : appearance });
+  }, [readyKey, retainRaster, queue, availableWidth, zoom, appearance.paper, appearance.ink, appearance.preserveColors, appearance.preset, compareOriginal, scrollViewport]);
   const readyRef = useRef(onPageReady);
   readyRef.current = onPageReady;
   const paintRef = useRef((original?: ImageData | null, source?: PixelFrame | null) => Boolean(original));
@@ -80,7 +82,7 @@ export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appear
     const canvas = canvasRef.current;
     if (!original || !canvas) return false;
     try {
-      colorRevision.current++; colorProcessor.current?.cancel();
+      colorRevision.current++; colorProcessor.current?.release();
       paintPdfFrame(canvas, original, appearance, compareOriginal, source?.linkText);
       canvas.style.visibility = 'visible';
       setColorError(false);
@@ -97,7 +99,7 @@ export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appear
         const frame = await processor.prepare(source, nextAppearance, fast);
         const canvas = canvasRef.current;
         if (!frame || !canvas || revision !== colorRevision.current || original !== originalRef.current) return;
-        const display = new ImageData(new Uint8ClampedArray(frame.data), frame.width, frame.height);
+        const display = new ImageData(new Uint8ClampedArray(frame.data.buffer as ArrayBuffer, frame.data.byteOffset, frame.data.length), frame.width, frame.height);
         const context = canvas.getContext('2d', { alpha: true, willReadFrequently: true }); if (!context) throw new Error('Canvas unavailable');
         // Prepared offscreen. Resizing and publishing remain one synchronous commit.
         if (canvas.width !== frame.width) canvas.width = frame.width;
@@ -111,14 +113,21 @@ export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appear
   }, [appearance.paper, appearance.ink, appearance.preserveColors, appearance.preset, compareOriginal]);
 
   useEffect(() => {
+    if (!retainRaster) {
+      colorProcessor.current?.release(); originalRef.current = null; colorSourceRef.current = null; detailSourceRef.current = null;
+      const canvas = canvasRef.current; if (canvas) canvas.width = canvas.height = 1;
+      return;
+    }
     let cancelled = false;
     const controller = new AbortController();
     let frameJob: ReturnType<typeof startPdfFrame> | undefined;
     let unbindSelection: (() => void) | undefined;
+    let pageLease: PdfPageLease | undefined;
     setReadyKey(0);
     setRenderError('');
     const render = async () => {
-      const [page, library] = await Promise.all([pdf.getPage(pageNumber), loadPdfJs()]);
+      pageLease = await acquirePdfPage(pdf, pageNumber, controller.signal);
+      const page = pageLease.page, library = await loadPdfJs();
       const canvas = canvasRef.current;
       const text = textRef.current;
       const stage = stageRef.current;
@@ -159,8 +168,11 @@ export function PdfAnnotatedPage({ pdf, pageNumber, availableWidth, zoom, appear
     const timer = setTimeout(() => { void queue.enqueue(render, controller.signal).catch((error: unknown) => {
       if (!cancelled && !(error instanceof Error && ['RenderingCancelledException', 'AbortError'].includes(error.name))) setRenderError('这页暂时无法显示，请试试“可批注文本”视图。');
     }); }, publishedScale.current ? 120 : 0);
-    return () => { cancelled = true; controller.abort(); clearTimeout(timer); unbindSelection?.(); frameJob?.cancel(); };
-  }, [pdf, pageNumber, availableWidth, zoom, queue, maxPixels]);
+    return () => {
+      cancelled = true; controller.abort(); clearTimeout(timer); unbindSelection?.(); frameJob?.cancel();
+      void (frameJob?.promise.catch(() => {}) || Promise.resolve()).then(() => pageLease?.release());
+    };
+  }, [pdf, pageNumber, availableWidth, zoom, queue, maxPixels, retainRaster]);
 
   const locatedRef = useRef(onSearchLocated); locatedRef.current = onSearchLocated;
   useEffect(() => {

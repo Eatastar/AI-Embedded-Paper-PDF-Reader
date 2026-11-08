@@ -18,5 +18,11 @@ contextBridge.exposeInMainWorld('learnSomething', {
     read: id => ipcRenderer.invoke('learn:backups-read', id),
     write: text => ipcRenderer.invoke('learn:backups-write', text),
     baseline: text => ipcRenderer.invoke('learn:backups-baseline', text),
+    remove: id => ipcRenderer.invoke('learn:backups-remove', id),
+    begin: input => ipcRenderer.invoke('learn:backups-begin', input),
+    append: input => ipcRenderer.invoke('learn:backups-append', input),
+    finish: id => ipcRenderer.invoke('learn:backups-finish', id),
+    abort: id => ipcRenderer.invoke('learn:backups-abort', id),
+    upgradeNeeded: () => ipcRenderer.invoke('learn:backups-upgradeNeeded'),
   },
 });

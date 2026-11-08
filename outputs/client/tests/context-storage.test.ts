@@ -113,6 +113,23 @@ test('旧格式升级在备份确认之后提交，保留原记录副本与附�
   assert.deepEqual(await new WorkspaceRecordStore(db).load(), validateImport(legacy));
 });
 
+test('v0.1.32 compact records are checkpointed before cleanup writes and a failed checkpoint leaves all rows unchanged', async () => {
+  const db = database(), previous = fixture(3, 10000);
+  await new WorkspaceRecordStore(db).write(previous);
+  const originalRows = await db.workspaces.toArray(), version = db.verno;
+  await assert.rejects(new WorkspaceRecordStore(db).load(undefined, async value => {
+    assert.deepEqual(value, validateImport(previous));
+    assert.deepEqual(await db.workspaces.toArray(), originalRows);
+    throw Error('synthetic-full-disk');
+  }), /升级前备份未完成/);
+  assert.deepEqual(await db.workspaces.toArray(), originalRows); assert.equal(db.verno, version);
+  let checkpointed = false;
+  const opened = await new WorkspaceRecordStore(db).load(undefined, async value => {
+    assert.deepEqual(parseWorkspace(exportWorkspace(value, { compact: true })), validateImport(previous)); checkpointed = true;
+  });
+  assert.equal(checkpointed, true); assert.deepEqual(opened, compactRequestCaches(validateImport(previous))); assert.equal(db.verno, 2);
+});
+
 test('升级前备份失败或迁移写入中断时，不覆盖旧格式，不留下半份新记录', async () => {
   const db = database(), store = new WorkspaceRecordStore(db), legacy = fixture();
   await db.workspaces.put({ id: 'current', workspace: legacy });

@@ -54,6 +54,7 @@ async function streamRequest(path: string, request: ReplyRequest | TranslationRe
   if (!response.ok) throw new Error(await readFailure(response));
   if (!response.body || !response.headers.get('content-type')?.includes('text/event-stream')) throw new Error('本地服务没有返回可读取的回答。');
   const reader = response.body.getReader();
+  const batch = new TextBatch(onDelta, () => { void reader.cancel().catch(() => {}); });
   const abortRead = () => { void reader.cancel().catch(() => {}); };
   signal?.addEventListener('abort', abortRead, { once: true });
   const decoder = new TextDecoder();
@@ -66,12 +67,13 @@ async function streamRequest(path: string, request: ReplyRequest | TranslationRe
     let part: { type: string; text?: string; modelLabel?: string; message?: string };
     try { part = JSON.parse(data) as typeof part; }
     catch { throw new Error('回答的数据格式不正确，请重试。'); }
-    if (part.type === 'delta' && typeof part.text === 'string') onDelta(part.text);
+    if (part.type === 'delta' && typeof part.text === 'string') batch.push(part.text);
     else if (part.type === 'done') result = { modelLabel: part.modelLabel || '所选模型' };
     else if (part.type === 'error') throw new Error(part.message || '生成回答时遇到问题。');
   };
   try {
     while (true) {
+      batch.check();
       signal?.throwIfAborted();
       const { done, value } = await reader.read();
       pending += decoder.decode(value, { stream: !done });
@@ -89,7 +91,7 @@ async function streamRequest(path: string, request: ReplyRequest | TranslationRe
     return result;
   } finally {
     signal?.removeEventListener('abort', abortRead);
-    await reader.cancel().catch(() => {});
-    reader.releaseLock();
+    try { batch.flush(); } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
   }
 }
+import { TextBatch } from './text-batch';
