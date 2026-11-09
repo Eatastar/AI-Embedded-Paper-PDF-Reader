@@ -2,7 +2,7 @@
 
 发行包内的中英双语 TXT 名称：`READ-ME-FIRST-Update-and-Data-Migration.txt`。
 
-适用：Windows 桌面版，在同一台电脑、同一个 Windows 账户中更新。下面以旧版本（例如 v0.1.32）升级到 v0.1.37 为例。
+适用：Windows 桌面版，在同一台电脑、同一个 Windows 账户中更新。下面以旧版本（例如 v0.1.32）升级到 v0.1.38 为例。
 
 **照这个顺序做：留一份备份 → 退出旧版 → 解压新版 → 确认资料 → 删除旧版。**
 
@@ -22,15 +22,15 @@
 
 ## 第 3 步：完整解压新版
 
-1. 下载新版 Windows ZIP，例如 `AI-Embedded-Paper-PDF-Reader-0.1.37-Windows-x64.zip`。
+1. 下载新版 Windows ZIP，例如 `AI-Embedded-Paper-PDF-Reader-0.1.38-Windows-x64.zip`。
 2. 右键 ZIP，选择“全部解压”或解压软件里的“解压到…”。
-3. 解压到一个新的、能分清版本的文件夹，例如桌面上的 `AI-Embedded-Paper-PDF-Reader-0.1.37-Windows-x64`。
+3. 解压到一个新的、能分清版本的文件夹，例如桌面上的 `AI-Embedded-Paper-PDF-Reader-0.1.38-Windows-x64`。
 4. 保留解压出来的全部文件。不要在 ZIP 内直接运行，也不要只把 EXE 单独拖出来。
 
 ## 第 4 步：打开新版，检查原来的资料
 
 1. 进入刚才解压的新文件夹，双击 `AI-Embedded-Paper-PDF-Reader.exe`。
-2. 看窗口上方的版本号，确认是 `0.1.37`。
+2. 看窗口上方的版本号，确认是 `0.1.38`。
 3. 打开一份以前读过的 PDF，点开一条以前的批注，再打开一段历史聊天，确认内容都在。
 4. 打开模型设置，确认原来的连接仍在。
 
@@ -41,7 +41,7 @@
 例如，现在有下面两个程序文件夹：
 
 - `AI-Embedded-Paper-PDF-Reader-0.1.32-Windows-x64`：旧版，确认资料正常后可以删除。
-- `AI-Embedded-Paper-PDF-Reader-0.1.37-Windows-x64`：新版，保留整个文件夹。
+- `AI-Embedded-Paper-PDF-Reader-0.1.38-Windows-x64`：新版，保留整个文件夹。
 
 旧版的 ZIP 和对应 `.sha256` 校验文件也可以删除。第 1 步导出的 `.json` 备份先留着。
 
@@ -88,15 +88,15 @@ v0.1.33 保留 v0.1.32 的资料目录、固定本机地址、数据库版本和
 
 The bilingual TXT in the release is named `READ-ME-FIRST-Update-and-Data-Migration.txt`.
 
-For the Windows desktop app on the same computer and Windows account. This example updates an older version, such as v0.1.32, to v0.1.37.
+For the Windows desktop app on the same computer and Windows account. This example updates an older version, such as v0.1.32, to v0.1.38.
 
 **Back up → exit the old app → extract the new ZIP → check your data → remove the old app.** The app and your profile are stored separately. Same-account updates reuse the profile automatically; exporting and importing is not normally required. The backup is an extra precaution.
 
 1. **Keep a backup first (recommended).** In v0.1.34 or later, choose **Menu → Backup & restore** at the top left of the start page. In earlier versions, open chat mode first, then choose **Backup & restore** at the lower left. Select **All records (including trash)** and click **Export backup**. Save the `.json` on your desktop or elsewhere outside the old program folder. It includes chats, answer versions, notes, annotations, figure regions/markings and imported PDFs, but excludes API connections and keys.
 2. **Exit the old app normally.** Click × and wait for saving to finish and the window to disappear. Keep its folder for now.
-3. **Fully extract the new ZIP into a new folder.** For example, extract `AI-Embedded-Paper-PDF-Reader-0.1.37-Windows-x64.zip` into a separate folder with that version number. Keep every accompanying file. Do not run from inside the ZIP or copy only the EXE.
-4. **Open and check the new app.** Run `AI-Embedded-Paper-PDF-Reader.exe` from the new folder. Verify `0.1.37` in the window, open an existing PDF and annotation, check an old chat, and confirm your saved model connections. If the data is present, continue using it; do not import the backup again. The new version creates a verified upgrade checkpoint when it first opens an existing profile from an earlier version.
-5. **Only then delete the old version folder.** You may remove the old program folder (for example, `0.1.32`), its ZIP and checksum. Keep the entire `0.1.37` folder and your exported backup. Move any PDFs or backups you manually placed inside the old folder elsewhere before deleting it.
+3. **Fully extract the new ZIP into a new folder.** For example, extract `AI-Embedded-Paper-PDF-Reader-0.1.38-Windows-x64.zip` into a separate folder with that version number. Keep every accompanying file. Do not run from inside the ZIP or copy only the EXE.
+4. **Open and check the new app.** Run `AI-Embedded-Paper-PDF-Reader.exe` from the new folder. Verify `0.1.38` in the window, open an existing PDF and annotation, check an old chat, and confirm your saved model connections. If the data is present, continue using it; do not import the backup again. The new version creates a verified upgrade checkpoint when it first opens an existing profile from an earlier version.
+5. **Only then delete the old version folder.** You may remove the old program folder (for example, `0.1.32`), its ZIP and checksum. Keep the entire `0.1.38` folder and your exported backup. Move any PDFs or backups you manually placed inside the old folder elsewhere before deleting it.
 6. **Launch the new app from now on.** Replace old desktop shortcuts with shortcuts to the new EXE. Removing an old shortcut does not delete data.
 
 **If old data does not appear:** keep the old version and profile. In the new app, choose **Backup & restore → Restore from file**, select the complete `.json`, and recheck the contents before removing the old app. In normal operation, restoring adds new conversations; the recovery screen shown after a read failure preserves the prior records before replacement. If you have no export yet, use the old app to create one.

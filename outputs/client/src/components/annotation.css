@@ -171,3 +171,6 @@ body:has(.annotation-popup-dragging), body:has(.annotation-popup-dragging) * { c
 .highlight-custom-color input[type="color"] { width: 29px; height: 28px; padding: 1px; border: 1px solid #ddc994; background: transparent; border-radius: 4px; cursor: pointer; }
 .highlight-custom-color input:not([type="color"]) { min-width: 0; width: 96px; padding: 5px 6px; background: #fffdf5; border: 1px solid #ddc994; border-radius: 5px; font-family: monospace; color: inherit; }
 .highlight-color-picker .annotation-footnote { margin-bottom: 0; }
+
+.annotation-chat-action { flex: none; border-top: 1px solid var(--ls-border); padding: 9px 14px; }
+.annotation-chat-action button { width: 100%; justify-content: center; white-space: normal; }

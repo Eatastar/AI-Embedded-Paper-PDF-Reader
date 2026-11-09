@@ -1,6 +1,17 @@
 # 版本记录 / Changelog
 
-## 0.1.37 · 20261108.6 · 未发布 / Unreleased
+## 0.1.38 · 20261109.1 · 2026-11-09
+
+聊天右侧新增按轮跳转点与目录：展示每次提问的开头，定位对应回答；目录按页显示，可多选、全选或清空本次聊天。删除前再次列出问题摘要并说明影响范围，确认后一次保存；失败不提交任何部分。删除包含所选问题、所有回答版本及回答批注，并清理后续引用和重试上下文；导入的 PDF 与原文批注保留，历史备份独立管理。
+
+Add a turn-navigation rail and paginated question index beside chat. Jump to an answer, select multiple/all turns or clear the current chat. Confirmation previews the questions and explains the scope before one durable write; failure leaves all turns intact. Remove selected questions, every answer version, answer annotations and stale downstream references/retry contexts, while retaining imported PDFs and source annotations. Historical backups remain separate.
+
+文字、图片与普通笔记批注新增“引用到聊天继续追问”：保存当前编辑，展开聊天并选中这条批注，聚焦输入框。保留原文、已打开的批注和已有聊天草稿，不自动发起模型请求。引用仍在发送时固定内容，后续批注提问继续与主聊天隔离。跳转支持已卸载的长聊天消息并保存阅读位置；新增导航描述只含编号和有上限的问题摘要，不复制回答、图片或上下文。新增界面文字覆盖八种语言。
+
+Text, figure and plain-note annotations gain Reference in chat and ask further. Save pending edits, open chat, select the annotation and focus the composer without sending a request or replacing its draft. Keep the PDF and note open. References are frozen only when sent; annotation requests remain isolated from chat. Navigation mounts offscreen targets and remembers their position. Lightweight turn descriptors contain IDs and bounded question previews, without answer, image or context copies. Translate new controls into all eight interface languages.
+
+
+## 0.1.37 · 20261108.6 · 2026-11-08
 
 备份列表新增逐条删除，普通和升级前备份均可在确认后移除；当前聊天、笔记、批注和 PDF 不受影响。附件仅在没有其他恢复点引用时清理。保护信息变更与删除使用可恢复的本地操作记录，中断后会恢复原保护或完成已执行的删除；不确定状态暂停附件清理。
 

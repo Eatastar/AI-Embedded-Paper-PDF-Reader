@@ -1,5 +1,8 @@
 AI-Embedded Paper PDF Reader
-AI 嵌入式论文 PDF 阅读器 · 0.1.37 · 20261108.6
+AI 嵌入式论文 PDF 阅读器 · 0.1.38 · 20261109.1
+
+聊天右侧的目录按钮可按提问开头跳转；“管理与删除”支持多选、全选及清空聊天，确认后删除，保留 PDF 和原文批注。批注底部可“引用到聊天继续追问”，选中引用后再输入问题发送。
+Use the chat-side index to jump by question preview. Manage and delete supports multiple/all turns or clearing chat after confirmation, preserving PDFs and source notes. Use Reference in chat and ask further below an annotation, then compose and send your follow-up.
 
 自动备份会共享相同 PDF 等附件，并校验转换旧备份；从菜单导出的完整 JSON 仍可单独恢复。不要只复制自动备份目录内的 .snapshot.json。
 Automatic backups share identical attachments and verify older backups before conversion. Complete JSON exported from the menu remains standalone; a .snapshot.json alone is not a full export.
@@ -16,7 +19,7 @@ Full backup JSON includes chats, notes, annotations and PDFs, excluding API prof
 1. 推荐先在旧版打开“备份与恢复”，导出“全部记录（含回收站）”，把 JSON 备份放到桌面等旧程序文件夹以外的位置。
 2. 点击 × 正常退出旧版，等待保存完成，先不要删除旧文件夹。
 3. 把新版 ZIP 完整解压到一个新文件夹。不要在 ZIP 内运行，也不要只拖出 EXE。
-4. 运行新文件夹中的 AI-Embedded-Paper-PDF-Reader.exe，确认上方版本号为 0.1.37，检查以前的 PDF、批注、聊天和模型连接。
+4. 运行新文件夹中的 AI-Embedded-Paper-PDF-Reader.exe，确认上方版本号为 0.1.38，检查以前的 PDF、批注、聊天和模型连接。
 5. 原资料已经出现就直接使用，不必再导入备份。确认后再删除旧程序文件夹、旧 ZIP 和旧校验文件；保留新版和导出的 JSON。自己放在旧文件夹中的论文、备份要先移出去。
 6. 没看到旧资料时，先不删旧版，在新版“备份与恢复”→“从文件恢复”中选择刚才的 JSON。以后从新版文件夹启动，旧快捷方式需要重新创建。
 详细分步说明见同目录“READ-ME-FIRST-Update-and-Data-Migration.txt”（中英双语）或“升级与数据保留-Update-and-data.md”。同机同账户更新会自动沿用资料，新版首次打开还会先建立升级检查点。不要删除 %APPDATA%\MarginChat 来清理旧程序。

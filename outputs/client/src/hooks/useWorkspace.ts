@@ -5,7 +5,7 @@ import { WorkspaceSession } from '../adapters/workspace-session';
 import { desktop } from '../adapters/desktop';
 import { permanentlyDelete } from '../domain/trash';
 import type { TrashTarget } from '../domain/trash';
-import { deleteChatTurn } from '../domain/workspace';
+import { deleteChatTurn, deleteChatTurns } from '../domain/workspace';
 import { writeLocalCheckpoint } from '../adapters/checkpoint';
 
 export const AUTOMATIC_BACKUP_INTERVAL_MS = 10 * 60_000;
@@ -59,10 +59,11 @@ export function useWorkspace() {
   const update = useCallback((change: (previous: Workspace) => Workspace) => session.current!.update(change), []);
   const purge = useCallback((target: TrashTarget) => session.current!.commit(previous => permanentlyDelete(previous, target), saveWorkspaceAndPruneFiles), []);
   const removeChatTurn = useCallback((conversationId: string, messageId: string) => session.current!.commit(previous => deleteChatTurn(previous, conversationId, messageId), saveWorkspaceAndPruneFiles, '正在删除本轮对话…'), []);
+  const removeChatTurns = useCallback((conversationId: string, messageIds: readonly string[]) => session.current!.commit(previous => deleteChatTurns(previous, conversationId, messageIds), saveWorkspaceAndPruneFiles, '正在删除所选对话…'), []);
   const recover = useCallback(async (text: string) => {
     const restored = await restoreWorkspaceWithFiles(text);
     session.current!.load(restored);
     setLoadError(''); backupRevision.current = -1;
   }, []);
-  return { workspace, current, update, saveStatus, loadError, flush, checkpoint, invalidateCheckpoint, recover, purge, removeChatTurn, backupWarning, lastBackup };
+  return { workspace, current, update, saveStatus, loadError, flush, checkpoint, invalidateCheckpoint, recover, purge, removeChatTurn, removeChatTurns, backupWarning, lastBackup };
 }

@@ -7,7 +7,7 @@ import { WorkspaceRecordStore } from '../src/adapters/record-store';
 import type { WorkspaceDatabase } from '../src/adapters/record-store';
 import { contentHash } from '../src/domain/context-pool';
 import { RECORD_PREFIX, unpackWorkspace, WorkspaceCodec } from '../src/domain/workspace-codec';
-import { buildMainContext, changeAnnotationReask, compactRequestCaches, completeAnnotation, createAnnotation, createAssistantMessage, createConversation, createUserMessage, deleteChatTurn, ImportValidationCache, makeId, prepareAnnotationRequest, updateAnnotationRequest, validateImport } from '../src/domain/workspace';
+import { buildMainContext, changeAnnotationReask, compactRequestCaches, completeAnnotation, createAnnotation, createAssistantMessage, createConversation, createUserMessage, deleteChatTurn, deleteChatTurns, ImportValidationCache, makeId, prepareAnnotationRequest, updateAnnotationRequest, validateImport } from '../src/domain/workspace';
 import { freezeContext } from '../src/domain/context-pool';
 import { WorkspaceSession } from '../src/adapters/workspace-session';
 import { permanentlyDelete } from '../src/domain/trash';
@@ -234,4 +234,25 @@ test('逐轮删除先原子保存再更新界面，事务失败保留旧记录�
   assert.equal(rows.some(row => row.kind === 'context' || row.kind === 'input'), false);
   assert.deepEqual(await new WorkspaceRecordStore(db).load(), validateImport(removed));
   assert.equal(removed.conversations[0].documents!.length, 1);
+});
+
+
+test('bulk turn deletion is one durable transaction and rolls every selected turn back on failure', async () => {
+  const db = database(), store = new WorkspaceRecordStore(db), source = fixture(1, 1000), conversation = source.conversations[0];
+  const middle = [createUserMessage('synthetic middle question'), createAssistantMessage('synthetic middle answer', 'complete')];
+  const last = [createUserMessage('synthetic last question'), createAssistantMessage('synthetic last answer', 'complete')];
+  const selected = [conversation.messages[0].id, last[0].id];
+  conversation.messages.push(...middle, ...last);
+  await store.write(source); const before = await db.workspaces.toArray();
+  const session = new WorkspaceSession({ save: value => store.write(value), onChange() {}, onStatus() {} }); session.load(source);
+  const originalDelete = IDBObjectStore.prototype.delete;
+  IDBObjectStore.prototype.delete = function(key: IDBValidKey | IDBKeyRange) { if (this.name === 'workspaces' && String(key).includes(last[1].versions[0].id)) throw new DOMException('synthetic bulk deletion failure', 'QuotaExceededError'); return originalDelete.call(this, key); };
+  try { await assert.rejects(session.commit(value => deleteChatTurns(value, conversation.id, selected), next => store.write(next, { checkRevision: true })), /synthetic bulk deletion failure/); }
+  finally { IDBObjectStore.prototype.delete = originalDelete; }
+  assert.equal(session.value, source); assert.deepEqual(await db.workspaces.toArray(), before);
+  let writes = 0;
+  const result = await session.commit(value => deleteChatTurns(value, conversation.id, selected), async next => { writes++; await store.write(next, { checkRevision: true }); });
+  assert.equal(writes, 1); assert.deepEqual(result.conversations[0].messages, middle);
+  assert.deepEqual(await new WorkspaceRecordStore(db).load(), validateImport(result));
+  assert.equal(result.conversations[0].documents!.length, 1); session.dispose();
 });

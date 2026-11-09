@@ -99,4 +99,27 @@ export const core = String.raw`
 第|N.º|第|Nr.|رقم|Nº
 条批注|anotaciones|件の注釈|Notizen|تعليقات|annotations
 {0}\n诊断编号：{1}|{0}\nID de diagnóstico: {1}|{0}\n診断 ID：{1}|{0}\nDiagnose-ID: {1}|{0}\nمعرّف التشخيص: {1}|{0}\nIdentifiant du diagnostic : {1}
+请先选择要删除的对话轮次。|Selecciona los turnos que deseas eliminar.|削除するターンを選択してください。|Wähle zuerst die zu löschenden Gesprächsrunden.|اختر جولات المحادثة المراد حذفها أولاً.|Sélectionnez d’abord les échanges à supprimer.
+正在删除所选对话…|Eliminando los turnos seleccionados…|選択したターンを削除中…|Ausgewählte Gesprächsrunden werden gelöscht…|جارٍ حذف الجولات المحددة…|Suppression des échanges sélectionnés…
+对话跳转|Saltar entre turnos|ターン間を移動|Zwischen Gesprächsrunden springen|التنقل بين الجولات|Naviguer entre les échanges
+对话目录与管理|Navegación y gestión del chat|会話の目次と管理|Chat-Navigation und Verwaltung|فهرس المحادثة وإدارتها|Navigation et gestion du chat
+跳转第 {0} 轮：{1}|Ir al turno {0}: {1}|ターン {0} に移動：{1}|Zu Gesprächsrunde {0} springen: {1}|انتقل إلى الجولة {0}: {1}|Aller à l’échange {0} : {1}
+确认删除所选对话？|¿Eliminar los turnos seleccionados?|選択したターンを削除しますか？|Ausgewählte Gesprächsrunden löschen?|هل تريد حذف الجولات المحددة؟|Supprimer les échanges sélectionnés ?
+请核对问题开头。将删除所选问题、回答和所有回答版本，此操作不进入回收站。|Revisa el inicio de las preguntas. Se eliminarán las preguntas, respuestas y todas sus versiones sin pasar por la papelera.|質問の冒頭を確認してください。選択した質問・回答・全回答バージョンはゴミ箱に入らず削除されます。|Prüfe die Fragenanfänge. Ausgewählte Fragen, Antworten und alle Antwortversionen werden ohne Papierkorb gelöscht.|راجع بدايات الأسئلة. ستُحذف الأسئلة والإجابات المحددة وجميع نسخها دون نقلها إلى سلة المهملات.|Vérifiez le début des questions. Les questions, réponses et toutes leurs versions seront supprimées sans passer par la corbeille.
+按提问开头查找，跳转到对应回答，或选择多轮一起删除。|Busca por el inicio de la pregunta, ve a su respuesta o selecciona varios turnos para eliminarlos.|質問の冒頭から回答に移動するか、複数のターンを選択して削除できます。|Finde Fragen anhand ihres Anfangs, springe zur Antwort oder wähle mehrere Runden zum Löschen.|ابحث ببداية السؤال وانتقل إلى إجابته، أو حدد عدة جولات لحذفها.|Retrouvez une question par son début, accédez à sa réponse ou sélectionnez plusieurs échanges à supprimer.
+全选全部 {0} 轮|Seleccionar los {0} turnos|全 {0} ターンを選択|Alle {0} Runden auswählen|تحديد جميع الجولات البالغ عددها {0}|Sélectionner les {0} échanges
+共 {0} 轮对话|{0} turnos|全 {0} ターン|{0} Gesprächsrunden|{0} جولة|{0} échanges
+管理与删除|Gestionar y eliminar|管理と削除|Verwalten und löschen|إدارة وحذف|Gérer et supprimer
+返回目录|Volver al índice|目次に戻る|Zurück zur Übersicht|العودة إلى الفهرس|Retour à la liste
+选择第 {0} 轮|Seleccionar el turno {0}|ターン {0} を選択|Runde {0} auswählen|تحديد الجولة {0}|Sélectionner l’échange {0}
+没有文字的问题|Pregunta sin texto|テキストのない質問|Frage ohne Text|سؤال بلا نص|Question sans texte
+对话目录翻页|Páginas del índice|会話目次のページ|Seiten der Chat-Übersicht|صفحات فهرس المحادثة|Pages de la liste des échanges
+将删除 {0} 轮对话；PDF 文件及其原文批注保留。|Se eliminarán {0} turnos; se conservarán los PDF y sus anotaciones originales.|{0} ターンを削除します。PDF と原文の注釈は保持されます。|{0} Runden werden gelöscht; PDF-Dateien und deren Originalanmerkungen bleiben erhalten.|سيتم حذف {0} جولة؛ ستبقى ملفات PDF وتعليقات نصوصها الأصلية.|{0} échanges seront supprimés ; les PDF et leurs annotations seront conservés.
+所选回答上的 {0} 条批注也会删除。|También se eliminarán las {0} anotaciones de las respuestas seleccionadas.|選択した回答上の {0} 件の注釈も削除されます。|Die {0} Anmerkungen zu ausgewählten Antworten werden ebenfalls gelöscht.|ستُحذف أيضًا التعليقات البالغ عددها {0} على الإجابات المحددة.|Les {0} annotations des réponses sélectionnées seront également supprimées.
+确认删除 {0} 轮|Confirmar eliminación de {0} turnos|{0} ターンの削除を確定|Löschen von {0} Runden bestätigen|تأكيد حذف {0} جولة|Confirmer la suppression de {0} échanges
+清空本次聊天|Vaciar este chat|このチャットを消去|Diesen Chat leeren|مسح هذه المحادثة|Vider ce chat
+已选 {0} 轮|{0} turnos seleccionados|{0} ターン選択済み|{0} Runden ausgewählt|تم تحديد {0} جولة|{0} échanges sélectionnés
+删除所选|Eliminar selección|選択項目を削除|Auswahl löschen|حذف المحدد|Supprimer la sélection
+引用到聊天继续追问|Citar en el chat y continuar|チャットに引用して質問を続ける|Im Chat zitieren und weiterfragen|اقتباس في المحادثة ومتابعة السؤال|Citer dans le chat et approfondir
+已删除 {0} 轮对话，后续请求不再带入。|Se eliminaron {0} turnos; no se incluirán en nuevas solicitudes.|{0} ターンを削除しました。以後のリクエストには含まれません。|{0} Runden gelöscht; künftige Anfragen enthalten sie nicht mehr.|تم حذف {0} جولة ولن تُضمَّن في الطلبات اللاحقة.|{0} échanges supprimés ; ils seront exclus des prochaines requêtes.
 `;

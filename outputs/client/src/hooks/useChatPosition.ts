@@ -4,7 +4,7 @@ import { captureChatPosition, loadChatPosition, restoreChatPosition, saveChatPos
 /** Preserve reading anchors without competing with an explicit new question. */
 export function useChatPosition(conversationId: string, visible: boolean, running: boolean, onAtBottom: (value: boolean) => void) {
   const viewportRef = useRef<HTMLDivElement>(null), contentRef = useRef<HTMLDivElement>(null);
-  const control = useRef<{ visibility: (value: boolean) => void; run: () => void; bottom: () => void } | null>(null);
+  const control = useRef<{ visibility: (value: boolean) => void; run: () => void; bottom: () => void; jump: (id: string) => void } | null>(null);
   const runningRef = useRef(running); runningRef.current = running;
   const visibleRef = useRef(visible); visibleRef.current = visible;
   useLayoutEffect(() => {
@@ -46,6 +46,13 @@ export function useChatPosition(conversationId: string, visible: boolean, runnin
     control.current = {
       visibility: value => { if (value) { pending = true; restore(); schedule(); } else { clearTimeout(timer); saveChatPosition(conversationId, held); } },
       run: () => { pending = false; },
+      jump: id => {
+        const rows = [...viewport.querySelectorAll<HTMLElement>('[data-chat-message]')];
+        const index = rows.findIndex(row => row.dataset.messageId === id), row = rows[index];
+        if (!row) return;
+        held = { scrollTop: viewport.scrollTop, atBottom: false, anchor: { messageId: id, versionId: row.dataset.versionId!, messageIndex: index, blockIndex: -1, offset: 8, fraction: null } };
+        pending = true; saveChatPosition(conversationId, held); restore(); schedule();
+      },
       bottom: () => { pending = false; held = { scrollTop: viewport.scrollHeight, atBottom: true }; saveChatPosition(conversationId, held); viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' }); },
     };
     restore(); schedule();
@@ -59,5 +66,5 @@ export function useChatPosition(conversationId: string, visible: boolean, runnin
   }, [conversationId, onAtBottom]);
   useLayoutEffect(() => { control.current?.visibility(visible); }, [visible]);
   useLayoutEffect(() => { if (running) control.current?.run(); }, [running]);
-  return { viewportRef, contentRef, onSend: () => control.current?.run(), scrollToBottom: () => control.current?.bottom() };
+  return { viewportRef, contentRef, onSend: () => control.current?.run(), scrollToBottom: () => control.current?.bottom(), scrollToMessage: (id: string) => control.current?.jump(id) };
 }

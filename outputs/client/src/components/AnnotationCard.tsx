@@ -2,10 +2,11 @@ import { t } from '../i18n/locale';
 import { useLocale } from '../i18n/react';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Check, CornerDownLeft, GripHorizontal, LoaderCircle, Pencil, RotateCcw, Send, Square, Trash2, X } from 'lucide-react';
+import { Check, CornerDownLeft, GripHorizontal, LoaderCircle, MessageSquareQuote, Pencil, RotateCcw, Send, Square, Trash2, X } from 'lucide-react';
 import { MathMarkdown } from './MathMarkdown';
 import { HighlightColorPicker } from './HighlightColorPicker';
 import type { Annotation } from '../domain/types';
+import { canReferenceAnnotation } from '../domain/chat-references';
 
 interface AnnotationCardProps {
   annotation: Annotation;
@@ -15,6 +16,7 @@ interface AnnotationCardProps {
   onStop: () => void;
   onReask: (action: 'start' | 'cancel' | 'edit') => void;
   onDelete: () => void;
+  onReferenceToChat?: () => void;
   disabled?: boolean;
   sourceContent?: ReactNode;
   requestControls?: ReactNode;
@@ -23,7 +25,7 @@ interface AnnotationCardProps {
 }
 
 /** An anchored note or replaceable exchange, without nested annotation or chat history. */
-export function AnnotationCard({ annotation, onClose, onUpdate, onAsk, onStop, onReask, onDelete, disabled, sourceContent, requestControls, requestDisabled, headerActions }: AnnotationCardProps) {
+export function AnnotationCard({ annotation, onClose, onUpdate, onAsk, onStop, onReask, onDelete, onReferenceToChat, disabled, sourceContent, requestControls, requestDisabled, headerActions }: AnnotationCardProps) {
   useLocale();
   const [editing, setEditing] = useState(false);
   const [question, setQuestion] = useState(annotation.question);
@@ -225,6 +227,7 @@ export function AnnotationCard({ annotation, onClose, onUpdate, onAsk, onStop, o
           </div>
         )}
       </div>
+      {onReferenceToChat && canReferenceAnnotation(annotation) && <footer className="annotation-chat-action"><button type="button" className="annotation-text-button" disabled={disabled || isGenerating} onClick={() => { flushRef.current(); onReferenceToChat(); }}><MessageSquareQuote size={14} />{t('引用到聊天继续追问')}</button></footer>}
     </section>
   );
 }

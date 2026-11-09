@@ -16,9 +16,9 @@ A desktop reader built around local PDFs, for working through a paper's concepts
 
 [下载 / Downloads](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases) · [已发布版本说明 / Published release notes](docs/RELEASE_NOTES.md) · [隐私 / Privacy](docs/PRIVACY.md) · [版本记录 / Changelog](docs/CHANGELOG.md) · [项目总纲 / Project outline](docs/PROJECT.md)
 
-当前源码版本：**0.1.37**。Windows x64 客户端请以 Releases 中实际发布的完整 ZIP 为准。支持八种界面语言，可在程序内切换并在本机记忆。[更新与数据保留](docs/UPDATING.md)：程序与个人资料分开保存，更新后继续使用原有聊天、笔记和批注。
+当前源码版本：**0.1.38**。Windows x64 客户端请以 Releases 中实际发布的完整 ZIP 为准。支持八种界面语言，可在程序内切换并在本机记忆。[更新与数据保留](docs/UPDATING.md)：程序与个人资料分开保存，更新后继续使用原有聊天、笔记和批注。
 
-Current source version: **0.1.37**. Download the complete Windows x64 ZIP actually published on Releases. Choose from eight interface languages in the app; your choice is remembered locally. [Updates and your data](docs/UPDATING.md): program files are separate from your profile, so updates retain existing chats, notes and annotations.
+Current source version: **0.1.38**. Download the complete Windows x64 ZIP actually published on Releases. Choose from eight interface languages in the app; your choice is remembered locally. [Updates and your data](docs/UPDATING.md): program files are separate from your profile, so updates retain existing chats, notes and annotations.
 
 首页左上角“菜单”可直接进入设置、API 连接、翻译设置、聊天、备份恢复和回收站，无需先打开 PDF。完整 JSON 备份包含聊天、笔记、批注和已导入的 PDF，不含 API 连接配置与密钥。
 
@@ -53,6 +53,10 @@ Work through unfamiliar concepts, equations and arguments beside their source. A
 点击聊天输入框中的“引用批注”，勾选这次需要的问答或笔记，再补充问题发送。适合把几处阅读疑问联系起来，做比较、归纳或进一步推导。
 
 Use Reference annotations in the composer, select the Q&A or notes you need, and add your next question. Connect questions from different passages to compare ideas, summarize or work through a derivation.
+
+也可以直接在文字、图片或笔记批注底部点击“引用到聊天继续追问”：打开聊天并带上这条批注，保留输入草稿，再由你补充问题发送。
+
+You can also choose Reference in chat and ask further below a text, figure or plain-note annotation. Open chat with that annotation selected, keep the composer draft and add your next question before sending.
 
 ### 3. 边聊边对照 PDF 批注 / Discuss with the PDF and note in view
 

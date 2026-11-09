@@ -8,7 +8,8 @@ import { isAnnotationGenerating } from './annotation-state';
 import { freezeContext, internMessage } from './context-pool';
 import { buildDocumentMessages, type DocumentContextOptions } from './document-context';
 import { documentByteLimit, documentTextLimit, MAX_DOCUMENT_PAGES } from './document-limits';
-import { chatQuestionContent, chatRound, MAX_CHAT_REFERENCES } from './chat-references';
+import { chatQuestionContent, MAX_CHAT_REFERENCES } from './chat-references';
+import { chatTurnSelection } from './chat-turns';
 import { parseChatTextReference } from './chat-text-reference';
 import { readFigure, readFigureStrokes, type FigureSelection, type FigureStroke } from './figure';
 
@@ -155,11 +156,15 @@ export function compactRequestCaches(workspace: Workspace): Workspace {
 }
 
 export function deleteChatTurn(workspace: Workspace, conversationId: string, messageId: string): Workspace {
+  return deleteChatTurns(workspace, conversationId, [messageId]);
+}
+
+export function deleteChatTurns(workspace: Workspace, conversationId: string, messageIds: readonly string[]): Workspace {
   const source = workspace.conversations.find(item => item.id === conversationId && item.deletedAt === undefined);
   if (!source) throw new Error('对话不存在。');
   if (source.messages.some(message => message.versions.some(version => version.status === 'streaming')) || source.annotations.some(isAnnotationGenerating)) throw new Error('请先停止回答，再删除本轮对话。');
-  const removed = new Set(chatRound(source.messages, messageId).map(message => message.id));
-  const removedAnnotations = new Set(source.annotations.filter(annotation => removed.has(annotation.messageId)).map(annotation => annotation.id));
+  if (!messageIds.length) throw new Error('请先选择要删除的对话轮次。');
+  const { messageIds: removed, annotationIds: removedAnnotations } = chatTurnSelection(source, messageIds);
   const messages = source.messages.filter(message => !removed.has(message.id)).map(message => {
     const versions = message.versions.map(version => { if (version.context === undefined) return version; const next = { ...version }; delete next.context; return next; });
     const next = { ...message, versions };
