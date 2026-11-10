@@ -30,6 +30,15 @@ test('archive entry paths and reflow preferences remain bounded', () => {
   assert.deepEqual(ebookPosition({ chapter: 99, block: -1, offset: Infinity, fraction: 2 }, 6), { chapter: 5, block: 0, offset: 0, fraction: 1 });
   assert.deepEqual(ebookTypography({ fontSize: 1000, lineHeight: -1, width: NaN }), { fontSize: 36, lineHeight: 1.2, width: 800 });
 });
+
+test('ebook zoom and horizontal progress extend old positions without changing typography', () => {
+  const legacy = { chapter: 2, block: 20, offset: .3, fraction: .6 };
+  assert.deepEqual(ebookPosition(legacy, 10), legacy);
+  assert.deepEqual(ebookPosition({ ...legacy, zoom: 1.75, horizontal: .4 }, 10), { ...legacy, zoom: 1.75, horizontal: .4 });
+  assert.deepEqual(ebookPosition({ ...legacy, zoom: 100, horizontal: 8 }, 10), { ...legacy, zoom: 2.5, horizontal: 1 });
+  assert.deepEqual(ebookPosition({ ...legacy, zoom: NaN, horizontal: Infinity }, 10), legacy);
+  assert.equal(ebookTypography({ fontSize: 19 }).fontSize, 19);
+});
 test('book chapter records and note anchors round-trip without changing legacy PDF data', () => {
   const workspace = createWorkspace(), conversation = workspace.conversations[0];
   const originalPdf: DocumentAttachment = { id: 'synthetic-pdf', kind: 'pdf', name: 'Synthetic.pdf', mimeType: 'application/pdf', size: 100, createdAt: 1, pages: [{ pageNumber: 1, text: 'Legacy PDF stays intact.', messageId: 'pdf-message', versionId: 'pdf-version' }] };

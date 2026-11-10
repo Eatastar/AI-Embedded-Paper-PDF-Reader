@@ -16,9 +16,9 @@ A desktop reader for local PDFs and DRM-free EPUB, MOBI and AZW3 ebooks. Work th
 
 [下载 / Downloads](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases) · [已发布版本说明 / Published release notes](docs/RELEASE_NOTES.md) · [隐私 / Privacy](docs/PRIVACY.md) · [版本记录 / Changelog](docs/CHANGELOG.md) · [项目总纲 / Project outline](docs/PROJECT.md)
 
-当前源码版本：**0.1.39**。Windows x64 客户端请以 Releases 中实际发布的完整 ZIP 为准。支持八种界面语言，可在程序内切换并在本机记忆。[更新与数据保留](docs/UPDATING.md)：程序与个人资料分开保存，更新后继续使用原有聊天、笔记和批注。
+当前源码版本：**0.1.40**。Windows x64 客户端请以 Releases 中实际发布的完整 ZIP 为准。支持八种界面语言，可在程序内切换并在本机记忆。[更新与数据保留](docs/UPDATING.md)：程序与个人资料分开保存，更新后继续使用原有聊天、笔记和批注。
 
-Current source version: **0.1.39**. Download the complete Windows x64 ZIP actually published on Releases. Choose from eight interface languages in the app; your choice is remembered locally. [Updates and your data](docs/UPDATING.md): program files are separate from your profile, so updates retain existing chats, notes and annotations.
+Current source version: **0.1.40**. Download the complete Windows x64 ZIP actually published on Releases. Choose from eight interface languages in the app; your choice is remembered locally. [Updates and your data](docs/UPDATING.md): program files are separate from your profile, so updates retain existing chats, notes and annotations.
 
 首页左上角“菜单”可直接进入设置、API 连接、翻译设置、聊天、备份恢复和回收站，无需先打开 PDF。完整 JSON 备份包含聊天、笔记、批注和已导入的 PDF / 电子书原文件，不含 API 连接配置与密钥。
 
@@ -83,7 +83,7 @@ For foreign-language papers and books, select a word or passage and press **Alt+
 | 功能 | Feature |
 | --- | --- |
 | **阅读本地 PDF**：保留论文原排版，支持连续滚动、单页阅读、目录、全文搜索、手势缩放和阅读位置记忆。 | **Read local PDFs** with their original layout, continuous or single-page reading, contents, full-text search, pinch zoom and reading position memory. |
-| **精读电子书**：打开无 DRM 的 EPUB、MOBI、AZW3；按章节阅读，调整字号、行距和正文宽度，使用目录、搜索、原文链接、笔记、AI 批注问答、引用聊天及划词翻译，记住阅读位置。 | **Read ebooks closely**: open DRM-free EPUB, MOBI and AZW3; read by chapter with font, spacing and width controls, contents, search, internal links, notes, annotation Q&A, chat references, quick translation and saved progress. |
+| **精读电子书**：打开无 DRM 的 EPUB、MOBI、AZW3；按章节阅读，双指或加减按钮保持当前排版整体缩放，独立调整字号、行距和正文宽度，使用目录、搜索、原文链接、笔记、AI 批注问答、引用聊天及划词翻译，记住阅读位置。 | **Read ebooks closely**: open DRM-free EPUB, MOBI and AZW3; read by chapter with layout-preserving pinch/button zoom plus independent font, spacing and width controls, contents, search, internal links, notes, annotation Q&A, chat references, quick translation and saved progress. |
 | **自定义纸张颜色**：调节 PDF 纸张和文字颜色，阅读区及工具栏随之配色；保留彩图并可切回原色对照。减少刺眼白底，方便畏光或对明亮屏幕敏感的读者按个人感受调整。 | **Customize paper colors**: adjust PDF paper and text colors, with matching reader controls and margins. Preserve colored figures and compare with original colors. Reduce bright white backgrounds and tailor the display for readers with light sensitivity, including photophobia. |
 | **在批注中询问 AI**：划选原文就地提问，问答与来源文字绑定；收起后保留高亮，点击即可重开。支持自选高亮颜色、重新提问，也可只写普通笔记。 | **Ask AI in annotations**: select a passage and ask in place, keeping the Q&A attached to its source. Close the panel and click the highlight to reopen it. Choose highlight colors, ask again or write a plain note. |
 | **图片批注问答**：框选图表，默认画圈或切换画笔标出疑问，使用自选视觉 API 在原图旁提问；选区、圈画与问答保存到本机。 | **Image Q&A annotations**: select a figure, circle or draw on a detail, and ask your chosen vision API beside the source. Region, markings and Q&A are saved locally. |

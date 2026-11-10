@@ -1,6 +1,6 @@
 # AI-Embedded Paper PDF Reader
 
-**AI 嵌入式论文 PDF 阅读器** · 0.1.39 · 20261110.1
+**AI 嵌入式论文 PDF 阅读器** · 0.1.40 · 20261110.2
 
 [更新与数据保留 / Updates and your data](../../docs/UPDATING.md) · [性能与架构 / Performance and architecture](../../docs/PERFORMANCE.md)
 
@@ -227,3 +227,7 @@ v0.1.36 automatic recovery points use small `.snapshot.json` files and content-a
 通过首页“打开 PDF / 电子书”选择无 DRM 文件。支持章节导航、搜索、字号/行距/宽度、背景与文字色、批注问答和快速翻译；原书保存在本机，与笔记一起进入完整备份。更多说明见仓库 README、docs/UPDATING.md 和 docs/THIRD_PARTY.md。
 
 Choose a DRM-free book from Open PDF / ebook. Use chapter navigation, search, typography, reading colors, annotation Q&A and quick translation. Original books stay local and are included with notes in complete backups. See the repository README, updating guide and third-party notices.
+
+电子书双指捏合或加减按钮是 50%–250% 的整体缩放，保留当前换行、文字与图片比例；点击百分比恢复 100%。字号、行距和宽度单独在阅读设置中调整，改变这些设置会重新排版。缩放和横向位置按书保存。
+
+Ebook pinch and +/− controls scale the current layout from 50% to 250%, retaining line breaks and text/image proportions. Click the percentage to reset to 100%. Font size, spacing and width remain separate reflow controls in Reading settings. Zoom and horizontal position are remembered per book.

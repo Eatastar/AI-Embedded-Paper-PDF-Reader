@@ -37,11 +37,14 @@ export function ebookTypography(value: unknown): EbookTypography {
   return { fontSize: n(v.fontSize, 12, 36, 19), lineHeight: n(v.lineHeight, 1.2, 2.6, 1.8), width: n(v.width, 400, 1200, 800) };
 }
 
-export interface EbookPosition { chapter: number; block: number; offset: number; fraction: number }
+export interface EbookPosition { chapter: number; block: number; offset: number; fraction: number; zoom?: number; horizontal?: number }
 export function ebookPosition(value: unknown, count: number): EbookPosition {
   const v = value && typeof value === 'object' ? value as Partial<EbookPosition> : {};
   const n = (x: unknown, max: number) => typeof x === 'number' && Number.isFinite(x) ? Math.max(0, Math.min(max, x)) : 0;
-  return { chapter: Math.floor(n(v.chapter, Math.max(0, count - 1))), block: Math.floor(n(v.block, 1_000_000)), offset: n(v.offset, 1), fraction: n(v.fraction, 1) };
+  return { chapter: Math.floor(n(v.chapter, Math.max(0, count - 1))), block: Math.floor(n(v.block, 1_000_000)), offset: n(v.offset, 1), fraction: n(v.fraction, 1),
+    ...(typeof v.zoom === 'number' && Number.isFinite(v.zoom) ? { zoom: Math.max(.5, Math.min(2.5, v.zoom)) } : {}),
+    ...(typeof v.horizontal === 'number' && Number.isFinite(v.horizontal) ? { horizontal: n(v.horizontal, 1) } : {}),
+  };
 }
 
 export const safeEbookEntry = (name: string) => Boolean(name) && !name.includes('\\') && !name.startsWith('/') && !/^[a-z]+:/i.test(name) && !name.split('/').includes('..') && !name.includes('\0');

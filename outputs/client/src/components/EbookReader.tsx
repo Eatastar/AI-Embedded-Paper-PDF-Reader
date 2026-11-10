@@ -9,6 +9,8 @@ import { ReaderToolbar } from './ReaderToolbar';
 import { ReaderNavigation } from './ReaderNavigation';
 import { getDocumentBytes } from '../adapters/storage';
 import { openEbook, type EbookSession, type EbookChapter, type EbookDestination } from '../adapters/ebooks';
+import { bindEbookZoom, type EbookZoomController } from '../adapters/ebook-zoom';
+import { clampPdfZoom } from '../domain/pdf-zoom';
 import { loadReaderAppearance, saveReaderAppearance } from '../adapters/reader';
 import { loadEbookPosition, saveEbookPosition, loadEbookTypography, saveEbookTypography } from '../adapters/ebook-preferences';
 import { readerTheme, colorLuminance } from '../domain/reader';
@@ -30,13 +32,14 @@ function capturePosition(doc: Document, chapter: number): EbookPosition {
   const blocks = root ? [...root.querySelectorAll<HTMLElement>(BLOCKS)] : [];
   const index = blocks.findIndex(el => el.getBoundingClientRect().bottom > 24);
   const rect = blocks[index]?.getBoundingClientRect();
-  return { chapter, block: Math.max(0, index), offset: rect ? Math.max(0, Math.min(1, (24 - rect.top) / Math.max(1, rect.height))) : 0, fraction: scroll ? scroll.scrollTop / Math.max(1, scroll.scrollHeight - scroll.clientHeight) : 0 };
+  return { chapter, block: Math.max(0, index), offset: rect ? Math.max(0, Math.min(1, (24 - rect.top) / Math.max(1, rect.height))) : 0, fraction: scroll ? scroll.scrollTop / Math.max(1, scroll.scrollHeight - scroll.clientHeight) : 0, zoom: clampPdfZoom(Number(doc.getElementById('ebook-mount')?.style.zoom) || 1), horizontal: scroll ? scroll.scrollLeft / Math.max(1, scroll.scrollWidth - scroll.clientWidth) : 0 };
 }
 function restorePosition(doc: Document, position: EbookPosition) {
   const scroll = doc.scrollingElement; if (!scroll) return;
   const blocks = doc.querySelector('.ebook-text')?.querySelectorAll<HTMLElement>(BLOCKS);
   const block = blocks?.[position.block];
   scroll.scrollTop = block ? scroll.scrollTop + block.getBoundingClientRect().top - 24 + block.getBoundingClientRect().height * position.offset : position.fraction * Math.max(0, scroll.scrollHeight - scroll.clientHeight);
+  scroll.scrollLeft = (position.horizontal || 0) * Math.max(0, scroll.scrollWidth - scroll.clientWidth);
 }
 
 export default function EbookReader(props: DocumentReaderProps) {
@@ -52,6 +55,9 @@ export default function EbookReader(props: DocumentReaderProps) {
   const rootRef = useRef<HTMLElement>(null);
   const [appearance, setAppearance] = useState(loadReaderAppearance), [saved, setSaved] = useState(true), [compare, setCompare] = useState(false);
   const [typography, setTypography] = useState(loadEbookTypography);
+  const [zoom, setZoom] = useState(initial.zoom || 1);
+  const zoomRef = useRef(zoom), zoomController = useRef<EbookZoomController | null>(null);
+  const typographyRef = useRef(typography); typographyRef.current = typography;
   const [search, setSearch] = useState<{ hit: SearchHit; query: string } | null>(null);
   const [returnTo, setReturnTo] = useState<EbookPosition | null>(null);
   const frameRef = useRef<HTMLIFrameElement>(null), pageInputRef = useRef<HTMLInputElement>(null);
@@ -68,9 +74,11 @@ export default function EbookReader(props: DocumentReaderProps) {
   };
   const saveRef = useRef(savePosition); saveRef.current = savePosition;
   useLayoutEffect(() => () => saveRef.current(), [source.id]);
+  useEffect(() => { const timer = setTimeout(() => saveRef.current(), 220); return () => clearTimeout(timer); }, [zoom]);
   const jump = (index: number, next?: EbookPosition) => {
     if (index < 0 || index >= source.pages.length) return;
     savePosition(); props.onOpen(null); setSearch(null); if (narrow) setNavigationOpen(false);
+    if (next?.zoom !== undefined) { zoomRef.current = next.zoom; zoomController.current?.set(next.zoom); setZoom(next.zoom); }
     pending.current = next || { chapter: index, block: 0, offset: 0, fraction: 0 };
     if (index === chapterIndex && frameDoc) { restorePosition(frameDoc, pending.current); pending.current = null; }
     else { ready.current = false; setFrameDoc(null); setChapter(null); setChapterIndex(index); }
@@ -120,9 +128,17 @@ export default function EbookReader(props: DocumentReaderProps) {
     if (!frameDoc) return;
     let style = frameDoc.getElementById('ebook-user-style');
     if (!style) { style = frameDoc.createElement('style'); style.id = 'ebook-user-style'; frameDoc.head.append(style); }
-    style.textContent = `html,body{background:${paper}!important;color:${ink}!important;color-scheme:${colorLuminance(paper) < .179 ? 'dark' : 'light'};scrollbar-color:${ink}55 ${paper}}body{padding:24px 20px 60px!important;font-size:${typography.fontSize}px!important;line-height:${typography.lineHeight}!important;box-sizing:border-box}.ebook-text{max-width:${typography.width}px;margin-inline:auto;overflow-wrap:anywhere}.ebook-text *{color:inherit!important;line-height:inherit!important;background-color:transparent!important;cursor:text}.ebook-text :is(p,div,span,li,td){font-size:inherit!important}.ebook-text img,.ebook-text svg{max-width:100%!important;height:auto}.ebook-text :is(img,svg,svg *){cursor:default}.ebook-text :is(a,a *){color:${colorLuminance(paper) < .179 ? '#9dc7ff' : '#2165aa'}!important;cursor:pointer}.ebook-text pre,.ebook-text table{max-width:100%;overflow:auto}.ebook-text table{display:block}.annotation-footnote{max-width:${typography.width}px;margin:12px auto;font:14px/1.6 sans-serif}.ebook-chapter-navigation{display:flex;justify-content:space-between;align-items:center;gap:12px;max-width:${typography.width}px;margin:40px auto 0;font:14px/1.5 sans-serif}.ebook-chapter-navigation button{border:1px solid ${ink}55;border-radius:8px;background:transparent;color:inherit;padding:8px 14px;cursor:pointer}.ebook-chapter-navigation button:disabled{opacity:.4;cursor:not-allowed}.ebook-annotator{position:relative}.reader-search-layer{position:absolute;inset:0;pointer-events:none}.reader-search-marker{position:absolute;background:#ffa80088;outline:1px solid #a2670080}::selection{background:#d8b35b80}`;
+    style.textContent = `html,body{background:${paper}!important;color:${ink}!important;color-scheme:${colorLuminance(paper) < .179 ? 'dark' : 'light'};scrollbar-color:${ink}55 ${paper}}html{scrollbar-gutter:stable}body{padding:0!important;margin:0!important;overflow-anchor:none;font-size:${typography.fontSize}px!important;line-height:${typography.lineHeight}!important;box-sizing:border-box}#ebook-mount{box-sizing:border-box!important;display:block!important;padding:24px 20px 60px!important;margin-inline:auto!important;max-width:none!important;overflow:visible!important}.ebook-text{max-width:${typography.width}px;margin-inline:auto;overflow-wrap:anywhere}.ebook-text *{color:inherit!important;line-height:inherit!important;background-color:transparent!important;cursor:text}.ebook-text :is(p,div,span,li,td){font-size:inherit!important}.ebook-text img,.ebook-text svg{max-width:100%!important;height:auto}.ebook-text :is(img,svg,svg *){cursor:default}.ebook-text :is(a,a *){color:${colorLuminance(paper) < .179 ? '#9dc7ff' : '#2165aa'}!important;cursor:pointer}.ebook-text pre,.ebook-text table{max-width:100%;overflow:auto}.ebook-text table{display:block}.annotation-footnote{max-width:${typography.width}px;margin:12px auto;font:14px/1.6 sans-serif}.ebook-chapter-navigation{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;max-width:${typography.width}px;margin:40px auto 0;font:14px/1.5 sans-serif}.ebook-chapter-navigation button{border:1px solid ${ink}55;border-radius:8px;background:transparent;color:inherit;padding:8px 14px;cursor:pointer}.ebook-chapter-navigation button:disabled{opacity:.4;cursor:not-allowed}.ebook-annotator{position:relative}.reader-search-layer{position:absolute;inset:0;pointer-events:none}.reader-search-marker{position:absolute;background:#ffa80088;outline:1px solid #a2670080}::selection{background:#d8b35b80}`;
+    zoomController.current?.resize(typography.width);
     if (ready.current && pending.current) { restorePosition(frameDoc, pending.current); pending.current = null; }
   }, [frameDoc, paper, ink, typography]);
+
+  useLayoutEffect(() => {
+    if (!frameDoc) return;
+    const controller = bindEbookZoom(frameDoc, { zoom: zoomRef.current, contentWidth: typographyRef.current.width, onZoom: value => { zoomRef.current = value; setZoom(value); } });
+    zoomController.current = controller;
+    return () => { controller.destroy(); if (zoomController.current === controller) zoomController.current = null; };
+  }, [frameDoc]);
 
   useEffect(() => {
     if (!frameDoc) return;
@@ -156,25 +172,19 @@ export default function EbookReader(props: DocumentReaderProps) {
     const key = (event: KeyboardEvent) => {
       if (event.key === 'Escape') document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     };
-    const wheel = (event: WheelEvent) => {
-      if (!event.ctrlKey) return;
-      event.preventDefault(); pending.current = capturePosition(frameDoc, chapterIndex);
-      setTypography(value => { const next = { ...value, fontSize: Math.max(12, Math.min(36, value.fontSize + (event.deltaY > 0 ? -1 : 1))) }; saveEbookTypography(next); return next; });
-    };
     let frameWidth = frameRef.current?.clientWidth;
     const resize = new ResizeObserver(() => {
       const nextWidth = frameRef.current?.clientWidth;
-      if (ready.current && nextWidth && frameWidth && nextWidth !== frameWidth) restorePosition(frameDoc, position.current);
+      if (nextWidth && frameWidth && nextWidth !== frameWidth) { zoomController.current?.resize(typographyRef.current.width); if (ready.current) restorePosition(frameDoc, position.current); }
       frameWidth = nextWidth;
     });
     if (frameRef.current) resize.observe(frameRef.current);
     frameDoc.addEventListener('scroll', scroll, { passive: true }); frameDoc.addEventListener('keydown', key);
-    frameDoc.addEventListener('wheel', wheel, { passive: false });
     for (const name of ['pointerdown', 'pointermove', 'pointerup'] as const) frameDoc.addEventListener(name, pointer);
     return () => {
       cancelled = true; clearTimeout(restoreTimer); clearTimeout(scrollTimer); resize.disconnect(); savePosition(); ready.current = false;
       if (frameState.current.doc === frameDoc) frameState.current = { doc: null, index: chapterIndex };
-      frameDoc.removeEventListener('scroll', scroll); frameDoc.removeEventListener('keydown', key); frameDoc.removeEventListener('wheel', wheel);
+      frameDoc.removeEventListener('scroll', scroll); frameDoc.removeEventListener('keydown', key);
       for (const name of ['pointerdown', 'pointermove', 'pointerup'] as const) frameDoc.removeEventListener(name, pointer);
     };
   }, [frameDoc]);
@@ -214,7 +224,7 @@ export default function EbookReader(props: DocumentReaderProps) {
   const srcDoc = useMemo(() => chapter ? frameSource(chapter, paper, ink) : '', [chapter]);
   const pageAnnotations = props.annotations.filter(a => a.messageId === page?.messageId && a.versionId === page?.versionId);
   return <section ref={rootRef} className="document-reader ebook-reader" style={palette} data-reader-focused={props.focused} data-reader-dark={colorLuminance(paper) < .179} data-reader-narrow={narrow}>
-    <ReaderToolbar {...props} kind={source.kind} name={source.name} pageCount={source.pages.length} pageIndex={chapterIndex} pageInput={pageInput} pageInputRef={pageInputRef} onPageInput={setPageInput} onCommitPage={() => { const n = Number(pageInput); if (Number.isInteger(n) && n >= 1 && n <= source.pages.length) jump(n - 1); else setPageInput(String(chapterIndex + 1)); }} onPage={index => jump(index)} zoom={1} onZoom={() => {}} view="original" onView={() => {}} layout="paged" onLayout={() => {}} appearance={appearance} onAppearance={value => { setAppearance(value); setSaved(saveReaderAppearance(value)); }} saved={saved} compareOriginal={compare} onCompareOriginal={() => setCompare(value => !value)} navigationOpen={navigationOpen} onToggleNavigation={() => setNavigationOpen(value => !value)} relevantContext={usesRelevantContext(source, props.contextMode)} onReturnFromLink={returnTo ? () => { jump(returnTo.chapter, returnTo); setReturnTo(null); } : undefined} typography={typography} onTypography={value => { if (frameDoc) pending.current = capturePosition(frameDoc, chapterIndex); setTypography(value); saveEbookTypography(value); }} />
+    <ReaderToolbar {...props} kind={source.kind} name={source.name} pageCount={source.pages.length} pageIndex={chapterIndex} pageInput={pageInput} pageInputRef={pageInputRef} onPageInput={setPageInput} onCommitPage={() => { const n = Number(pageInput); if (Number.isInteger(n) && n >= 1 && n <= source.pages.length) jump(n - 1); else setPageInput(String(chapterIndex + 1)); }} onPage={index => jump(index)} zoom={zoom} onZoom={value => zoomController.current?.set(value)} view="original" onView={() => {}} layout="paged" onLayout={() => {}} appearance={appearance} onAppearance={value => { setAppearance(value); setSaved(saveReaderAppearance(value)); }} saved={saved} compareOriginal={compare} onCompareOriginal={() => setCompare(value => !value)} navigationOpen={navigationOpen} onToggleNavigation={() => setNavigationOpen(value => !value)} relevantContext={usesRelevantContext(source, props.contextMode)} onReturnFromLink={returnTo ? () => { jump(returnTo.chapter, returnTo); setReturnTo(null); } : undefined} typography={typography} onTypography={value => { if (frameDoc) pending.current = capturePosition(frameDoc, chapterIndex); setTypography(value); saveEbookTypography(value); }} />
     <div className="document-reader-body">
       <ReaderNavigation open={navigationOpen} source={source} annotations={props.annotations} pageIndex={chapterIndex} outline={outline.length ? outline : source.pages.map((page, index) => ({ key: page.messageId, title: page.title || t('第 {0} 章', [index + 1]), depth: 0, pageIndex: index }))} outlineLoading={!book && loading} outlineError={outlineError} outlineTruncated={outline.length >= 1000} onClose={() => setNavigationOpen(false)} onPage={index => jump(index)} onOutline={entry => { if (entry.href) void followLink(entry.href, true); else if (entry.pageIndex !== null) jump(entry.pageIndex); }} onSearch={(hit, query) => { if (hit.pageIndex !== chapterIndex) jump(hit.pageIndex); setSearch({ hit, query }); }} onClearSearch={() => setSearch(null)} onAnnotation={selectNote} />
       <div className="ebook-content" style={{ background: paper }}>

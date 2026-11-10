@@ -1,5 +1,15 @@
 # 版本记录 / Changelog
 
+## 0.1.40 · 20261110.2 · 2026-11-10
+
+电子书的双指捏合与加减按钮改为保持当前排版的整体缩放，范围 50%–250%；文字、公式、插图和高亮同步放大，不改变当前换行，点击百分比恢复 100%。字号、行距和正文宽度仍在阅读设置中独立调整，需要时重新排版。仅缩放阅读内容，工具栏、聊天和批注框保持正常界面尺寸；放大后可横向滚动，窄分栏可在阅读设置中使用缩放按钮。
+
+Ebook pinch and +/− controls now zoom the current layout from 50% to 250%, scaling text, formulas, illustrations and highlights together without changing line breaks. Click the percentage to reset to 100%. Font size, line spacing and text width remain independent reflow controls. Scale reading content while keeping toolbar, chat and annotation panels at their normal UI size. Horizontal scrolling is available when needed; narrow split panes expose zoom buttons in Reading settings.
+
+使用原生文字与 CSS 缩放，不生成章节截图或复制图像缓存；沿用精确触控板增量和动画帧合并。在可滚动范围内保持鼠标下的阅读位置，保留划词、原文高亮点击与翻译。按书记住缩放和横向位置，并兼容已有位置记录。资料路径、原书副本、聊天和笔记结构不变；清理旧程序文件不会删除本机资料库，也不修改用户原文件。
+
+Use live browser text and CSS zoom without chapter screenshots or copied image caches, reusing precision-touchpad deltas and animation-frame coalescing. Keep the reading point under the pointer within scroll limits and retain selection, source-highlight clicks and translation. Remember zoom/horizontal position per book, accepting existing position records. Profile paths, original-file copies, chats and notes retain their structure. Removing old program files preserves the local library and never edits the user's original documents.
+
 ## 0.1.39 · 20261110.1 · 2026-11-10
 
 新增无 DRM 的 EPUB、MOBI 和 AZW3（KF8）阅读。沿用本地文件入口、配色、原文笔记、AI 批注问答、引用到聊天、独立划词翻译、目录与全文搜索。电子书按章节滚动，支持字号、行距、正文宽度、章节和脚注链接及返回，记住章节和段落位置；更改字号、并排聊天和重新打开时恢复位置。原有 PDF 功能保持不变，图片框选问答仍用于 PDF。

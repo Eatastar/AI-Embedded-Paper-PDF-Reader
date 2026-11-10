@@ -2,7 +2,7 @@
 
 发行包内的中英双语 TXT 名称：`READ-ME-FIRST-Update-and-Data-Migration.txt`。
 
-适用：Windows 桌面版，在同一台电脑、同一个 Windows 账户中更新。下面以旧版本（例如 v0.1.32）升级到 v0.1.39 为例。
+适用：Windows 桌面版，在同一台电脑、同一个 Windows 账户中更新。下面以旧版本（例如 v0.1.32）升级到 v0.1.40 为例。
 
 **照这个顺序做：留一份备份 → 退出旧版 → 解压新版 → 确认资料 → 删除旧版。**
 
@@ -22,7 +22,7 @@
 
 ## 第 3 步：完整解压新版
 
-1. 下载新版 Windows ZIP，例如 `AI-Embedded-Paper-PDF-Reader-0.1.39-Windows-x64.zip`。
+1. 下载新版 Windows ZIP，例如 `AI-Embedded-Paper-PDF-Reader-0.1.40-Windows-x64.zip`。
 2. 右键 ZIP，选择“全部解压”或解压软件里的“解压到…”。
 3. 解压到一个新的、能分清版本的文件夹，例如桌面上的 `AI-Embedded-Paper-PDF-Reader-0.1.39-Windows-x64`。
 4. 保留解压出来的全部文件。不要在 ZIP 内直接运行，也不要只把 EXE 单独拖出来。
@@ -94,7 +94,7 @@ For the Windows desktop app on the same computer and Windows account. This examp
 
 1. **Keep a backup first (recommended).** In v0.1.34 or later, choose **Menu → Backup & restore** at the top left of the start page. In earlier versions, open chat mode first, then choose **Backup & restore** at the lower left. Select **All records (including trash)** and click **Export backup**. Save the `.json` on your desktop or elsewhere outside the old program folder. It includes chats, answer versions, notes, annotations, figure regions/markings and imported PDFs, but excludes API connections and keys.
 2. **Exit the old app normally.** Click × and wait for saving to finish and the window to disappear. Keep its folder for now.
-3. **Fully extract the new ZIP into a new folder.** For example, extract `AI-Embedded-Paper-PDF-Reader-0.1.39-Windows-x64.zip` into a separate folder with that version number. Keep every accompanying file. Do not run from inside the ZIP or copy only the EXE.
+3. **Fully extract the new ZIP into a new folder.** For example, extract `AI-Embedded-Paper-PDF-Reader-0.1.40-Windows-x64.zip` into a separate folder with that version number. Keep every accompanying file. Do not run from inside the ZIP or copy only the EXE.
 4. **Open and check the new app.** Run `AI-Embedded-Paper-PDF-Reader.exe` from the new folder. Verify `0.1.39` in the window, open an existing PDF and annotation, check an old chat, and confirm your saved model connections. If the data is present, continue using it; do not import the backup again. The new version creates a verified upgrade checkpoint when it first opens an existing profile from an earlier version.
 5. **Only then delete the old version folder.** You may remove the old program folder (for example, `0.1.32`), its ZIP and checksum. Keep the entire `0.1.39` folder and your exported backup. Move any PDFs or backups you manually placed inside the old folder elsewhere before deleting it.
 6. **Launch the new app from now on.** Replace old desktop shortcuts with shortcuts to the new EXE. Removing an old shortcut does not delete data.
@@ -140,3 +140,13 @@ Upgrading preserves existing PDFs, chats, notes, API connections and the profile
 含有电子书的资料不提供“兼容旧版导出”；请选择默认的新版本备份，原书、聊天和笔记都可完整保留。
 
 Legacy-format export is blocked for records containing ebooks. Use the default current-version backup to retain original books, chats and notes in full.
+
+## v0.1.40 整体缩放 / Page zoom
+
+正常退出旧版，再完整解压新版并运行 EXE，即可继续使用已有聊天、原文笔记、电子书和 API 连接。新版只在每本书的阅读偏好中增加缩放和横向位置，没有更改主资料库或备份格式，无需手工搬数据。确认新版正常后可删除旧程序目录、旧 ZIP 和对应 SHA-256 文件；保留 `%APPDATA%\MarginChat` 和自己导出的备份。
+
+打开 PDF 或电子书时，原字节保存为本机资料库中的副本，批注和问答单独保存，原文件不会被修改。相同内容会优先复用已有记录。程序目录与这些资料分开，删除旧版程序文件不等于删除原书或笔记。
+
+Exit the old app, fully extract the new ZIP and run its EXE to keep using existing chats, source notes, ebooks and API connections. This version only adds zoom and horizontal position to per-book reading preferences; the main database and backup formats are unchanged, with no manual migration required. After verification, remove old program folders, ZIPs and checksum files while retaining `%APPDATA%\MarginChat` and your exported backups.
+
+Opening a PDF/ebook stores a local library copy of its original bytes, with annotations and Q&A saved separately. The original file is never modified, and identical contents reuse existing records when available. Program files and reading data are separate; removing an old app folder does not remove your books or notes.

@@ -1,5 +1,9 @@
 AI-Embedded Paper PDF Reader
-AI 嵌入式论文 PDF 阅读器 · 0.1.39 · 20261110.1
+AI 嵌入式论文 PDF 阅读器 · 0.1.40 · 20261110.2
+
+电子书缩放 / Ebook zoom
+双指捏合或加减按钮整体缩放，保持当前换行，文字与图片同步放大；点击百分比恢复 100%。字号、行距、宽度另在阅读设置中调整，放大后可横向滚动。缩放和阅读位置会按书保存。
+Pinch or use +/− for layout-preserving page zoom. Text and pictures scale together; click the percentage to reset to 100%. Font size, spacing and width stay in Reading settings. Scroll horizontally when enlarged; zoom and position are remembered per book.
 
 新增电子书阅读 / Ebook reading
 首页点击“打开 PDF / 电子书”，可选无 DRM 的 EPUB、MOBI、AZW3。沿用批注问答、翻译、目录、搜索和配色，阅读设置可调整字号、行距和宽度。按章节加载，原书只存一份；笔记和聊天继续保存在原本的本机资料中。

@@ -163,3 +163,13 @@ Memory includes Chromium, GPU, UI, diagnostics and prior actions. In that combin
 Windows x64 ZIP 与 v0.1.38 比较：146,368,733 → 146,431,454 字节，增加 62,721 字节（约 61 KiB）。Electron EXE 保持原运行时字节不变；增加的主要是解析器和阅读交互代码。
 
 Windows x64 ZIP comparison: 146,368,733 → 146,431,454 bytes, an increase of 62,721 bytes (about 61 KiB). The Electron executable stays byte-identical to the existing runtime; additions are mainly parsers and reader interaction code.
+
+## v0.1.40：保留排版的缩放 / Layout-preserving zoom
+
+逻辑排版宽度与显示倍率分开：固定当前阅读宽度后，对当前章使用浏览器原生 CSS zoom。缩放不改变字号偏好、换行或原文 DOM，不克隆图像、不生成整章截图或新画布；引用、批注范围和翻译继续使用同一份文字。仍只有一章的解析资源。放大后的原生文字由浏览器重新绘制；工具栏和浮窗不随正文放大。
+
+Keep logical layout width separate from display scale. Native CSS zoom scales the live chapter with its existing DOM, line breaks and font preferences, without cloned images, chapter screenshots or additional canvases. References, note ranges and translations continue to use the same text, with one chapter's parser resources. Browser text remains native; toolbar and floating panels retain their normal size.
+
+隔离合成检查：200% 时原始字号仍为 19px，正文宽度 800→1600、插图宽度 480→960，逐字符换行位置一致。触控板等效 Ctrl+wheel 事件只缩放正文，应用窗口倍率保持 1；可滚动范围内保持指针位置。检查放大后的原文高亮点击、译文只发送选段、独立字号重排、缩放与横向位置重开恢复、窄分栏按钮。连续 12 轮放大/缩小，图像资源数量保持不变、画布数量为 0。完整回归 378 项通过。
+
+Isolated synthetic checks: at 200%, font size stays 19px, text width scales 800→1600 and illustration width 480→960, with identical per-character line breaks. Native Ctrl+wheel scales the reading content while application zoom stays 1; the pointer anchor is retained within scroll limits. Verify scaled highlight clicks, selected-text-only translation, independent font reflow, saved zoom/horizontal progress and compact-pane controls. Twelve zoom-in/out cycles keep the resource count unchanged and create zero canvases. All 378 regression tests pass.

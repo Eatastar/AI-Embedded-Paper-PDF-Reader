@@ -4,11 +4,11 @@
 
 See [performance and architecture](PERFORMANCE.md) for resource ownership and verification, and [updates](UPDATING.md) for data-preserving upgrade and rollback steps.
 
-当前源码：客户端 0.1.39，构建 20261110.1，2026年11月10日；尚未发布。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
+当前源码：客户端 0.1.40，构建 20261110.2，2026年11月10日；尚未发布。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
 
 首个公开正式版沿用 v0.1.11 和现有构建，使用 MIT 许可证。公开范围包括已核对的源码及通用 Windows 发行包；历史检查范围见 [公开发布说明](OPEN_SOURCE_RELEASE.md)，本地数据和请求边界见 [隐私说明](PRIVACY.md)。
 
-Current source: **0.1.39 / 20261110.1**. A local PDF and ebook reader for close reading of papers and books, with optional AI questions, quick translation and personal notes. Public introductions and release notes are bilingual. Users can select one of eight interface languages in the app; interface language sets the default AI answer and translation languages without rewriting their documents, messages, notes or custom preferences.
+Current source: **0.1.40 / 20261110.2**. A local PDF and ebook reader for close reading of papers and books, with optional AI questions, quick translation and personal notes. Public introductions and release notes are bilingual. Users can select one of eight interface languages in the app; interface language sets the default AI answer and translation languages without rewriting their documents, messages, notes or custom preferences.
 
 PDF 显示保留有像素上限的整页底图；可视区域按屏幕密度重绘独立高清层，每页高清缓冲最多 800 万像素，仅在可见时保留。滚动复用边缘缓存并丢弃过期任务，页面移出视野或关闭时释放。高清层不接收鼠标事件，文字选取、引用跳转、批注及临时翻译继续使用原文字层。
 
@@ -334,3 +334,9 @@ Since v0.1.36, automatic recovery points store workspace records and file refere
 - 请求边界：批注仍只引用所属原书和本条问题，不引入聊天及其他笔记；翻译只发选段；小书默认全文，大书按需引用。PDF 图片问答不改变。
 
 The file/data layer adds known ebook kinds and stable chapter IDs, text and titles while preserving PDF records and existing incremental saves, deduplication and shared backups. The ebook adapter owns bounded parsing and resource lifecycle. EbookReader renders one inert isolated chapter with separate typography/progress preferences. Existing annotation cards, translation and chat-reference UI are reused; native ranges/highlights reflow without page-image copies. Requests keep the existing source/chat isolation and selected-text-only translation boundaries. The PDF engine and figure Q&A are unchanged.
+
+## v0.1.40：字号与整体缩放 / Typography and page zoom
+
+整体缩放由 `adapters/ebook-zoom.ts` 管理：固定逻辑正文宽度，使用原生 CSS zoom 同比例显示当前章，复用仅含事件/数学处理的精确滚轮控制，不加载另一套渲染引擎，也不创建页面画布。批注范围继续对应原 DOM。字号和正文宽度属于独立排版偏好；缩放与横向位置是每本书的位置偏好，旧记录缺少新字段时使用 100%。框内范围位置继续使用浏览器视口坐标，外层浮窗保持原尺寸。
+
+The ebook zoom adapter fixes logical content width and uses native CSS zoom, reusing precision-wheel handling without another rendering engine or page canvas. Annotation ranges remain in the same DOM. Typography stays independent; per-book zoom/horizontal position extend reading preferences with 100% defaults for older records. Native range coordinates locate source selections while outer popups retain normal UI dimensions.
