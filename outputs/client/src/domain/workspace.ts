@@ -485,23 +485,25 @@ export function validateImport(input: unknown, cache?: ImportValidationCache): W
     }));
     if (c.documents !== undefined) conversation.documents = list(c.documents, '附件', 10).map(rawDocument => memo<DocumentAttachment>(rawDocument, 'document', () => {
       const d = obj(rawDocument, ['id', 'name', 'kind', 'mimeType', 'size', 'createdAt', 'pages'], '附件');
-      if (d.kind !== 'pdf' && d.kind !== 'text') invalid('附件类型不受支持。');
-      if (typeof d.size !== 'number' || !Number.isSafeInteger(d.size) || d.size < 0 || d.size > documentByteLimit(d.kind as 'pdf' | 'text')) invalid('附件大小超过支持范围（PDF 150 MB，文字文件 25 MB）。');
+      if (!['pdf', 'text', 'epub', 'mobi', 'azw3'].includes(d.kind as string)) invalid('附件类型不受支持。');
+      if (typeof d.size !== 'number' || !Number.isSafeInteger(d.size) || d.size < 0 || d.size > documentByteLimit(d.kind as DocumentAttachment['kind'])) invalid('附件大小超过支持范围（PDF 150 MB，文字文件 25 MB）。');
       const name = str(d.name, '附件名称');
       const mimeType = str(d.mimeType, '附件格式');
       if (name.length > 512 || mimeType.length > 200) invalid('附件名称或格式过长。');
       const documentId = id(d.id, '附件 ID');
       let textLength = 0;
       const pages = list(d.pages, '附件页面', MAX_DOCUMENT_PAGES).map((rawPage, index) => {
-        const p = obj(rawPage, ['pageNumber', 'text', 'messageId', 'versionId'], '附件页面');
+        const p = obj(rawPage, ['pageNumber', 'text', 'messageId', 'versionId', 'title'], '附件页面');
         if (p.pageNumber !== index + 1) invalid('附件页号应从 1 开始连续排列。');
         const text = str(p.text, '附件页面文本', true);
         textLength += text.length;
-        if (textLength > documentTextLimit(d.kind as 'pdf' | 'text')) invalid('附件提取文本超过支持范围（PDF 1000 万字符，文字文件 100 万字符）。');
-        return { pageNumber: index + 1, text, messageId: id(p.messageId, '附件页面消息 ID'), versionId: id(p.versionId, '附件页面版本 ID') };
+        if (textLength > documentTextLimit(d.kind as DocumentAttachment['kind'])) invalid('附件提取文本超过支持范围（PDF 1000 万字符，文字文件 100 万字符）。');
+        const title = p.title === undefined ? undefined : str(p.title, '章节标题', true);
+        if (title !== undefined && (title.length > 512 || d.kind === 'pdf' || d.kind === 'text')) invalid('章节标题格式无效。');
+        return { ...(title !== undefined ? { title } : {}), pageNumber: index + 1, text, messageId: id(p.messageId, '附件页面消息 ID'), versionId: id(p.versionId, '附件页面版本 ID') };
       });
       if (!pages.length) invalid('附件至少应有一页。');
-      return { id: documentId, name, kind: d.kind, mimeType, size: d.size, createdAt: timestamp(d.createdAt, '附件创建时间'), pages };
+      return { id: documentId, name, kind: d.kind as DocumentAttachment['kind'], mimeType, size: d.size, createdAt: timestamp(d.createdAt, '附件创建时间'), pages };
     }));
     conversation.annotations = list(c.annotations, '批注', WORKSPACE_LIMITS.annotations).map(rawAnnotation => {
       const result = memo<Annotation>(rawAnnotation, 'annotation', () => {

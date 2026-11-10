@@ -141,3 +141,25 @@ Validation includes 331 regression tests and actual UI checks in an isolated Win
 为保持 v0.1.32 原地打开与回退，数据库版本、记录格式及附件存储没有改变，因此附件仍需一次读取一份完整文件。PDF 内部解码图像、字体、浏览器和 GPU 另有开销；底图预算不等于整个进程的硬性内存上限。以后如引入附件分段存储或逐会话加载，需要另行设计迁移与回退测试。
 
 For v0.1.32 compatibility and rollback, the database version, record format and attachment representation are unchanged, so one complete attachment is still read at a time. Decoded PDF images, fonts, browser and GPU allocations add overhead; a base-pixel budget is not a hard process-memory limit. Chunked attachment storage or lazy conversation loading would require separate migration and rollback work.
+
+## v0.1.39：电子书按章加载 / Chapter-based ebook resources
+
+复用现有 PDF 引擎、批注卡、翻译、聊天和资料库。仅增加固定版本的 Foliate-js EPUB/MOBI/CFI 文件解析模块及轻量 ZIP/解压模块，延迟加载；不引入完整电子书应用或格式转换器。原书保存为一个附件，自动恢复点共享同一份字节；不会为每一章或每一条批注复制一份电子书，也不会持久保存整本书的页面截图。
+
+Reuse the existing PDF engine, note cards, translation, chat and storage. Add only pinned Foliate-js EPUB/MOBI/CFI parsers and ZIP/inflation modules, loaded on demand, without a full second reader application or converter. Store one original attachment shared across automatic checkpoints, without per-chapter/per-note book copies or persistent page screenshots.
+
+只显示当前章节，离开章节时撤销该章的 Blob URL、字体和图像引用。MOBI6 原格式仍需在解析时读出连续文字，不能声称完全流式；KF8 保留有界的原始文字缓存。书籍上限 150 MiB / 5000 章 / 1000 万字符；EPUB 单个条目最多 24 MiB、文本文件最多 8 MiB，总解压声明最多 512 MiB，当前章资源预算 48 MiB。检查实际解压输出，常见栅格图像的单图与单章合计像素上限 4000 万；MOBI 解压文本上限 32 MiB，并限制字体、单条文字记录和字典递归。超过范围时提示拆分、转换或压缩，避免无上限展开。
+
+Only the current chapter is displayed, with chapter Blob URLs and image/font references released on change or close. Legacy MOBI6 still expands contiguous text while parsing and is not fully streaming; KF8 keeps bounded raw-text caches. Limits are 150 MiB / 5,000 chapters / 10 million text characters, 24 MiB per EPUB entry, 8 MiB per text entry, 512 MiB declared total expansion and 48 MiB current-chapter resources. Check actual decompression output and common raster dimensions, with 40 million pixels per image and chapter. MOBI text is capped at 32 MiB with bounded records, fonts and dictionary recursion. Oversized inputs are reported rather than expanded without limits.
+
+独立测试使用虚构教材和隔离资料：EPUB、PalmDoc/MOBI6、真实 KF8/AZW3 索引结构、约 31.6 MB / 90 章 EPUB、AI 批注、独立翻译接口、章节和脚注跳转、字号重排、关闭重开与重启。连续切换 24 次章节，活动资源 URL 维持 1–3 个，关闭后为 0。完整回归 377 项通过。以上为合成测试，不能代表所有出版文件，固定版式、复杂样式和特殊字体仍需实书兼容反馈。
+
+Isolated synthetic checks cover EPUB, PalmDoc/MOBI6, genuine KF8/AZW3 index structures, a roughly 31.6 MB / 90-chapter EPUB, annotation Q&A, an independent local translation mock, chapter/footnote links, typography reflow, reopening and restarting. Active resource URLs stay at 1–3 over 24 chapter transitions and return to zero on close. All 377 regression tests pass. These synthetic checks do not prove compatibility with every publication; fixed-layout books, complex styles and unusual fonts still need real-book feedback.
+
+内存测量包含 Chromium、GPU、界面、调试检查和历史操作。该综合场景中渲染进程工作集两次峰值约 399–406 MiB；关书并请求回收后约 170–174 MiB，浏览器和 GPU 另计。释放资源不等于系统统计立刻归零，也不能据此保证任意大书的峰值。打包体积和书籍资料占用应分别比较：增加格式解析不会为每本书再复制一套客户端运行时。
+
+Memory includes Chromium, GPU, UI, diagnostics and prior actions. In that combined scenario the renderer working-set peak was about 399–406 MiB across two runs and about 170–174 MiB after closing the book and requesting collection, with browser/GPU processes counted separately. Resource release is not immediate zero system memory, nor a guarantee for arbitrary large books. Package size and reading-data storage are separate: adding a parser does not copy another application runtime per book.
+
+Windows x64 ZIP 与 v0.1.38 比较：146,368,733 → 146,431,454 字节，增加 62,721 字节（约 61 KiB）。Electron EXE 保持原运行时字节不变；增加的主要是解析器和阅读交互代码。
+
+Windows x64 ZIP comparison: 146,368,733 → 146,431,454 bytes, an increase of 62,721 bytes (about 61 KiB). The Electron executable stays byte-identical to the existing runtime; additions are mainly parsers and reader interaction code.

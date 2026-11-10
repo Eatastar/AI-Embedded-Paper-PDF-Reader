@@ -9,3 +9,4 @@ const destination = resolve(root, 'public/pdfjs');
 await mkdir(destination, { recursive: true });
 for (const name of ['cmaps', 'standard_fonts', 'wasm', 'LICENSE']) await cp(resolve(source, name), resolve(destination, name), { recursive: true });
 console.log('PDF.js offline reading assets copied.');
+await import('./copy-ebook-assets.mjs');

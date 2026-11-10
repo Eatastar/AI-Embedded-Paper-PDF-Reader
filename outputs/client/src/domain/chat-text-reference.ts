@@ -6,7 +6,7 @@ function sourceLabel(conversation: Conversation, selection: ChatTextSelection): 
   if (selection.conversationId !== conversation.id) return;
   for (const document of conversation.documents || []) {
     const page = document.pages.find(item => item.messageId === selection.messageId && item.versionId === selection.versionId);
-    if (page) return `${document.name} · p. ${page.pageNumber}`;
+    if (page) return `${document.name} · ${document.kind === 'epub' || document.kind === 'mobi' || document.kind === 'azw3' ? 'ch.' : 'p.'} ${page.pageNumber}`;
   }
   const message = conversation.messages.find(item => item.id === selection.messageId);
   const version = message?.versions.find(item => item.id === selection.versionId && item.status === 'complete');

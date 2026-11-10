@@ -1,5 +1,19 @@
 # 版本记录 / Changelog
 
+## 0.1.39 · 20261110.1 · 2026-11-10
+
+新增无 DRM 的 EPUB、MOBI 和 AZW3（KF8）阅读。沿用本地文件入口、配色、原文笔记、AI 批注问答、引用到聊天、独立划词翻译、目录与全文搜索。电子书按章节滚动，支持字号、行距、正文宽度、章节和脚注链接及返回，记住章节和段落位置；更改字号、并排聊天和重新打开时恢复位置。原有 PDF 功能保持不变，图片框选问答仍用于 PDF。
+
+Add DRM-free EPUB, MOBI and AZW3 (KF8) reading through the existing local-file entry. Reuse colors, source notes, AI annotation Q&A, chat references, independent selection translation, contents and text search. Scroll within chapters, adjust font size/spacing/width, follow chapter and footnote links and return, and retain chapter/block progress across reflow, split chat and reopening. Existing PDF features are preserved; figure-region Q&A remains a PDF feature.
+
+只引入固定版本的 Foliate-js 文件解析模块及其 ZIP/解压依赖，不引入另一套 PDF 引擎或完整格式转换器。当前章节按需加载，离开章节释放渲染资源；原书附件和备份继续按内容共享。正文在禁用脚本、禁用远端资源的独立阅读区域显示；检查解压大小、文字量、图片像素及 DRM。电子书章节标题、批注和原文件纳入现有增量保存与完整备份；旧 PDF 记录无需转换。
+
+Vendor only pinned Foliate-js file parsers and their ZIP/inflation dependencies, with no second PDF engine or full converter. Load resources for the current chapter and release them when leaving it; keep content-shared original files and backups. Render book content in an isolated, script-free frame with remote resources blocked. Bound expanded data, text and raster dimensions and detect DRM. Chapter titles, notes and original archives use existing incremental saves and complete backups; legacy PDF records need no conversion.
+
+升级后继续使用同一份本机资料。导入电子书后请继续使用 v0.1.39 及以上；较早版本不认识电子书记录。不能交替运行旧版编辑同一份资料。含电子书资料使用默认新版备份；普通恢复会合并为新对话，不等于整体回滚，也不提供含电子书资料的一键降级。详见 UPDATING.md。
+
+Updates keep the same local profile. After importing ebooks use v0.1.39 or later: earlier versions do not understand ebook records. Do not alternate old/new editors on the same profile. Use current-version backups for ebooks. Normal restore merges new conversations rather than rolling the profile back; one-click downgrade of ebook profiles is not provided. See UPDATING.md.
+
 ## 0.1.38 · 20261109.1 · 2026-11-09
 
 聊天右侧新增按轮跳转点与目录：展示每次提问的开头，定位对应回答；目录按页显示，可多选、全选或清空本次聊天。删除前再次列出问题摘要并说明影响范围，确认后一次保存；失败不提交任何部分。删除包含所选问题、所有回答版本及回答批注，并清理后续引用和重试上下文；导入的 PDF 与原文批注保留，历史备份独立管理。

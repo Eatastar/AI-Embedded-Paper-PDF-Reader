@@ -31,7 +31,7 @@ export function readerAppearance(value: unknown): ReaderAppearance {
     paper: preset?.paper || candidate.paper.toLowerCase(), ink: preset?.ink || candidate.ink.toLowerCase(), preserveColors: candidate.preserveColors !== false,
   };
 }
-export function readerPosition(value: unknown, pageCount: number, kind: 'pdf' | 'text'): ReaderPosition {
+export function readerPosition(value: unknown, pageCount: number, kind: import('../domain/types').DocumentKind): ReaderPosition {
   const candidate = value && typeof value === 'object' ? value as Partial<ReaderPosition> : {};
   const bounded = (v: unknown, min: number, max: number, fallback: number) => typeof v === 'number' && Number.isFinite(v) ? Math.max(min, Math.min(max, v)) : fallback;
   return {

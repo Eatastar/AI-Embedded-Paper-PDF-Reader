@@ -53,6 +53,9 @@
 !/outputs/client/scripts/
 !/outputs/client/tests/
 !/outputs/client/public/
+!/outputs/client/vendor/
+/outputs/client/vendor/*
+!/outputs/client/vendor/foliate-js/
 /outputs/client/public/*
 !/outputs/client/public/icon.svg
 

@@ -1,6 +1,7 @@
 import { english } from './messages';
 import { additional } from './additional';
 import { traditional } from './traditional';
+import { ebookMessages, ebookDiagnostics } from './ebooks';
 
 export const LANGUAGES = [
   { code: 'zh-CN', name: '简体中文' }, { code: 'en', name: 'English' },
@@ -14,6 +15,8 @@ export const LOCALE_STORAGE_KEY = 'ai-paper-pdf-reader.ui-locale.v1';
 type PreferenceStorage = Pick<Storage, 'getItem' | 'setItem'>;
 export function isLocale(value: unknown): value is Locale { return LANGUAGES.some(item => item.code === value); }
 export const catalogs: Partial<Record<Locale, Record<string, string>>> = { en: english, 'zh-TW': traditional, ...additional };
+Object.assign(english, ebookDiagnostics);
+for (const row of ebookMessages) LANGUAGES.slice(1).forEach((language, index) => { catalogs[language.code]![row[0]] = row[index + 1]; });
 
 /** This preference is separate from conversations, credentials and backup data. */
 export function createLocaleStore(storage?: PreferenceStorage) {

@@ -4,7 +4,7 @@ import { BoundedCache } from './bounded-cache';
 export interface SearchText { text: string; starts: Uint32Array; ends: Uint32Array }
 export interface SearchHit { key: string; pageIndex: number; pageNumber: number; ordinal: number; start: number; end: number; before: string; quote: string; after: string }
 export interface SearchFocus { pageIndex: number; ordinal: number; query: string; request: number }
-export interface OutlineEntry { key: string; title: string; depth: number; pageIndex: number | null }
+export interface OutlineEntry { key: string; title: string; depth: number; pageIndex: number | null; href?: string }
 export interface DocumentNote { annotation: Annotation; pageIndex: number; pageNumber: number }
 
 /** A search-only representation. Original text, DOM and annotation offsets never

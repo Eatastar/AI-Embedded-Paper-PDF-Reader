@@ -1,12 +1,12 @@
 # AI-Embedded Paper PDF Reader
 
-**AI 嵌入式论文 PDF 阅读器** · 0.1.33 · 20261108.2
+**AI 嵌入式论文 PDF 阅读器** · 0.1.39 · 20261110.1
 
 [更新与数据保留 / Updates and your data](../../docs/UPDATING.md) · [性能与架构 / Performance and architecture](../../docs/PERFORMANCE.md)
 
-主要功能：本地 PDF 阅读、自定义纸张配色、AI 问答批注、划词翻译及可选聊天模式。划选单词或段落后右键翻译或按 Alt+1，在原文旁查看译文；可配置独立 API、翻译提示词和快捷键，只发送选段与翻译提示词，并可将译文保留为普通批注。
+主要功能：本地 PDF / EPUB / MOBI / AZW3 阅读、自定义纸张配色、AI 问答批注、划词翻译及可选聊天模式。划选单词或段落后右键翻译或按 Alt+1，在原文旁查看译文；可配置独立 API、翻译提示词和快捷键，只发送选段与翻译提示词，并可将译文保留为普通批注。
 
-Main features: local PDF reading, custom paper colors, AI Q&A annotations, selection translation and optional chat. Select a word or passage and right-click or press Alt+1 to read its translation beside the source. Configure an independent API, prompt and shortcut; only the selection and translation prompt are sent. Results can be kept as plain notes.
+Main features: local PDF / EPUB / MOBI / AZW3 reading, custom paper colors, AI Q&A annotations, selection translation and optional chat. Select a word or passage and right-click or press Alt+1 to read its translation beside the source. Configure an independent API, prompt and shortcut; only the selection and translation prompt are sent. Results can be kept as plain notes.
 
 连接自己的 API 或自行部署的模型服务，在 PDF 原文的批注中直接询问 AI。以本地阅读为主，支持自定义纸张配色，聊天按需打开。项目介绍、功能、实现分工和复用说明见[项目首页](../../README.md)，历史变化见[版本记录](../../docs/CHANGELOG.md)。
 
@@ -221,3 +221,9 @@ Question markings appear only in the image Q&A preview and drawing editor, and a
 v0.1.36 自动恢复点采用小型 `.snapshot.json` 和按内容哈希命名的附件库；同一内容只保留一份备份附件，主资料库原件另存。旧自动备份逐份校验后转换，错误或不支持时保留原文件。只在最后一个恢复点不再引用时清理附件。手动及恢复点导出的 JSON 仍自带原文件、可独立导入；不要把单独的 `.snapshot.json` 当作完整导出。
 
 v0.1.36 automatic recovery points use small `.snapshot.json` files and content-addressed attachments. Identical content has one backup copy, separate from library originals. Older automatic backups convert after individual verification, retaining originals on errors or unsupported layouts. Attachments are collected only when their last recovery-point reference disappears. Manual and recovery-point JSON exports still contain original files and can be imported independently; a `.snapshot.json` alone is not a complete export.
+
+## EPUB / MOBI / AZW3
+
+通过首页“打开 PDF / 电子书”选择无 DRM 文件。支持章节导航、搜索、字号/行距/宽度、背景与文字色、批注问答和快速翻译；原书保存在本机，与笔记一起进入完整备份。更多说明见仓库 README、docs/UPDATING.md 和 docs/THIRD_PARTY.md。
+
+Choose a DRM-free book from Open PDF / ebook. Use chapter navigation, search, typography, reading colors, annotation Q&A and quick translation. Original books stay local and are included with notes in complete backups. See the repository README, updating guide and third-party notices.

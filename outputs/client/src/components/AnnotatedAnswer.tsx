@@ -9,8 +9,9 @@ import { useChatTextReference } from './ChatTextReference';
 import { matchesTranslationShortcut, shortcutLabel } from '../domain/translation';
 import { MathMarkdown } from './MathMarkdown';
 import { createTextAnnotator, rangeToSelector } from '@recogito/text-annotator';
-import type { TextAnnotator, TextAnnotation, TextSelector } from '@recogito/text-annotator';
+import type { TextAnnotation, TextSelector } from '@recogito/text-annotator';
 import type { Annotation, MessageVersion } from '../domain/types';
+import { annotationViewportRect, createFrameAnnotationSurface, ebookRangeSelector, elementTarget, type AnnotationSurface } from '../adapters/annotation-surface';
 import { reviveQuoteSelector } from '../adapters/anchors';
 import { AnnotationCard } from './AnnotationCard';
 import { MovableAnnotationPopup } from './MovableAnnotationPopup';
@@ -88,7 +89,7 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
   const chatText = useChatTextReference();
   const sourceKey = `${conversationId}:${messageId}:${version.id}`;
   const proseRef = useRef<HTMLDivElement>(null);
-  const annotatorRef = useRef<TextAnnotator<TextAnnotation, TextAnnotation> | null>(null);
+  const annotatorRef = useRef<AnnotationSurface | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const chooserRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -119,7 +120,7 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
   useEffect(() => {
     const element = proseRef.current;
     if (!element || !isComplete) return;
-    const annotator = createTextAnnotator<TextAnnotation, TextAnnotation>(element, {
+    const annotator = element.ownerDocument !== document ? createFrameAnnotationSurface(element, id => callbacksRef.current.annotations.find(entry => entry.id === id)?.color || COLORS[0]) : createTextAnnotator<TextAnnotation, TextAnnotation>(element, {
       annotatingEnabled: false,
       renderer: 'SPANS',
       selectorReviveFn: reviveQuoteSelector,
@@ -211,38 +212,40 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
     const element = proseRef.current;
     const bounds = annotatorRef.current?.state.store.getAnnotationBounds(openAnnotation.id);
     const container = element?.getBoundingClientRect();
-    const rect = bounds && container ? new DOMRect(container.left + bounds.x, container.top + bounds.y, bounds.width, bounds.height) : lastRectRef.current;
+    const rect = bounds && container ? annotationViewportRect(new DOMRect(container.left + bounds.x, container.top + bounds.y, bounds.width, bounds.height), element?.ownerDocument) : lastRectRef.current;
     if (rect) lastRectRef.current = rect;
     setPopupStyle(popupPosition(rect, popupRef.current?.offsetHeight || 440));
   }, [openAnnotation?.id, layoutRevision]);
 
   useEffect(() => {
     const clearSelection = () => {
-      const selection = window.getSelection();
+      const selection = proseRef.current?.ownerDocument.getSelection();
       if (!selection || selection.isCollapsed) setSelectionDraft(null);
     };
     const dismiss = (event: PointerEvent) => {
-      if (!(event.target instanceof Element) || !event.target.closest('.annotation-selection-button')) setSelectionDraft(null);
+      if (!elementTarget(event.target)?.closest('.annotation-selection-button')) setSelectionDraft(null);
       if (!(event.target instanceof Node) || !chooserRef.current?.contains(event.target)) setAnnotationChoice(null);
     };
-    document.addEventListener('selectionchange', clearSelection);
+    const sourceDocument = proseRef.current?.ownerDocument || document;
+    sourceDocument.addEventListener('selectionchange', clearSelection);
     document.addEventListener('pointerdown', dismiss);
-    return () => { document.removeEventListener('selectionchange', clearSelection); document.removeEventListener('pointerdown', dismiss); };
+    if (sourceDocument !== document) sourceDocument.addEventListener('pointerdown', dismiss);
+    return () => { sourceDocument.removeEventListener('selectionchange', clearSelection); document.removeEventListener('pointerdown', dismiss); if (sourceDocument !== document) sourceDocument.removeEventListener('pointerdown', dismiss); };
   }, []);
 
   const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!isComplete || event.button !== 0) return;
     const element = proseRef.current;
-    const selection = window.getSelection();
+    const selection = proseRef.current?.ownerDocument.getSelection();
     if (!element || !selection) return;
     if (!selection.isCollapsed && selection.rangeCount) {
       const range = selection.getRangeAt(0);
       if (!element.contains(range.startContainer) || !element.contains(range.endContainer) || !range.toString().trim()) return;
-      const revived = rangeToSelector(range, element);
+      const revived = element.ownerDocument === document ? rangeToSelector(range, element) : ebookRangeSelector(range, element);
       const rects = range.getClientRects();
       const rect = rects.length ? rects[rects.length - 1] : range.getBoundingClientRect();
       setAnnotationChoice(null);
-      setSelectionDraft({ selector: { start: revived.start, end: revived.end, quote: revived.quote }, rect });
+      setSelectionDraft({ selector: { start: revived.start, end: revived.end, quote: revived.quote }, rect: annotationViewportRect(rect, element.ownerDocument) });
       return;
     }
     setSelectionDraft(null);
@@ -253,7 +256,7 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
     const hitIds = new Set(hits.map((annotation) => annotation.id));
     const matching = visibleAnnotations.filter((annotation) => hitIds.has(annotation.id));
     if (matching.length) {
-      lastRectRef.current = new DOMRect(event.clientX, event.clientY, 1, 18);
+      lastRectRef.current = annotationViewportRect(new DOMRect(event.clientX, event.clientY, 1, 18), element.ownerDocument);
       if (matching.length > 1) {
         setAnnotationChoice({ ids: matching.map((annotation) => annotation.id), rect: lastRectRef.current });
       } else {
@@ -280,7 +283,7 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
     setAnnotationChoice(null);
     setSelectionDraft(null);
     setAnswerMenu(null);
-    window.getSelection()?.removeAllRanges();
+    proseRef.current?.ownerDocument.getSelection()?.removeAllRanges();
     return true;
   };
 
@@ -295,28 +298,29 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
     if (!chatText?.enabled || !isComplete) return;
     chatText.quote({ conversationId, messageId, versionId: version.id, text: draft.selector.quote });
     setSelectionDraft(null); setAnswerMenu(null); setAnnotationChoice(null);
-    window.getSelection()?.removeAllRanges();
+    proseRef.current?.ownerDocument.getSelection()?.removeAllRanges();
   };
   useEffect(() => () => translation?.releaseSource(sourceKey), [sourceKey, translation?.releaseSource]);
   useEffect(() => {
     if (!translation?.enabled || !isComplete) return;
     const keydown = (event: KeyboardEvent) => {
       if (event.defaultPrevented || !matchesTranslationShortcut(event, translation.preferences.shortcut) || document.querySelector('dialog[open]')) return;
-      if (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable="true"], .translation-result')) return;
-      const element = proseRef.current, selection = window.getSelection();
+      if (elementTarget(event.target)?.closest('input, textarea, select, [contenteditable="true"], .translation-result')) return;
+      const element = proseRef.current, selection = proseRef.current?.ownerDocument.getSelection();
       if (!element || !selection || selection.isCollapsed || !selection.rangeCount) return;
       const range = selection.getRangeAt(0);
       if (!element.contains(range.startContainer) || !element.contains(range.endContainer) || !range.toString().trim()) return;
-      const selector = rangeToSelector(range, element);
+      const selector = element.ownerDocument === document ? rangeToSelector(range, element) : ebookRangeSelector(range, element);
       event.preventDefault(); event.stopPropagation();
-      translateSelection({ selector: { start: selector.start, end: selector.end, quote: selector.quote }, rect: range.getBoundingClientRect() });
+      translateSelection({ selector: { start: selector.start, end: selector.end, quote: selector.quote }, rect: annotationViewportRect(range.getBoundingClientRect(), element.ownerDocument) });
     };
-    document.addEventListener('keydown', keydown);
-    return () => document.removeEventListener('keydown', keydown);
+    const sourceDocument = proseRef.current?.ownerDocument || document;
+    sourceDocument.addEventListener('keydown', keydown);
+    return () => sourceDocument.removeEventListener('keydown', keydown);
   });
 
   const handleContextMenu = (event: ReactMouseEvent<HTMLDivElement>) => {
-    if (!isComplete || (event.target instanceof Element && event.target.closest('input, textarea, [contenteditable="true"]'))) return;
+    if (!isComplete || (elementTarget(event.target)?.closest('input, textarea, [contenteditable="true"]'))) return;
     event.preventDefault();
     const element = proseRef.current;
     if (!element) return;
@@ -328,20 +332,21 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
     const hitIds = new Set(hits.map((annotation) => annotation.id));
     if (keyboardTriggered && openAnnotation) hitIds.add(openAnnotation.id);
     const ids = visibleAnnotations.filter((annotation) => hitIds.has(annotation.id)).map((annotation) => annotation.id);
-    const selection = window.getSelection();
+    const selection = proseRef.current?.ownerDocument.getSelection();
     let draft: SelectionDraft | null = null;
     if (selection && !selection.isCollapsed && selection.rangeCount) {
       const range = selection.getRangeAt(0);
       if (element.contains(range.startContainer) && element.contains(range.endContainer) && range.toString().trim()) {
-        const selector = rangeToSelector(range, element);
-        draft = { selector: { start: selector.start, end: selector.end, quote: selector.quote }, rect: range.getBoundingClientRect() };
+        const selector = element.ownerDocument === document ? rangeToSelector(range, element) : ebookRangeSelector(range, element);
+        draft = { selector: { start: selector.start, end: selector.end, quote: selector.quote }, rect: annotationViewportRect(range.getBoundingClientRect(), element.ownerDocument) };
       }
     }
     menuReturnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setSelectionDraft(null);
     setAnnotationChoice(null);
-    setMenuStyle({ left: x, top: y });
-    setAnswerMenu({ x, y, ids, selection: draft, targetId: ids.length === 1 ? ids[0] : null });
+    const point = annotationViewportRect(new DOMRect(x, y, 0, 0), element.ownerDocument);
+    setMenuStyle({ left: point.x, top: point.y });
+    setAnswerMenu({ x: point.x, y: point.y, ids, selection: draft, targetId: ids.length === 1 ? ids[0] : null });
   };
 
   const closeMenu = (restoreFocus = false) => {

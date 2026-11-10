@@ -1,3 +1,5 @@
+import { isEbookKind } from '../domain/types';
+import { assertEbookSignature } from '../domain/ebook';
 import Dexie, { type EntityTable } from 'dexie';
 import type { Workspace } from '../domain/types';
 import { compactRequestCaches, validateImport, mergeImportedWorkspace } from '../domain/workspace';
@@ -120,6 +122,7 @@ async function decodeWorkspaceWithFiles(text: string) {
       }
     } catch { throw new Error('备份附件数据无法读取。'); }
     if (bytes.length !== document.size || bytes.length > documentByteLimit(document.kind)) throw new Error('备份附件大小与记录不一致。');
+    if (isEbookKind(document.kind)) assertEbookSignature(bytes, document.kind);
     if (document.kind === 'pdf' && !new TextDecoder().decode(bytes.subarray(0, 1024)).includes('%PDF-')) throw new Error('备份中的 PDF 原文件无效。');
     decoded.set(document.id, bytes);
   }

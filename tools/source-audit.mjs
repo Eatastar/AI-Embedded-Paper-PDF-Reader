@@ -19,6 +19,7 @@ const staticFiles = [
   'docs/PRIVACY.md', 'docs/RELEASE_NOTES.md', 'docs/THIRD_PARTY.md', 'docs/OPEN_SOURCE_RELEASE.md', 'docs/ATTRIBUTION.md',
   'docs/UPDATING.md', 'docs/PERFORMANCE.md',
   'outputs/windows/开始使用.txt', ...demoImages,
+  ...['epub.js', 'mobi.js', 'epubcfi.js', 'vendor/zip.js', 'vendor/fflate.js', 'vendor/zip-LICENSE', 'vendor/fflate-LICENSE', 'LICENSE', 'ORIGIN.json'].map(name => app + 'vendor/foliate-js/' + name),
   ...['.gitignore', '.gitattributes', '.env.example', 'README.md', 'package.json', 'pnpm-lock.yaml',
     'pnpm-workspace.yaml', 'index.html', 'tsconfig.json', 'vite.config.ts', '启动客户端.cmd', '停止客户端.cmd',
     'public/icon.svg'].map(name => app + name),

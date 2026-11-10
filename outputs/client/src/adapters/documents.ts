@@ -1,10 +1,11 @@
 import type { PDFDocumentProxy } from 'pdfjs-dist';
-import type { DocumentAttachment, DocumentPage } from '../domain/types';
+import { isEbookKind, type DocumentAttachment, type DocumentKind, type DocumentPage } from '../domain/types';
 import { MAX_PDF_BYTES, MAX_DOCUMENT_PAGES, MAX_DOCUMENT_TEXT_CHARACTERS, MAX_TEXT_CHARACTERS, documentByteLimit } from '../domain/document-limits';
 
 export const MAX_DOCUMENT_BYTES = MAX_PDF_BYTES;
 export { MAX_DOCUMENT_PAGES, MAX_DOCUMENT_TEXT_CHARACTERS };
-export const DOCUMENT_ACCEPT = '.pdf,.txt,.md,.markdown,application/pdf,text/plain,text/markdown';
+export const DOCUMENT_ACCEPT = '.pdf,.epub,.mobi,.azw3,.txt,.md,.markdown,application/pdf,application/epub+zip,text/plain,text/markdown';
+export const READER_ACCEPT = '.pdf,.epub,.mobi,.azw3,application/pdf,application/epub+zip';
 
 export class DocumentImportError extends Error {
   constructor(message: string) { super(message); this.name = 'DocumentImportError'; }
@@ -89,12 +90,12 @@ export function documentPageText(items: readonly unknown[]): string {
   return output.join('').replace(/\r\n?/g, '\n').trim();
 }
 
-export function documentFileKind(file: Pick<File, 'name' | 'type' | 'size'>): 'pdf' | 'text' {
+export function documentFileKind(file: Pick<File, 'name' | 'type' | 'size'>): DocumentKind {
   if (!file.size) throw new DocumentImportError('文件是空的，请选择有内容的文件。');
   const extension = file.name.split('.').pop()?.toLowerCase();
-  const kind = extension === 'pdf' ? 'pdf' : ['txt', 'md', 'markdown'].includes(extension || '') ? 'text' : null;
-  if (!kind) throw new DocumentImportError('目前支持 PDF、TXT 和 Markdown 文件。');
-  if (file.size > documentByteLimit(kind)) throw new DocumentImportError(kind === 'pdf' ? 'PDF 超过 150 MB，请先拆分或压缩。' : '文字文件超过 25 MB，请先拆分。');
+  const kind: DocumentKind | null = ['pdf', 'epub', 'mobi', 'azw3'].includes(extension || '') ? extension as DocumentKind : ['txt', 'md', 'markdown'].includes(extension || '') ? 'text' : null;
+  if (!kind) throw new DocumentImportError('目前支持 PDF、EPUB、MOBI、AZW3、TXT 和 Markdown 文件。');
+  if (file.size > documentByteLimit(kind)) throw new DocumentImportError(kind === 'text' ? '文字文件超过 25 MB，请先拆分。' : '文件超过 150 MB，请先拆分或压缩。');
   return kind;
 }
 
@@ -119,6 +120,11 @@ export async function parseDocumentFile(file: File, options: DocumentParseOption
     if (text.length > MAX_TEXT_CHARACTERS) throw new DocumentImportError('文字文件超过 100 万字，请先拆分。');
     pages.push(page(1, text));
     options.onProgress?.(1, 1);
+  } else if (isEbookKind(kind)) {
+    const { openEbook } = await import('./ebooks');
+    const book = await openEbook(bytes, kind, options.signal);
+    try { pages.push(...await book.pages(options.signal, options.onProgress)); }
+    finally { await book.destroy(); }
   } else {
     const signature = new TextDecoder('latin1').decode(bytes.subarray(0, 1024));
     if (!signature.includes('%PDF-')) throw new DocumentImportError('文件内容不是有效的 PDF，请检查文件。');
@@ -152,7 +158,7 @@ export async function parseDocumentFile(file: File, options: DocumentParseOption
   return {
     document: {
       id: crypto.randomUUID(), name: file.name.slice(0, 500), kind,
-      mimeType: kind === 'pdf' ? 'application/pdf' : 'text/plain',
+      mimeType: kind === 'pdf' ? 'application/pdf' : kind === 'epub' ? 'application/epub+zip' : isEbookKind(kind) ? 'application/x-mobipocket-ebook' : 'text/plain',
       size: bytes.byteLength, createdAt: Date.now(), pages,
     },
     bytes,

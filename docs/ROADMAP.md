@@ -68,3 +68,13 @@ Next priorities remain request controls, clearer source references, extraction q
 - [x] PDF 图片框选、默认画圈和可选画笔、紧凑问答面板。 / PDF image selection, circles by default, optional pen and compact Q&A.
 - [x] 三种图片协议、共享连接独立选择与明确的错误提示。 / Three image protocols, independent shared-connection selection and clear error handling.
 - [x] 矢量持久化、图片按需重建和有界临时缓存。 / Vector persistence, on-demand image regeneration and bounded transient caching.
+
+## v0.1.39 电子书 / Ebooks
+
+- [x] EPUB、MOBI、AZW3（KF8）无 DRM 文件，复用本地文件入口和共享附件。
+- [x] 单章滚动、目录、搜索、链接和脚注返回，字号/行距/宽度与配色。
+- [x] 原文笔记、AI 批注问答、引用到聊天、独立划词翻译、进度和备份。
+- [x] 固定解析模块、有限解压及图像预算，切章和关闭时释放资源；旧 PDF 回归。
+- [ ] 电子书原生图像提问、更多固定版式/复杂出版样式的适配。
+
+DRM-free EPUB/MOBI/AZW3, chapter reading and navigation, typography/colors, source notes/Q&A, chat references, translation, persistence and bounded resources are implemented. Native ebook image Q&A and broader complex/fixed-layout compatibility remain future work.

@@ -1,9 +1,10 @@
 import { t } from '../i18n/locale';
 import { useLocale } from '../i18n/react';
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
+import { isEbookKind } from '../domain/types';
 import type { Annotation, DocumentAttachment, MessageVersion, ModelSettings } from '../domain/types';
 import type { FigureRect, FigureStroke } from '../domain/figure';
 import { clearFigureCache, type PreparedFigureImage } from '../adapters/figure';
@@ -50,7 +51,7 @@ const ReaderPageSlot = memo(function ReaderPageSlot({ index, number, width, heig
   return <div ref={element => register(index, element)} data-reader-page={index} className="reader-page-slot" style={{ width }}><p className="reader-page-label">{t('第 {0} 页', [number])}{empty ? t(' · 无可提取文字，暂不支持 OCR') : ''}</p><div className="reader-page-body" style={{ width, height }}>{children || <div className="reader-page-placeholder" aria-label={t('第 {0} 页，滚动到此处时显示', [number])} />}</div></div>;
 });
 
-export function DocumentReader({ source, onClose, focused, onToggleFocus, modelLabel, onOpenModelSettings, onBackup, onOpenFile, contextMode, onContextMode, onLocation, figureSettings, onFigureAsk, onFigureStrokes, ...annotationProps }: DocumentReaderProps) {
+function PdfDocumentReader({ source, onClose, focused, onToggleFocus, modelLabel, onOpenModelSettings, onBackup, onOpenFile, contextMode, onContextMode, onLocation, figureSettings, onFigureAsk, onFigureStrokes, ...annotationProps }: DocumentReaderProps) {
   useLocale();
   const translation = useTranslation();
   // Keep only the active translation's source page mounted so scrolling cannot
@@ -398,4 +399,9 @@ export function DocumentReader({ source, onClose, focused, onToggleFocus, modelL
     </div>
     {detached && createPortal(<MovableAnnotationPopup key={detached.id} popupRef={detachedPopup} style={{ ...palette, width: Math.min(390, window.innerWidth - 24), maxHeight: window.innerHeight - 32, left: Math.max(12, window.innerWidth - 414), top: 90 }}><AnnotationCard key={detached.id} annotation={detached} onClose={() => annotationProps.onOpen(null)} onUpdate={patch => annotationProps.onUpdate(detached.id, patch)} onAsk={() => annotationProps.onAsk(detached.id)} onStop={() => annotationProps.onStop(detached.id)} onReask={action => annotationProps.onReask(detached.id, action)} onDelete={() => annotationProps.onDelete(detached.id)} onReferenceToChat={annotationProps.onReferenceToChat ? () => annotationProps.onReferenceToChat!(detached.id) : undefined} disabled={annotationProps.disabled} /></MovableAnnotationPopup>, document.body)}
   </section>;
+}
+
+const LazyEbookReader = lazy(() => import('./EbookReader'));
+export function DocumentReader(props: DocumentReaderProps) {
+  return isEbookKind(props.source.kind) ? <Suspense fallback={<div className="document-reader-empty">{t('正在读取电子书…')}</div>}><LazyEbookReader {...props} /></Suspense> : <PdfDocumentReader {...props} />;
 }

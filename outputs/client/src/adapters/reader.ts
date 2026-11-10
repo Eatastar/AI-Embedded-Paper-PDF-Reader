@@ -8,7 +8,7 @@ function read(key: string, target = storage()): unknown { try { const value = ta
 function save(key: string, value: unknown, target = storage()): boolean { try { if (!target) return false; target.setItem(key, JSON.stringify(value)); return true; } catch { return false; } }
 export function loadReaderAppearance(target?: ReaderStorage): ReaderAppearance { return readerAppearance(read(APPEARANCE_KEY, target)); }
 export function saveReaderAppearance(appearance: ReaderAppearance, target?: ReaderStorage): boolean { return save(APPEARANCE_KEY, readerAppearance(appearance), target); }
-export function loadReaderPosition(id: string, pageCount: number, kind: 'pdf' | 'text', target?: ReaderStorage): ReaderPosition {
+export function loadReaderPosition(id: string, pageCount: number, kind: import('../domain/types').DocumentKind, target?: ReaderStorage): ReaderPosition {
   const current = read(positionKey(id), target);
   if (current !== null) {
     const parsed = readerPosition(current, pageCount, kind);

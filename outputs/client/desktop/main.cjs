@@ -132,7 +132,7 @@ if (!ownsLock) {
     });
     desktopSession.webRequest.onHeadersReceived((details, callback) => {
       const headers = { ...details.responseHeaders };
-      if (isLocalPage(details.url)) headers['Content-Security-Policy'] = ["default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-src 'none'; frame-ancestors 'none'"];
+      if (isLocalPage(details.url)) headers['Content-Security-Policy'] = ["default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' blob:; img-src 'self' data: blob: https:; font-src 'self' data: blob:; connect-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-src 'self'; frame-ancestors 'none'"];
       callback({ responseHeaders: headers });
     });
     desktopSession.setPermissionRequestHandler((contents, permission, callback) => callback(permission === 'clipboard-sanitized-write' && isLocalPage(contents.getURL())));
@@ -161,6 +161,9 @@ if (!ownsLock) {
     window.webContents.on('will-navigate', (event, url) => { if (!isLocalPage(url)) { event.preventDefault(); openDocumentation(url); } });
     window.webContents.on('will-redirect', (event, url) => { if (!isLocalPage(url)) event.preventDefault(); });
     window.webContents.on('will-attach-webview', event => event.preventDefault());
+    // Ebooks use an inert srcdoc frame. Never allow it to navigate to a site or
+    // to another local application page; links are handled by the reader UI.
+    window.webContents.on('will-frame-navigate', event => { if (!event.isMainFrame && !['about:srcdoc', 'about:blank'].includes(event.url)) event.preventDefault(); });
     window.webContents.on('context-menu', (_event, params) => {
       if (!params.isEditable) return;
       Menu.buildFromTemplate(editMenu()).popup({ window });

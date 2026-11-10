@@ -1,0 +1,25 @@
+{
+  "repository": "https://github.com/johnfactotum/foliate-js",
+  "commit": "78914aef4466eb960965702401634c2cb348e9b1",
+  "license": "MIT",
+  "changes": [
+    "mobi.js: add unload() to revoke and clear chapter/resource caches between chapters; destroy delegates to unload.",
+    "mobi.js: reject DRM in combo headers, bound decompressed text records and total MOBI6 text, yield between record batches.",
+    "mobi.js: bound PalmDoc/HUFF expansion, dictionary nesting, INDX/TAGX bounds and KF8 raw text offsets.",
+    "mobi.js: accept resource-validation callback and bound font inflation using an explicit output buffer."
+  ],
+  "sha256": {
+    "epub.js": "dfe347495039e9b5991478986ec6b7713cf9efbcd8f475a77ef7b967c5176298",
+    "mobi.js": "1d30df867c31fd274fcbf485666f835a502a3b19c191d061ad4e248831ee10ec",
+    "epubcfi.js": "e1a688ad5c84bf31f33cef467f92c7a6d060a0f17ec37c1d3c048e9c7b1cf645",
+    "vendor/zip.js": "2a0d43157e4a447c6e43351225758795b75a33e8dfec10c6767248df2182949a",
+    "vendor/fflate.js": "e63bcc21f83a43e5f71d5cbefd351ff4d4dbd57bef8b29ad65c8bd65752f6e6b",
+    "LICENSE": "b621ffc351fe263bc9b09dd0bc1c9332fda9c462a3904c1e4f0b4d3236b9c28c",
+    "vendor/zip-LICENSE": "1b7ebc8d7889ed25491484ab2b102370742ca6c0b26650a0c62cc2269b579b84",
+    "vendor/fflate-LICENSE": "370679c457d36555127bbcefe8f57361f7852f04df0f2329a065f566f26f0d76"
+  },
+  "licenseSources": {
+    "vendor/zip-LICENSE": "https://github.com/gildas-lormeau/zip.js/blob/v2.8.11/LICENSE",
+    "vendor/fflate-LICENSE": "https://github.com/101arrowz/fflate/blob/v0.8.2/LICENSE"
+  }
+}

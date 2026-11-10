@@ -1,5 +1,11 @@
 AI-Embedded Paper PDF Reader
-AI 嵌入式论文 PDF 阅读器 · 0.1.38 · 20261109.1
+AI 嵌入式论文 PDF 阅读器 · 0.1.39 · 20261110.1
+
+新增电子书阅读 / Ebook reading
+首页点击“打开 PDF / 电子书”，可选无 DRM 的 EPUB、MOBI、AZW3。沿用批注问答、翻译、目录、搜索和配色，阅读设置可调整字号、行距和宽度。按章节加载，原书只存一份；笔记和聊天继续保存在原本的本机资料中。
+Choose Open PDF / ebook on the start page for DRM-free EPUB, MOBI or AZW3. Use annotation Q&A, translation, contents, search and reading colors, with font size, spacing and width in Reading settings. Chapters load on demand and one original archive is stored. Notes and chats keep using your existing local profile.
+导入电子书后请使用 v0.1.39 或更新版本，完整备份选择默认格式；旧版不能识别新增的电子书记录。升级和保留数据的步骤见 READ-ME-FIRST-Update-and-Data-Migration.txt。
+After importing ebooks use v0.1.39 or later and the default complete backup format. Older apps cannot interpret ebook records. See READ-ME-FIRST-Update-and-Data-Migration.txt for data-preserving updates.
 
 聊天右侧的目录按钮可按提问开头跳转；“管理与删除”支持多选、全选及清空聊天，确认后删除，保留 PDF 和原文批注。批注底部可“引用到聊天继续追问”，选中引用后再输入问题发送。
 Use the chat-side index to jump by question preview. Manage and delete supports multiple/all turns or clearing chat after confirmation, preserving PDFs and source notes. Use Reference in chat and ask further below an annotation, then compose and send your follow-up.

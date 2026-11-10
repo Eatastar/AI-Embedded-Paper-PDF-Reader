@@ -84,6 +84,8 @@ export interface AnnotationAttempt {
 }
 
 export interface DocumentPage {
+  /** Stable chapter metadata for reflowable books; PDF page records stay unchanged. */
+  title?: string;
   pageNumber: number;
   text: string;
   messageId: string;
@@ -93,12 +95,15 @@ export interface DocumentPage {
 export interface DocumentAttachment {
   id: string;
   name: string;
-  kind: 'pdf' | 'text';
+  kind: DocumentKind;
   mimeType: string;
   size: number;
   createdAt: number;
   pages: DocumentPage[];
 }
+
+export type DocumentKind = 'pdf' | 'text' | 'epub' | 'mobi' | 'azw3';
+export const isEbookKind = (kind: DocumentKind) => kind === 'epub' || kind === 'mobi' || kind === 'azw3';
 
 export interface Conversation {
   id: string;

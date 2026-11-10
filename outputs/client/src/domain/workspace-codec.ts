@@ -57,7 +57,7 @@ export class WorkspaceCodec {
   private message(value: ChatMessage): Group {
     return this.memo(value, () => this.group('message', value.id, { ...pick(value, ['id', 'role', 'activeVersionId', 'annotationReferences', 'textReference']), versionIds: value.versions.map(v => v.id) }, value.versions.map(v => this.version(v))));
   }
-  private page(value: DocumentPage): Group { return this.memo(value, () => this.group('page', value.messageId, pick(value, ['pageNumber', 'text', 'messageId', 'versionId']))); }
+  private page(value: DocumentPage): Group { return this.memo(value, () => this.group('page', value.messageId, pick(value, ['pageNumber', 'text', 'messageId', 'versionId', 'title']))); }
   private document(value: DocumentAttachment): Group {
     return this.memo(value, () => this.group('document', value.id, { ...pick(value, ['id', 'name', 'kind', 'mimeType', 'size', 'createdAt']), pageIds: value.pages.map(p => p.messageId) }, value.pages.map(p => this.page(p))));
   }
@@ -158,7 +158,7 @@ export function unpackWorkspace(input: unknown): unknown {
     });
     const documents = data.documentIds === undefined ? undefined : ids(data.documentIds, 10).map(documentId => {
       const d = read('document', documentId);
-      return { ...pick(d, ['id', 'name', 'kind', 'mimeType', 'size', 'createdAt']), pages: ids(d.pageIds, MAX_DOCUMENT_PAGES).map(pageId => pick(read('page', pageId), ['pageNumber', 'text', 'messageId', 'versionId'])) };
+      return { ...pick(d, ['id', 'name', 'kind', 'mimeType', 'size', 'createdAt']), pages: ids(d.pageIds, MAX_DOCUMENT_PAGES).map(pageId => pick(read('page', pageId), ['pageNumber', 'text', 'messageId', 'versionId', 'title'])) };
     });
     const annotations = ids(data.annotationIds, 10000).map(annotationId => {
       const a = read('annotation', annotationId);

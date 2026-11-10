@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { AssistantRuntimeProvider, ComposerPrimitive, ThreadPrimitive, useExternalStoreRuntime } from '@assistant-ui/react';
 import type { ThreadMessageLike } from '@assistant-ui/react';
 import { ArrowDown, ArrowUp, BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, Columns2, Download, FileUp, FileText, FolderOpen, Menu, MessageSquare, MessageSquareQuote, Paperclip, PenLine, Plus, RefreshCw, RotateCcw, Settings2, Square, Trash2, X } from 'lucide-react';
+import { isEbookKind } from './domain/types';
 import type { Annotation, ChatMessage, ChatTextReference, Conversation, InputMessage, MessageVersion, ModelSettings, ProfileInput, Workspace } from './domain/types';
 import { activeVersion, addAssistantVersion, buildMainContext, completeAnnotation, createAssistantMessage, createConversation, createUserMessage, deleteAnnotation, restoreAnnotation, deleteConversation, restoreConversation, prepareAnnotationRequest, updateAnnotationCopy, saveNoteAnnotation } from './domain/workspace';
 import { exportWorkspaceBlob, importWorkspaceWithFiles, saveDocumentBytes, getDocumentBytes } from './adapters/storage';
@@ -48,7 +49,7 @@ import { figureImageKey, figureSourceKey, FIGURE_LIMITS } from './domain/figure'
 import { figureCache, figureDataURL, type PreparedFigureImage } from './adapters/figure';
 import { updateFigureStrokes } from './domain/workspace';
 import { DEFAULT_RESPONSE_PROMPT, responsePreference } from './domain/response-language';
-import { parseDocumentFile, documentFileKind } from './adapters/documents';
+import { parseDocumentFile, documentFileKind, DOCUMENT_ACCEPT, READER_ACCEPT } from './adapters/documents';
 
 const DEFAULT_SETTINGS: ModelSettings = { mode: 'demo', baseURL: 'https://api.openai.com/v1', model: '', systemPrompt: DEFAULT_RESPONSE_PROMPT, hasApiKey: false, apiFormat: 'openai-chat', profiles: [], activeProfileId: null, persistence: 'session' };
 type Busy = { conversationId: string; messageId: string; versionId: string; controller: AbortController };
@@ -418,6 +419,7 @@ export default function App() {
       const snapshot = current.current;
       const selected = conversationId ? snapshot.conversations.find(c => c.id === conversationId && c.deletedAt === undefined) : undefined;
       const source = selected ? { ...snapshot, conversations: [selected], activeConversationId: selected.id } : snapshot;
+      if (legacy && source.conversations.some(c => c.documents?.some(d => isEbookKind(d.kind)))) throw new Error('电子书记录需要新版备份，请使用默认导出格式。');
       const blob = await exportWorkspaceBlob(source, { compact: !legacy });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a'); link.href = url; link.download = 'ai-paper-pdf-reader-' + (legacy ? t("兼容旧版-") : '') + t("备份-") + new Date().toISOString().slice(0, 10) + '.json'; link.click();
@@ -517,7 +519,7 @@ export default function App() {
     <aside className={'sidebar ' + (sidebarOpen ? 'sidebar-open' : '')}>
       <div className="brand"><span className="brand-mark"><PenLine size={20} /></span><span className="brand-name"><span className="brand-title">AI-Embedded Paper PDF Reader</span><small>{t("阅读与批注")}</small></span><button className="icon-button mobile-close" aria-label={t("关闭对话列表")} onClick={() => setSidebarOpen(false)}><X size={18} /></button></div>
       <button className="new-conversation" disabled={fileBusy} onClick={newConversation}><Plus size={18} />{t("开启新对话")}<span>＋</span></button>
-      <button className="open-reading-file" disabled={fileBusy || mainBusyId !== null} onClick={chooseReaderFile}><BookOpen size={17} />{t("打开本地 PDF")}</button>
+      <button className="open-reading-file" disabled={fileBusy || mainBusyId !== null} onClick={chooseReaderFile}><BookOpen size={17} />{t("打开 PDF / 电子书")}</button>
       <div className="sidebar-section-label">{t("你的对话")}</div>
       <nav className="conversation-list" aria-label={t("对话列表")}>
         {workspace.conversations.filter(c => c.deletedAt === undefined).sort((a, b) => b.updatedAt - a.updatedAt).map(c => <div key={c.id} className={'conversation-row ' + (c.id === active.id ? 'active' : '')}><button className={'conversation-item ' + (c.id === active.id ? 'active' : '')} disabled={fileBusy} onClick={() => selectConversation(c.id)} aria-current={c.id === active.id ? 'page' : undefined}>
@@ -536,7 +538,7 @@ export default function App() {
     <main className="main-pane">
       <header className="topbar">
         <div className="topbar-heading"><button className="icon-button mobile-menu" aria-label={t("打开对话列表")} onClick={() => setSidebarOpen(true)}><Menu size={20} /></button><span>{openDocument && readerFocused ? openDocument.name : active.title}</span><span className="version-badge" title={t("构建 {0} · {1}", [__APP_BUILD__, new Date(__APP_BUILD_TIME__).toLocaleString(getLocale(), { hour12: false })])}>{__APP_VERSION__} · {__APP_BUILD__}</span></div>
-        <div className="topbar-actions"><TranslationButton /><div className="reader-mode-actions">{!openDocument && reopenDocument && <button type="button" className="reader-mode-button" aria-label={t('展开 PDF 与聊天并排阅读')} title={t('展开文档：{0}', [reopenDocument.name])} disabled={fileBusy || turnBusy} onClick={() => expandReader('split')}><Columns2 size={17} /><span>{t('展开 PDF')}</span></button>}<button type="button" className="reader-mode-button" aria-label={t('返回阅读模式')} title={t('返回阅读模式')} disabled={fileBusy || turnBusy} onClick={() => expandReader('focused')}><BookOpen size={17} /><span>{t('阅读模式')}</span></button></div><button className="icon-button" aria-label={t("备份当前对话")} title={t("单独备份这个对话及其文件")} onClick={() => void downloadBackup(active.id)}><Download size={17} /></button><button className={'connection-button ' + (settings.mode === 'demo' ? 'demo-connection' : '')} onClick={() => setSettingsOpen(true)}><span className="status-dot" />{settings.mode === 'demo' ? t("演示模式") : settings.model || t("连接模型")}<Settings2 size={14} /></button></div>
+        <div className="topbar-actions"><TranslationButton /><div className="reader-mode-actions">{!openDocument && reopenDocument && <button type="button" className="reader-mode-button" aria-label={t('展开文档与聊天并排阅读')} title={t('展开文档：{0}', [reopenDocument.name])} disabled={fileBusy || turnBusy} onClick={() => expandReader('split')}><Columns2 size={17} /><span>{t('展开文档')}</span></button>}<button type="button" className="reader-mode-button" aria-label={t('返回阅读模式')} title={t('返回阅读模式')} disabled={fileBusy || turnBusy} onClick={() => expandReader('focused')}><BookOpen size={17} /><span>{t('阅读模式')}</span></button></div><button className="icon-button" aria-label={t("备份当前对话")} title={t("单独备份这个对话及其文件")} onClick={() => void downloadBackup(active.id)}><Download size={17} /></button><button className={'connection-button ' + (settings.mode === 'demo' ? 'demo-connection' : '')} onClick={() => setSettingsOpen(true)}><span className="status-dot" />{settings.mode === 'demo' ? t("演示模式") : settings.model || t("连接模型")}<Settings2 size={14} /></button></div>
       </header>
       <div className={'workspace-content ' + (openDocument ? 'with-reader' : '')}>
       <div className="conversation-pane">
@@ -546,9 +548,9 @@ export default function App() {
       </div>
     </main>
     <input ref={fileInput} className="visually-hidden" type="file" accept=".json,application/json" onChange={e => { const file = e.target.files?.[0]; if (file) void importBackup(file); }} aria-label={t("导入聊天备份")} />
-    <input ref={readerInput} className="visually-hidden" type="file" accept=".pdf,application/pdf" onChange={e => { const file = e.target.files?.[0]; if (file) void uploadDocument(file, 'reader'); }} aria-label={t("选择本地 PDF")} />
-    <input ref={uploadInput} className="visually-hidden" type="file" accept=".pdf,.txt,.md,.markdown,application/pdf,text/plain,text/markdown" onChange={e => { const file = e.target.files?.[0]; if (file) void uploadDocument(file); }} aria-label={t("添加本地 PDF 或文本文件")} />
-    {fileProgress && <div className="file-open-progress" role="status"><span>{fileProgress.total ? t("正在提取文字：{0} / {1} 页", [fileProgress.page, fileProgress.total]) : t("正在读取本地文件…")}</span><progress max={fileProgress.total || 1} value={fileProgress.page} /><button type="button" onClick={() => fileController.current?.abort()}>{t("取消打开")}</button></div>}
+    <input ref={readerInput} className="visually-hidden" type="file" accept={READER_ACCEPT} onChange={e => { const file = e.target.files?.[0]; if (file) void uploadDocument(file, 'reader'); }} aria-label={t("选择 PDF 或电子书")} />
+    <input ref={uploadInput} className="visually-hidden" type="file" accept={DOCUMENT_ACCEPT} onChange={e => { const file = e.target.files?.[0]; if (file) void uploadDocument(file); }} aria-label={t("添加本地 PDF 或文本文件")} />
+    {fileProgress && <div className="file-open-progress" role="status"><span>{fileProgress.total ? t("正在提取文字：{0} / {1}", [fileProgress.page, fileProgress.total]) : t("正在读取本地文件…")}</span><progress max={fileProgress.total || 1} value={fileProgress.page} /><button type="button" onClick={() => fileController.current?.abort()}>{t("取消打开")}</button></div>}
     {notice && <div role="status" className="toast">{t(notice)}{notice === "已删除批注与高亮，可撤销。" && latestDeleted && <button className="undo-toast" onClick={undoDelete}>{t("撤销")}</button>}<button className="icon-button" aria-label={t("关闭提示")} onClick={() => setNotice('')}><X size={15} /></button></div>}
     {saveStatus.startsWith("保存失败") && <div className="save-failure" role="alert">{t(saveStatus)}<button onClick={() => void downloadBackup()}>{t("导出备份")}</button></div>}
     {appSettingsOpen && <AppSettingsDialog onClose={() => setAppSettingsOpen(false)} onModels={() => { setAppSettingsOpen(false); setSettingsIntent('configure'); setSettingsOpen(true); }} />}
@@ -635,7 +637,7 @@ export function ChatView(props: ChatViewProps) {
   });
   return <AssistantRuntimeProvider runtime={runtime}>
     <ThreadPrimitive.Root className="chat-root">
-      {Boolean(conversation.documents?.length) && <details className="chat-local-files" aria-label={t("对话本地文件")}><summary><FolderOpen size={14} />{t("本地文件")}<small>{props.filesLoading ? t("整理中…") : props.fileGroups.length}</small><span className="chat-files-disclosure" aria-hidden="true"><span className="chat-files-expand">{t('展开')}</span><span className="chat-files-collapse">{t('收起')}</span><ChevronDown size={14} strokeWidth={1.6} /></span></summary><div>{props.fileGroups.map(group => { const d = group.references[0].document; return <button type="button" key={group.id} title={t("阅读 {0}", [d.name])} onClick={() => props.onOpenDocument(d.id)}><FileText size={15} /><span>{d.name}</span><small>{d.pages.length}{t("页")}</small></button>; })}</div></details>}
+      {Boolean(conversation.documents?.length) && <details className="chat-local-files" aria-label={t("对话本地文件")}><summary><FolderOpen size={14} />{t("本地文件")}<small>{props.filesLoading ? t("整理中…") : props.fileGroups.length}</small><span className="chat-files-disclosure" aria-hidden="true"><span className="chat-files-expand">{t('展开')}</span><span className="chat-files-collapse">{t('收起')}</span><ChevronDown size={14} strokeWidth={1.6} /></span></summary><div>{props.fileGroups.map(group => { const d = group.references[0].document; return <button type="button" key={group.id} title={t("阅读 {0}", [d.name])} onClick={() => props.onOpenDocument(d.id)}><FileText size={15} /><span>{d.name}</span><small>{d.pages.length}{t(isEbookKind(d.kind) ? "章" : "页")}</small></button>; })}</div></details>}
 
       <div className="chat-scroll-region">
       <ThreadPrimitive.Viewport ref={chatPosition.viewportRef} className="chat-viewport" autoScroll={isRunning} scrollToBottomOnInitialize={false} scrollToBottomOnRunStart scrollToBottomOnThreadSwitch={false}>
@@ -676,7 +678,7 @@ export function ChatView(props: ChatViewProps) {
           {props.textReference && <ChatTextReferencePreview reference={props.textReference} onRemove={props.onClearTextReference} />}
           <ComposerPrimitive.Input className="composer-input" placeholder={t(props.textReference ? '就这段文字，你想问什么？' : "想弄懂什么？从这里开始…")} aria-label={t("输入主对话问题")} autoFocus={false} disabled={globallyBusy} maxRows={7} addAttachmentOnPaste={false} unstable_focusOnScrollToBottom={false} unstable_focusOnRunStart={false} />
           <div className="composer-toolbar">
-            <div className="composer-quick-actions"><button type="button" className="upload-document-button" aria-label={t("添加本地文件")} title={t("从本地选择 PDF、TXT 或 Markdown")} disabled={globallyBusy} onClick={props.onUpload}><Paperclip size={15} /><span className="composer-action-label">{props.fileBusy ? t("读取中…") : t("本地文件")}</span></button>
+            <div className="composer-quick-actions"><button type="button" className="upload-document-button" aria-label={t("添加本地文件")} title={t("本地文件格式：PDF、EPUB、MOBI、AZW3、TXT、Markdown。")} disabled={globallyBusy} onClick={props.onUpload}><Paperclip size={15} /><span className="composer-action-label">{props.fileBusy ? t("读取中…") : t("本地文件")}</span></button>
               <div className="chat-reference-tools"><button type="button" className="chat-reference-trigger" data-selected={selectedAnnotations.length > 0 || undefined} aria-label={t('引用批注')} title={selectedAnnotations.length ? `${t('引用批注')} · ${t('已选 {0} 条批注', [selectedAnnotations.length])}` : t('引用批注')} disabled={globallyBusy} onClick={() => setPickingAnnotations(true)}><MessageSquareQuote size={15} /><span className="composer-action-label">{t('引用批注')}</span>{selectedAnnotations.length > 0 && <span className="chat-reference-count" aria-hidden="true">{selectedAnnotations.length}</span>}</button>{selectedAnnotations.length > 0 && <><span className="visually-hidden" role="status">{t('已选 {0} 条批注', [selectedAnnotations.length])}</span><button type="button" className="chat-reference-clear" title={t('清除本次批注引用')} disabled={globallyBusy} aria-label={t('清除本次批注引用')} onClick={() => setSelectedAnnotations([])}><X size={13} /></button></>}</div>
             </div>
             <div className="composer-model-controls"><NativeSelect wrapperClassName="composer-model-select" aria-label={t("选择预载模型")} title={settings.mode === 'api' ? settings.model : t("选择已保存的模型配置")} value={settings.mode === 'demo' ? '__demo__' : settings.activeProfileId || '__current__'} disabled={props.modelSwitchDisabled} onChange={event => { if (event.target.value === '__manage__') props.onManageModels(); else props.onChooseModel(event.target.value === '__demo__' ? null : event.target.value); }}>

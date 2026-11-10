@@ -7,7 +7,7 @@ export function canReferenceAnnotation(annotation: Annotation): boolean {
 export function annotationSourceLabel(conversation: Conversation, annotation: Annotation): string {
   for (const document of conversation.documents || []) {
     const page = document.pages.find(item => item.messageId === annotation.messageId && item.versionId === annotation.versionId);
-    if (page) return `${document.name} · p. ${page.pageNumber}`;
+    if (page) return `${document.name} · ${document.kind === 'epub' || document.kind === 'mobi' || document.kind === 'azw3' ? 'ch.' : 'p.'} ${page.pageNumber}`;
   }
   return 'AI 回答';
 }

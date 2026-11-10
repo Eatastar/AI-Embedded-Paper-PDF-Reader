@@ -6,23 +6,23 @@
 
 **面向文献与书籍精读：接入自己的 API，把批注提问与快速翻译留在原文旁。**
 
-这是一个以本地 PDF 阅读为主的桌面阅读器，适合逐段理解论文的概念、公式与论证，也适合精读教材、专业书籍和外语 PDF 书籍。你可以连接自选的 AI 服务、中转 API，或自行部署的本地模型服务；划选原文，在批注框里提问、查看回答，或快速翻译选中的单词和段落。需要把某个疑问展开讨论时，选择引用已有批注，在聊天中继续追问，同时对照 PDF 和原文批注。纸张与文字颜色可以自由调整。
+这是一个支持本地 PDF、EPUB、MOBI 和 AZW3 的桌面精读器，适合逐段理解论文的概念、公式与论证，也适合精读教材、专业书籍和外语电子书。你可以连接自选的 AI 服务、中转 API，或自行部署的本地模型服务；划选原文，在批注框里提问、查看回答，或快速翻译选中的单词和段落。需要把某个疑问展开讨论时，选择引用已有批注，在聊天中继续追问，同时对照 PDF 和原文批注。纸张与文字颜色可以自由调整。
 
 Tired of switching back and forth between a paper and an AI chat window? Or scrolling through a long conversation just to find an explanation you want to revisit?
 
-**Close reading for papers and PDF books, with your own API, annotation Q&A and quick translation beside the source.**
+**Close reading for papers and ebooks, with your own API, annotation Q&A and quick translation beside the source.**
 
-A desktop reader built around local PDFs, for working through a paper's concepts, equations and arguments or studying textbooks, technical books and foreign-language PDF books in detail. Connect your preferred AI provider, relay API or self-hosted model service. Select a passage to ask in its annotation panel or quickly translate a word or paragraph. To develop a question further, reference selected annotations in chat while keeping the PDF and its original note in view. Adjust paper and text colors to your preference.
+A desktop reader for local PDFs and DRM-free EPUB, MOBI and AZW3 ebooks. Work through a paper's concepts, equations and arguments, or study textbooks, technical books and foreign-language ebooks in detail. Connect your preferred AI provider, relay API or self-hosted model service. Select a passage to ask in its annotation panel or quickly translate a word or paragraph. To develop a question further, reference selected annotations in chat while keeping the PDF and its original note in view. Adjust paper and text colors to your preference.
 
 [下载 / Downloads](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases) · [已发布版本说明 / Published release notes](docs/RELEASE_NOTES.md) · [隐私 / Privacy](docs/PRIVACY.md) · [版本记录 / Changelog](docs/CHANGELOG.md) · [项目总纲 / Project outline](docs/PROJECT.md)
 
-当前源码版本：**0.1.38**。Windows x64 客户端请以 Releases 中实际发布的完整 ZIP 为准。支持八种界面语言，可在程序内切换并在本机记忆。[更新与数据保留](docs/UPDATING.md)：程序与个人资料分开保存，更新后继续使用原有聊天、笔记和批注。
+当前源码版本：**0.1.39**。Windows x64 客户端请以 Releases 中实际发布的完整 ZIP 为准。支持八种界面语言，可在程序内切换并在本机记忆。[更新与数据保留](docs/UPDATING.md)：程序与个人资料分开保存，更新后继续使用原有聊天、笔记和批注。
 
-Current source version: **0.1.38**. Download the complete Windows x64 ZIP actually published on Releases. Choose from eight interface languages in the app; your choice is remembered locally. [Updates and your data](docs/UPDATING.md): program files are separate from your profile, so updates retain existing chats, notes and annotations.
+Current source version: **0.1.39**. Download the complete Windows x64 ZIP actually published on Releases. Choose from eight interface languages in the app; your choice is remembered locally. [Updates and your data](docs/UPDATING.md): program files are separate from your profile, so updates retain existing chats, notes and annotations.
 
-首页左上角“菜单”可直接进入设置、API 连接、翻译设置、聊天、备份恢复和回收站，无需先打开 PDF。完整 JSON 备份包含聊天、笔记、批注和已导入的 PDF，不含 API 连接配置与密钥。
+首页左上角“菜单”可直接进入设置、API 连接、翻译设置、聊天、备份恢复和回收站，无需先打开 PDF。完整 JSON 备份包含聊天、笔记、批注和已导入的 PDF / 电子书原文件，不含 API 连接配置与密钥。
 
-The top-left Menu on the start page opens settings, API connections, translation settings, chats, backup and restore, and trash without opening a PDF. A full JSON backup includes chats, notes, annotations and imported PDFs; it excludes API connection profiles and keys.
+The top-left Menu on the start page opens settings, API connections, translation settings, chats, backup and restore, and trash without opening a PDF. A full JSON backup includes chats, notes, annotations and original imported PDF/ebook files; it excludes API connection profiles and keys.
 
 自动备份按内容共享 PDF 等附件，多个恢复点只保存一份相同文件；旧自动备份会在校验成功后转换。手动导出的 JSON 仍包含原文件，可单独恢复。[备份与空间说明](docs/PERFORMANCE.md)。
 
@@ -31,6 +31,10 @@ Automatic backups share identical PDF and other attachments across recovery poin
 聊天和批注照常及时保存；历史备份按 10 分钟间隔、手动操作及正常退出建立。备份列表支持逐条删除，包括升级前恢复点；删除备份不影响当前资料。
 
 Chats and annotations keep saving promptly. Historical backups are created at 10-minute intervals, manually, and on normal exit. Individual backups, including pre-upgrade points, can be deleted without removing current data.
+
+EPUB/MOBI/AZW3 按章节显示，不把整本书转换成 PDF 或页面截图；原书只保存一份，章节图片和字体在切章或关闭时释放。大书沿用按需引用，小书默认全文。图片框选问答目前用于 PDF；电子书本版提供原文文字批注与翻译。只支持无 DRM 文件，不解密受保护的商业电子书。
+
+EPUB/MOBI/AZW3 are rendered chapter by chapter without converting whole books to PDFs or page images. Store one original archive and release chapter image/font resources on chapter changes or close. Large books use relevant excerpts; small books default to full text. Figure-region Q&A is currently a PDF feature; ebook support in this version covers text annotations and translation. DRM-protected commercial ebooks are not decrypted.
 
 ## 精读场景 / Close-reading workflows
 
@@ -79,6 +83,7 @@ For foreign-language papers and books, select a word or passage and press **Alt+
 | 功能 | Feature |
 | --- | --- |
 | **阅读本地 PDF**：保留论文原排版，支持连续滚动、单页阅读、目录、全文搜索、手势缩放和阅读位置记忆。 | **Read local PDFs** with their original layout, continuous or single-page reading, contents, full-text search, pinch zoom and reading position memory. |
+| **精读电子书**：打开无 DRM 的 EPUB、MOBI、AZW3；按章节阅读，调整字号、行距和正文宽度，使用目录、搜索、原文链接、笔记、AI 批注问答、引用聊天及划词翻译，记住阅读位置。 | **Read ebooks closely**: open DRM-free EPUB, MOBI and AZW3; read by chapter with font, spacing and width controls, contents, search, internal links, notes, annotation Q&A, chat references, quick translation and saved progress. |
 | **自定义纸张颜色**：调节 PDF 纸张和文字颜色，阅读区及工具栏随之配色；保留彩图并可切回原色对照。减少刺眼白底，方便畏光或对明亮屏幕敏感的读者按个人感受调整。 | **Customize paper colors**: adjust PDF paper and text colors, with matching reader controls and margins. Preserve colored figures and compare with original colors. Reduce bright white backgrounds and tailor the display for readers with light sensitivity, including photophobia. |
 | **在批注中询问 AI**：划选原文就地提问，问答与来源文字绑定；收起后保留高亮，点击即可重开。支持自选高亮颜色、重新提问，也可只写普通笔记。 | **Ask AI in annotations**: select a passage and ask in place, keeping the Q&A attached to its source. Close the panel and click the highlight to reopen it. Choose highlight colors, ask again or write a plain note. |
 | **图片批注问答**：框选图表，默认画圈或切换画笔标出疑问，使用自选视觉 API 在原图旁提问；选区、圈画与问答保存到本机。 | **Image Q&A annotations**: select a figure, circle or draw on a detail, and ask your chosen vision API beside the source. Region, markings and Q&A are saved locally. |
@@ -115,7 +120,7 @@ Delete individual chat rounds and their stale request caches while retaining PDF
 
 ## 并排阅读与文字引用 / Side-by-side reading and quotations
 
-聊天模式关闭 PDF 后保持聊天可见，顶部“展开 PDF”及聊天文件名可一键恢复并排阅读，沿用原页码与缩放。左上角长项目名按侧栏宽度换行。选中 PDF、AI 回答或聊天问题中的文字，可通过浮动按钮或右键“引用到聊天”，在输入框预览选段、补充问题再发送，不创建批注或自动调用 API。每次引用一段，重新选择会替换待发送段落，可用 × 取消。
+聊天模式关闭 PDF 后保持聊天可见，顶部“展开文档”及聊天文件名可一键恢复并排阅读，沿用原页码与缩放。左上角长项目名按侧栏宽度换行。选中 PDF、AI 回答或聊天问题中的文字，可通过浮动按钮或右键“引用到聊天”，在输入框预览选段、补充问题再发送，不创建批注或自动调用 API。每次引用一段，重新选择会替换待发送段落，可用 × 取消。
 
 Closing a PDF in chat keeps the conversation visible. Open PDF at the top, or the file name in chat, restores side-by-side reading with the saved page and zoom. Long branding wraps inside the sidebar. Select text in a PDF, AI answer or chat question and use Quote in chat from the selection action or context menu, preview the excerpt, add a question and send. This creates no annotation and makes no automatic API call. One pending excerpt can be replaced or removed with ×.
 
@@ -137,7 +142,7 @@ Reading, search, recoloring and plain notes make no AI requests. **Asking a ques
 
 1. 从 [Releases](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases) 下载 Windows x64 ZIP，**完整解压**后运行 `AI-Embedded-Paper-PDF-Reader.exe`，保留同目录所有文件。更新前先正常退出旧版。
    Download the Windows x64 ZIP from [Releases](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases), **fully extract it** and run `AI-Embedded-Paper-PDF-Reader.exe`, keeping all accompanying files. Exit the old app normally before updating.
-2. 在首页打开本地 PDF，在阅读设置中调整纸张和文字颜色。无需配置 API 即可阅读和写普通批注。
+2. 在首页点击“打开 PDF / 电子书”；在阅读设置中调整纸张和文字颜色，电子书还可调整字号、行距和宽度。无需配置 API 即可阅读和写普通批注。
    Open a local PDF from the home screen and adjust paper/text colors in Reading settings. Reading and plain annotations work without an API connection.
 3. 要使用 AI，在首页点击“配置 API”，填写服务地址和密钥，再“探测上游模型”。从列表选择实际调用的模型，点击“保存并使用”；服务不提供列表时可手动填写模型名称。
    To use AI, open API setup on the home screen, enter the endpoint/key and discover upstream models. Choose the actual model and Save and use, or enter its name manually if listing is unavailable.

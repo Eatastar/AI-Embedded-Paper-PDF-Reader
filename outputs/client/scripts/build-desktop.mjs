@@ -51,6 +51,8 @@ for (const entry of await readdir(resolve(root, 'node_modules/.pnpm'))) {
     notices.push(`\n${info.name} ${info.version} — ${JSON.stringify(info.license || 'See package license')}\n${texts.join('\n')}`);
   } catch { /* Not every pnpm entry is a package root. */ }
 }
+for (const license of ['vendor/zip-LICENSE', 'vendor/fflate-LICENSE']) notices.push('\nEbook dependency: ' + license + '\n' + await readFile(resolve(root, 'vendor/foliate-js', license), 'utf8'));
+notices.push('\nFoliate-js ebook parsers (MIT), pinned source: https://github.com/johnfactotum/foliate-js/tree/78914aef4466eb960965702401634c2cb348e9b1\n' + await readFile(resolve(root, 'vendor/foliate-js/LICENSE'), 'utf8'));
 await writeFile(resolve(stage, 'THIRD-PARTY-NOTICES.txt'), notices.join('\n\n'));
 // The packager's default filters omit root LICENSE/NOTICE files from ASAR.
 // Keep explicit copies under neutral filenames inside the app as well as next to it.
