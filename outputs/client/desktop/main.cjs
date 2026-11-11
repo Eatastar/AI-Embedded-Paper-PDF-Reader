@@ -8,6 +8,8 @@ const { createModelFetch } = require('./model-network.cjs');
 const { createRequestLog } = require('./request-log.cjs');
 const { createBackupStore } = require('./backup-store.cjs');
 const { installDesktopBridge, createCloseGuard } = require('./desktop-bridge.cjs');
+const { buildId, desktopDistribution } = require('./package.json');
+const packaged = app.isPackaged || desktopDistribution === true;
 
 const smoke = process.argv.includes('--smoke-test');
 const interactiveSmoke = smoke && process.argv.includes('--interactive');
@@ -52,7 +54,7 @@ function refreshMenu() {
   ]));
 }
 function editMenu() { return [{ label: local('撤销', 'Undo'), role: 'undo' }, { label: local('重做', 'Redo'), role: 'redo' }, { type: 'separator' }, { label: local('剪切', 'Cut'), role: 'cut' }, { label: local('复制', 'Copy'), role: 'copy' }, { label: local('粘贴', 'Paste'), role: 'paste' }, { label: local('全选', 'Select all'), role: 'selectAll' }]; }
-const report = { app: 'MarginChat', packaged: app.isPackaged, started: false, rendererLoaded: false, rendererErrors: 0 };
+const report = { app: 'MarginChat', packaged, started: false, rendererLoaded: false, rendererErrors: 0 };
 
 function isLocalPage(url) {
   try { return new URL(url).origin === origin; } catch { return false; }
@@ -70,7 +72,7 @@ async function saveSmokeReport(error) {
   await writeFile(reportPath, JSON.stringify({ ...report, ...(error ? { error: String(error.message || error) } : {}) }, null, 2));
 }
 async function refreshCodeCache() {
-  const build = `${app.getVersion()}/${require('./package.json').buildId ?? ''}`;
+  const build = `${app.getVersion()}/${buildId ?? ''}`;
   const stampPath = join(profile, 'code-cache-build.txt');
   const previous = await readFile(stampPath, 'utf8').catch(error => {
     if (error.code === 'ENOENT') return '';
@@ -96,9 +98,14 @@ async function failStartup(error) {
   const code = errorCode(error);
   startupLog.write('startup-failed', { code });
   await saveSmokeReport(error).catch(() => {});
-  if (!smoke) dialog.showErrorBox('AI-Embedded Paper PDF Reader · 启动失败 / Startup failed', code === 'EADDRINUSE'
-    ? '程序使用的本机端口 4327 已被占用。请先关闭另一份客户端后重试。\n\n如果仍无法打开，请运行同目录的「启动诊断」。'
-    : '程序启动未完成。请运行同目录的「启动诊断」，把生成的结果发给开发者。\n\n错误代码：' + code + '\n启动日志：' + startupLog.path);
+  if (!smoke) {
+    const reason = code === 'EADDRINUSE'
+      ? '程序使用的本机端口 4327 已被占用。请先关闭另一份客户端后重试。'
+      : '程序启动未完成。';
+    const help = process.platform === 'win32' ? '\n\n如需排查，请运行同目录的「启动诊断」。' : '';
+    dialog.showErrorBox('AI-Embedded Paper PDF Reader · 启动失败 / Startup failed',
+      reason + help + '\n\n错误代码：' + code + '\n启动日志：' + startupLog.path);
+  }
   await shutdown().catch(() => {});
   app.exit(1);
 }
@@ -124,7 +131,8 @@ if (!ownsLock) {
   });
   app.whenReady().then(async () => {
     startupLog.write('app-ready');
-    app.setAppUserModelId('com.marginchat.desktop');
+    if (process.platform === 'win32') app.setAppUserModelId('com.marginchat.desktop');
+    app.dock?.setIcon(join(__dirname, 'icon.png'));
     const { createAppServer } = require('./server.cjs');
     const { createProfileStore } = require('./profile-store.cjs');
     desktopSession = session.defaultSession;
@@ -156,7 +164,7 @@ if (!ownsLock) {
     window = new BrowserWindow({
       width: 1280, height: 860, minWidth: 760, minHeight: 600, title: 'AI-Embedded Paper PDF Reader',
       backgroundColor: '#fff8e7', show: !smoke || (interactiveSmoke && !hiddenSmoke), autoHideMenuBar: true, icon: join(__dirname, 'icon.png'),
-      webPreferences: { preload: join(__dirname, 'preload.cjs'), nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, allowRunningInsecureContent: false, spellcheck: false, devTools: !app.isPackaged },
+      webPreferences: { preload: join(__dirname, 'preload.cjs'), nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, allowRunningInsecureContent: false, spellcheck: false, devTools: !packaged },
     });
     desktopBridge = installDesktopBridge({ ipcMain, window, isLocalPage, backupStore: createBackupStore({ directory: join(profile, 'Backups'), version: app.getVersion() }), onLocale: locale => { interfaceLocale = locale; refreshMenu(); } });
     closeGuard = createCloseGuard({

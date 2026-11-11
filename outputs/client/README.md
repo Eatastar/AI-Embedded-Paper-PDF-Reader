@@ -1,6 +1,6 @@
 # AI-Embedded Paper PDF Reader
 
-**AI 嵌入式论文 PDF 阅读器** · 0.1.44 · 20261111.3
+**AI 嵌入式论文 PDF 阅读器** · 0.1.45 · 20261111.5
 
 [更新与数据保留 / Updates and your data](../../docs/UPDATING.md) · [性能与架构 / Performance and architecture](../../docs/PERFORMANCE.md)
 
@@ -109,6 +109,20 @@ pnpm build
 pnpm dev
 pnpm build:desktop
 ```
+
+### Linux 和 macOS 试用包 / Linux and macOS preview builds
+
+打包机需有 Python 3.9 或更新版本。下列命令可在 Windows 上运行，生成 Linux x64 的 `.tar.gz)，以及 Apple 芯片和 Intel Mac 各自的便携试用 ZIP。完整解压后，Linux 运行 `ai-embedded-paper-pdf-reader`，Mac 打开 `Start Reader.command`。
+
+Python 3.9 or newer is required on the build machine. This command also runs on Windows and produces a Linux x64 tarball and portable preview ZIPs for Apple silicon and Intel Macs. Fully extract the archive and run `ai-embedded-paper-pdf-reader` on Linux or open `Start Reader.command` on macOS.
+
+```sh
+pnpm run build:desktop --target linux-x64 --target macos-arm64 --target macos-x64
+```
+
+包和 SHA-256 校验文件写入项目的 `outputs/linux` 与 `outputs/macos`。已有官方 Electron ZIP 时，可加 `--runtime-cache <目录>` 从该目录读取。打包脚本会用锁定版本自带的 SHA-256 校验每个运行组件。
+
+Packages and SHA-256 files go to `outputs/linux` and `outputs/macos`. Use `--runtime-cache <directory>` to reuse official Electron ZIPs from a local folder. The build checks each runtime against the pinned Electron version's SHA-256. Use `--output-root <directory>` to stage a release outside the usual delivery folders.
 
 模块职责见 [PROJECT](../../docs/PROJECT.md)，后续计划见 [ROADMAP](../../docs/ROADMAP.md)。公开提交前在仓库根运行 `node tools/source-audit.mjs`。不要提交运行数据、依赖、密钥或论文。
 

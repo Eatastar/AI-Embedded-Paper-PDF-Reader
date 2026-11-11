@@ -1,5 +1,15 @@
 # 版本记录 / Changelog
 
+## 0.1.45 · 20261111.5 · 2026-11-11
+
+首页默认显示最近打开的 5 份文件，点击「查看全部」可展开。用「整理」批量移出或恢复阅读记录，保留原文件、批注与阅读进度。重新打开文件后，它会回到列表顶部。
+
+The start page shows the five most recently opened files. Select View all to expand the list or Manage to remove or restore entries in batches. Files, annotations, and reading progress are preserved. Reopening a file moves it to the top.
+
+新增 Linux x64 预览包，以及 Apple 芯片和 Intel Mac 的便携试用包。Windows、Linux 和 macOS 共用阅读器功能。
+
+Add a Linux x64 preview and portable previews for Apple silicon and Intel Macs. Windows, Linux, and macOS builds share the same reader features.
+
 ## 0.1.44 · 20261111.3 · 2026-11-11
 
 桌面版首次启动新构建时回收旧版 JavaScript 编译缓存。同一构建重开时继续复用已生成的编译结果。

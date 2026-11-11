@@ -1,5 +1,9 @@
 AI-Embedded Paper PDF Reader
-AI 嵌入式论文 PDF 阅读器 · 0.1.44 · 20261111.3
+AI 嵌入式论文 PDF 阅读器 · 0.1.45 · 20261111.5
+
+最近阅读 / Recent reading
+首页显示最近打开的 5 份文件，点击「查看全部」可展开。「整理」支持勾选并移出多条记录，或从「已移出」恢复。原文件、批注与阅读进度都会保留。
+The start page shows the five most recently opened files. Select View all to expand the list. Use Manage to remove several entries or restore them from Removed. Files, annotations, and reading progress are preserved.
 
 电子书排版 / Ebook typography
 电子书右上角的 Aa 排版按钮可调字号、行距和正文宽度；窄栏也有 Aa，PDF 不显示此按钮。旧版排版参数按书保留，无需先解锁。

@@ -158,12 +158,19 @@
 .reader-open-file:disabled { opacity: .55; }
 .reader-recent > header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 15px; }
 .reader-recent h2 { margin: 0; font-size: 12px; color: var(--ls-text); font-weight: 500; }
-.reader-recent > header > span { font-size: 10px; color: var(--ls-muted); }
+.reader-recent-header-actions, .reader-recent-controls, .reader-recent-tabs, .reader-recent-list-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.reader-recent-header-actions { justify-content: flex-end; }
+.reader-recent-controls { justify-content: space-between; margin-bottom: 8px; }
+.reader-recent-list-actions { margin-top: 12px; }
+.reader-recent-count { font-size: 10px; color: var(--ls-muted); }
+.reader-recent-help { margin: 0; color: var(--ls-muted); font-size: 11px; }
 .reader-recent > ul { list-style: none; margin: 0; padding: 0; }
 .reader-recent > ul > li { border-bottom: 1px solid var(--ls-border); }
 .reader-recent-file { width: 100%; display: flex; align-items: center; gap: 14px; padding: 16px 4px; border: 0; background: transparent; color: var(--ls-text); font: inherit; text-align: start; cursor: pointer; }
 .reader-recent-file:hover { background: var(--ls-surface); }
 .reader-recent-file > svg { color: var(--ls-muted); flex: none; }
+.reader-recent-select > input { flex: none; width: 16px; height: 16px; margin: 0; accent-color: var(--ls-text); cursor: inherit; }
+.reader-recent-select:has(input:checked) { background: var(--ls-surface); }
 .reader-recent-file > span:first-of-type { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
 .reader-recent-file strong { font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .reader-recent-file small, .reader-recent-open { font-size: 10px; color: var(--ls-muted); }

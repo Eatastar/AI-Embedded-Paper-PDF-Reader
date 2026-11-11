@@ -20,6 +20,17 @@ export const reader = String.raw`
 正在提取文字：{0} / {1} 页|Extrayendo texto: {0} / {1} páginas|テキスト抽出中：{0} / {1} ページ|Text wird extrahiert: {0} / {1} Seiten|جارٍ استخراج النص: {0} / {1} صفحة|Extraction du texte : {0} / {1} pages
 本地阅读记录|Historial local de lectura|ローカル閲覧履歴|Lokaler Leseverlauf|سجل القراءة المحلي|Historique local de lecture
 最近阅读|Lecturas recientes|最近読んだ文書|Zuletzt gelesen|المقروء مؤخرًا|Lectures récentes
+整理最近阅读|Gestionar lecturas recientes|最近読んだ文書を管理|Leseliste verwalten|إدارة القراءات الأخيرة|Gérer les lectures récentes
+整理|Gestionar|管理|Verwalten|إدارة|Gérer
+列表中|En la lista|一覧に表示|In der Liste|في القائمة|Dans la liste
+已移出|Retirados|一覧から除外済み|Ausgeblendet|المُزالة|Retirées
+移出所选|Retirar selección|選択した項目を除外|Auswahl ausblenden|إزالة المحدد|Retirer la sélection
+恢复所选|Restaurar selección|選択した項目を戻す|Auswahl wiederherstellen|استعادة المحدد|Restaurer la sélection
+移出后可恢复，原文件、批注和进度保留。|Puedes restaurar las entradas retiradas. Se conservan los archivos, las anotaciones y el progreso.|除外した項目は元に戻せます。ファイル、注釈、読書の進捗は保持されます。|Ausgeblendete Einträge lassen sich wiederherstellen. Dateien, Anmerkungen und Lesefortschritt bleiben erhalten.|يمكن استعادة العناصر المُزالة. تبقى الملفات والتعليقات ومواضع القراءة محفوظة.|Les entrées retirées peuvent être restaurées. Les fichiers, les annotations et la progression sont conservés.
+没有已移出的阅读记录。|No hay lecturas retiradas.|除外した文書はありません。|Keine ausgeblendeten Leseeinträge.|لا توجد قراءات مُزالة.|Aucune lecture retirée.
+最近阅读暂无文件。|La lista de lecturas recientes está vacía.|最近読んだ文書はありません。|Die Liste der zuletzt gelesenen Dateien ist leer.|قائمة القراءات الأخيرة فارغة.|La liste des lectures récentes est vide.
+查看全部|Ver todo|すべて表示|Alle anzeigen|عرض الكل|Tout afficher
+阅读列表整理仅在本次有效。|Los cambios en la lista solo se aplican durante esta sesión.|一覧の変更は今回の起動中のみ有効です。|Änderungen an der Leseliste gelten nur für diese Sitzung.|تسري تغييرات قائمة القراءة خلال هذه الجلسة فقط.|Les modifications de la liste ne durent que le temps de cette session.
 正在整理…|Organizando…|整理中…|Wird geordnet…|جارٍ التنظيم…|Organisation…
 {0} 份文件|{0} archivos|{0} 個のファイル|{0} Dateien|{0} ملفات|{0} fichiers
 读过的文件和批注会留在这里。|Aquí estarán tus archivos y anotaciones.|読んだファイルと注釈がここに表示されます。|Gelesene Dateien und Notizen erscheinen hier.|ستظهر هنا ملفاتك المقروءة وتعليقاتك.|Vos documents lus et annotations apparaîtront ici.

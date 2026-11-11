@@ -48,8 +48,9 @@ test('desktop profiles survive reopening while their keys exist only as encrypte
   } finally { file.close(); }
 });
 
-test('browser and unavailable encryption persist configuration without writing keys in plaintext', () => {
-  for (const safeStorage of [undefined, { isEncryptionAvailable: () => false }]) {
+test('unavailable or unprotected system storage persists configuration without keys', () => {
+  const basicText = { ...crypto, getSelectedStorageBackend: () => 'basic_text' };
+  for (const safeStorage of [undefined, { isEncryptionAvailable: () => false }, basicText]) {
     const file = fixture();
     try {
       const store = createProfileStore({ filePath: file.filePath, safeStorage });

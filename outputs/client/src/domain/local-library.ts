@@ -4,6 +4,43 @@ import type { Annotation, Conversation, DocumentAttachment, Workspace } from './
 
 export interface LocalDocumentReference { conversationId: string; document: DocumentAttachment }
 export interface LocalDocumentGroup { id: string; references: LocalDocumentReference[] }
+export interface RecentReadingPreferences { opened: string[]; hidden: string[] }
+export const RECENT_READING_ORDER_LIMIT = 200;
+
+export function recordRecentReading(preferences: RecentReadingPreferences, documentId: string): RecentReadingPreferences {
+  if (preferences.opened[0] === documentId && !preferences.hidden.includes(documentId)) return preferences;
+  return {
+    opened: [documentId, ...preferences.opened.filter(id => id !== documentId)].slice(0, RECENT_READING_ORDER_LIMIT),
+    hidden: preferences.hidden.filter(id => id !== documentId),
+  };
+}
+
+export function setRecentReadingHidden(preferences: RecentReadingPreferences, groups: LocalDocumentGroup[], hide: boolean): RecentReadingPreferences {
+  const hidden = new Set(preferences.hidden);
+  // Group keys can change when duplicate files are discovered. Save the IDs
+  // of the actual records represented by the row.
+  for (const group of groups) for (const { document } of group.references) {
+    if (hide) hidden.add(document.id);
+    else hidden.delete(document.id);
+  }
+  return { ...preferences, hidden: [...hidden] };
+}
+
+export function recentReadingGroups(groups: LocalDocumentGroup[], preferences: RecentReadingPreferences) {
+  const order = new Map(preferences.opened.map((id, index) => [id, index]));
+  const hiddenIds = new Set(preferences.hidden);
+  const ordered = groups.map(group => ({
+    group,
+    rank: group.references.reduce((best, { document }) => Math.min(best, order.get(document.id) ?? order.size), order.size),
+  })).sort((a, b) => a.rank - b.rank);
+  const visible: LocalDocumentGroup[] = [], hidden: LocalDocumentGroup[] = [];
+  for (const { group } of ordered) {
+    const destination = group.references.every(({ document }) => hiddenIds.has(document.id)) ? hidden : visible;
+    destination.push(group);
+  }
+  return { visible, hidden };
+}
+
 export type DocumentBytesReader = (id: string) => Promise<Uint8Array | undefined>;
 export const fileContentHash = (bytes: Uint8Array) => bytesToHex(sha256(bytes));
 export const localDocumentReferences = (workspace: Workspace | null): LocalDocumentReference[] => (workspace?.conversations || [])

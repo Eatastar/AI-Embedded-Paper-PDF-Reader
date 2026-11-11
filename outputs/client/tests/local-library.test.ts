@@ -1,13 +1,59 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LocalDocumentIndex, conversationFileGroups, fileAnnotationCounter, localDocumentReferences, projectFileAnnotations } from '../src/domain/local-library';
+import { LocalDocumentIndex, conversationFileGroups, fileAnnotationCounter, localDocumentReferences, projectFileAnnotations, recentReadingGroups, recordRecentReading, setRecentReadingHidden } from '../src/domain/local-library';
 import type { Annotation, Conversation, DocumentAttachment, Workspace } from '../src/domain/types';
 import { parseDocumentFile } from '../src/adapters/documents';
+import { loadReaderSession, loadRecentReading, saveReaderSession, saveRecentReading } from '../src/adapters/reader-session';
 
 const document = (id: string, name = 'paper.pdf', size = 4): DocumentAttachment => ({ id, name, size, kind: 'pdf', mimeType: 'application/pdf', createdAt: 1, pages: [{ pageNumber: 1, text: 'same extracted text', messageId: `${id}-m`, versionId: `${id}-v` }] });
 const conversation = (id: string, documents: DocumentAttachment[], annotations: Annotation[] = []): Conversation => ({ id, title: id, createdAt: 1, updatedAt: 1, documents, annotations, messages: [] });
 const annotation = (id: string, d: DocumentAttachment, extra: Partial<Annotation> = {}): Annotation => ({ id, conversationId: 'c', messageId: d.pages[0].messageId, versionId: d.pages[0].versionId, quote: 'same', anchor: { selectors: [{ start: 0, end: 4, quote: 'same' }] }, color: '#f3cf67', question: '', answer: '', mode: 'note', note: id, edited: false, status: 'noted', createdAt: 1, updatedAt: 1, ...extra });
 const refs = (...documents: DocumentAttachment[]) => documents.map(document => ({ conversationId: 'c', document }));
+
+test('removing and restoring recent reading leaves library references and annotations intact', async () => {
+  const a = document('a'), copy = document('copy'), b = document('b', 'other.pdf', 5);
+  const notes = [annotation('keep', a)];
+  const owner = conversation('c', [a, copy, b], notes);
+  const source = refs(a, copy, b);
+  const index = new LocalDocumentIndex();
+  const read = async (id: string) => new Uint8Array(id === 'b' ? 5 : 4);
+  const [oldGroup] = await index.group(refs(a), read);
+  const groups = await index.group(source, read);
+  const [shared, other] = groups;
+  assert.notEqual(shared.id, oldGroup.id);
+  const initial = recordRecentReading({ opened: [], hidden: [] }, b.id);
+  const removed = setRecentReadingHidden(initial, [shared], true);
+
+  assert.deepEqual(recentReadingGroups(groups, removed), { visible: [other], hidden: [shared] });
+  assert.deepEqual(recentReadingGroups([oldGroup, other], removed), { visible: [other], hidden: [oldGroup] });
+  assert.deepEqual(conversationFileGroups(groups, owner), groups);
+  assert.equal(fileAnnotationCounter([owner])(shared.references), 1);
+  assert.equal((await index.find(new Uint8Array(4), 'pdf', source, read))?.document.id, a.id);
+
+  const restored = setRecentReadingHidden(removed, [shared], false);
+  assert.deepEqual(recentReadingGroups(groups, restored), { visible: [other, shared], hidden: [] });
+  const reopened = recordRecentReading(removed, a.id);
+  assert.deepEqual(recentReadingGroups(groups, reopened), { visible: [shared, other], hidden: [] });
+  assert.deepEqual(reopened.hidden, [copy.id]);
+  assert.deepEqual(initial.hidden, []);
+});
+
+test('recent reading preferences persist separately from the saved reader session', () => {
+  const values = new Map<string, string>();
+  const storage = {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => { values.set(key, value); },
+  };
+  const session = { conversationId: 'c', documentId: 'a', mode: 'closed' } as const;
+  saveReaderSession(session, storage);
+  assert.deepEqual(loadRecentReading(storage), { opened: [], hidden: [] });
+
+  const preferences = { opened: ['b', 'b', '', 'a'], hidden: ['a', 'a'] };
+  assert.equal(saveRecentReading(preferences, storage), true);
+  assert.deepEqual(loadRecentReading(storage), { opened: ['b', 'a'], hidden: ['a'] });
+  assert.deepEqual(loadReaderSession(storage), session);
+  assert.equal(saveRecentReading(preferences, { setItem() { throw Error('Storage unavailable'); } }), false);
+});
 
 test('equal original bytes merge even after renaming; same names and extracted text never prove identity', async () => {
   const a = document('a'), b = document('b', 'renamed.pdf'), c = document('c');

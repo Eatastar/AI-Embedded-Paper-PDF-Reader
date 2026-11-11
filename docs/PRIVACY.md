@@ -7,9 +7,9 @@ AI-Embedded Paper PDF Reader 在本机保存阅读资料、聊天、批注和 AP
 - 导入文件的原始字节、提取文字、聊天、批注与阅读位置。
 - 各模型连接的名称、接口地址、模型名与回答偏好。
 - 手动导出的聊天备份和桌面自动备份；备份含对话与原文件，应按个人资料保管。
-- Windows 桌面版使用系统加密保存模型密钥。系统加密不可用时，连接配置仍可保存，密钥只在本次运行的内存中保留，不写入明文密钥文件。
+- 桌面版通过系统凭证服务保存模型密钥。系统加密不可用时，连接配置仍可保存，密钥只在本次运行的内存中保留。Linux 的 `basic_text` 回退也按加密不可用处理。
 
-模型配置和凭证独立于聊天数据库，聊天备份不包含模型凭证字段。桌面数据使用当前 Windows 账户的应用数据目录，与程序目录分开。删除或移动源码和程序文件，不会自动删除个人数据。
+模型配置和凭证独立于聊天数据库，聊天备份不包含模型凭证字段。桌面数据保存在当前系统账户的应用数据目录，与程序目录分开。删除或移动源码和程序文件，不会自动删除个人数据。
 
 ## 什么时候发送数据
 
@@ -53,7 +53,7 @@ Windows 桌面版通过 Electron / Chromium 网络组件读取系统代理设置
 
 ## English
 
-The app stores original document bytes, extracted text, conversations, annotations, reading position and API connection settings locally. You supply the endpoints and keys; the app does not upload them to a project-operated server. The project runs no credential hosting, cloud document library, account service or usage collection endpoint. Model connections and credentials are separate from the conversation database. The Windows desktop app encrypts saved keys with the operating system; if encryption is unavailable, connection metadata can still be saved but keys remain only in session memory, without a plaintext key file. Conversation backups include original attachments and notes, but no model credential fields. Interface language is an independent local preference and is not included in these backups.
+The app stores original document bytes, extracted text, conversations, annotations, reading position and API connection settings locally. You supply the endpoints and keys; the app does not upload them to a project-operated server. The project runs no credential hosting, cloud document library, account service or usage collection endpoint. Model connections and credentials are separate from the conversation database. The desktop app encrypts saved keys through the operating system's credential service. Without encryption, including Linux's `basic_text` fallback, the app saves connection metadata and keeps keys only in session memory. Conversation backups include original attachments and notes, but no model credential fields. Interface language is an independent local preference and is not included in these backups.
 
 Reading, turning pages, recoloring, searching, writing personal notes and saving/switching connections make no AI requests. Chat sends the remaining valid main conversation and document material, without automatically reading annotations. Reference annotations in the composer toolbar adds only the Q&A or notes you select to that question. A PDF annotation uses only its own document, selection and current question, without chat or other annotations. An annotation on an AI answer uses only its bound original answer version.
 

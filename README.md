@@ -14,11 +14,17 @@ Tired of switching back and forth between a paper and an AI chat window? Or scro
 
 A desktop reader for local PDFs and DRM-free EPUB, MOBI and AZW3 ebooks. Work through a paper's concepts, equations and arguments, or study textbooks, technical books and foreign-language ebooks in detail. Connect your preferred AI provider, relay API or self-hosted model service. Select a passage to ask in its annotation panel or quickly translate a word or paragraph. To develop a question further, reference selected annotations in chat while keeping the PDF and its original note in view. Adjust paper and text colors to your preference.
 
-[下载 / Downloads](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases) · [已发布版本说明 / Published release notes](docs/RELEASE_NOTES.md) · [隐私 / Privacy](docs/PRIVACY.md) · [版本记录 / Changelog](docs/CHANGELOG.md) · [项目总纲 / Project outline](docs/PROJECT.md)
+[发布记录 / Releases](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases) · [版本说明 / Release notes](docs/RELEASE_NOTES.md) · [隐私 / Privacy](docs/PRIVACY.md) · [版本记录 / Changelog](docs/CHANGELOG.md) · [项目总纲 / Project outline](docs/PROJECT.md)
 
-当前源码版本：**0.1.44**。Windows x64 客户端请以 Releases 中实际发布的完整 ZIP 为准。支持八种界面语言，可在程序内切换并在本机记忆。[更新与数据保留](docs/UPDATING.md)：程序与个人资料分开保存，更新后继续使用原有聊天、笔记和批注。
+## 下载 v0.1.45 / Download v0.1.45
 
-Current source version: **0.1.44**. Download the complete Windows x64 ZIP actually published on Releases. Choose from eight interface languages in the app; your choice is remembered locally. [Updates and your data](docs/UPDATING.md): program files are separate from your profile, so updates retain existing chats, notes and annotations.
+| Windows | Linux（预览 / Preview） | macOS（便携试用 / Portable preview） |
+| --- | --- | --- |
+| [x64 ZIP](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases/download/v0.1.45/AI-Embedded-Paper-PDF-Reader-0.1.45-Windows-x64.zip) | [x64 tar.gz](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases/download/v0.1.45/AI-Embedded-Paper-PDF-Reader-0.1.45-Linux-x64.tar.gz) | [Apple 芯片 / Apple silicon](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases/download/v0.1.45/AI-Embedded-Paper-PDF-Reader-0.1.45-macOS-arm64.zip) · [Intel](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases/download/v0.1.45/AI-Embedded-Paper-PDF-Reader-0.1.45-macOS-x64.zip) |
+
+支持八种界面语言，可在程序内切换并在本机记忆。程序与个人资料分开保存。[更新与数据保留](docs/UPDATING.md)
+
+Choose from eight interface languages. The app remembers your choice locally. Program files are separate from your profile. [Updates and your data](docs/UPDATING.md)
 
 首页左上角“菜单”可直接进入设置、API 连接、翻译设置、聊天、备份恢复和回收站，无需先打开 PDF。完整 JSON 备份包含聊天、笔记、批注和已导入的 PDF / 电子书原文件，不含 API 连接配置与密钥。
 
