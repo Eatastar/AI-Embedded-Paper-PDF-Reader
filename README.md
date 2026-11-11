@@ -22,6 +22,20 @@ A desktop reader for local PDFs and DRM-free EPUB, MOBI and AZW3 ebooks. Work th
 | --- | --- | --- |
 | [x64 ZIP](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases/download/v0.1.45/AI-Embedded-Paper-PDF-Reader-0.1.45-Windows-x64.zip) | [x64 tar.gz](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases/download/v0.1.45/AI-Embedded-Paper-PDF-Reader-0.1.45-Linux-x64.tar.gz) | [Apple 芯片 / Apple silicon](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases/download/v0.1.45/AI-Embedded-Paper-PDF-Reader-0.1.45-macOS-arm64.zip) · [Intel](https://github.com/Eatastar/AI-Embedded-Paper-PDF-Reader/releases/download/v0.1.45/AI-Embedded-Paper-PDF-Reader-0.1.45-macOS-x64.zip) |
 
+### 解压后打开 / Open after extracting
+
+- **Windows** 完整解压 ZIP，双击解压目录里的 `AI-Embedded-Paper-PDF-Reader.exe`。
+
+  Fully extract the ZIP, then double-click `AI-Embedded-Paper-PDF-Reader.exe` in the extracted folder.
+
+- **Linux** 在 Linux 桌面解压 `.tar.gz`，打开解压目录里的 `ai-embedded-paper-pdf-reader`，或在该目录的终端运行 `./ai-embedded-paper-pdf-reader`。系统依赖见包内 `START-HERE.txt`。
+
+  Extract the `.tar.gz` on a Linux desktop and open `ai-embedded-paper-pdf-reader`, or run `./ai-embedded-paper-pdf-reader` from that folder in a terminal. See `START-HERE.txt` for system libraries.
+
+- **macOS** 从 **Apple 菜单 → 关于本机** 确认芯片。Apple 芯片下载 `arm64`，Intel 下载 `x64`。完整解压后，打开 `Start Reader.command`，并把解压出的文件保留在同一个文件夹。
+
+  Open **Apple menu → About This Mac** to check your chip. Choose `arm64` for Apple silicon or `x64` for Intel. Extract the full ZIP, keep its files together, and open `Start Reader.command`.
+
 支持八种界面语言，可在程序内切换并在本机记忆。程序与个人资料分开保存。[更新与数据保留](docs/UPDATING.md)
 
 Choose from eight interface languages. The app remembers your choice locally. Program files are separate from your profile. [Updates and your data](docs/UPDATING.md)
