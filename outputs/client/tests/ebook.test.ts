@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import 'fake-indexeddb/auto';
 import { saveDocumentBytes, exportWorkspaceWithFiles, importWorkspaceWithFiles, getDocumentBytes } from '../src/adapters/storage';
 import { assertEbookImageHeader, assertEbookSignature, safeEbookEntry, ebookPosition, ebookTypography } from '../src/domain/ebook';
+import { loadEbookTypography, saveEbookTypography } from '../src/adapters/ebook-preferences';
 import { documentFileKind, DOCUMENT_ACCEPT, READER_ACCEPT } from '../src/adapters/documents';
 import { syntheticEpub, syntheticMobi, syntheticAzw3 } from './ebook-fixtures';
 import { createWorkspace, createAnnotation, buildAnnotationContext, createUserMessage, createAssistantMessage, validateImport } from '../src/domain/workspace';
@@ -89,4 +90,23 @@ test('complete ebook backups restore original archives and remapped note sources
     assert.equal(document.pages[0].title, 'Chapter 1');
     assert(target.annotations.some(note => note.messageId === document.pages[0].messageId && note.versionId === document.pages[0].versionId && note.note === 'Synthetic saved note.'));
   }
+});
+
+test('ebook typography survives a legacy layout lock and stays separate for each book', t => {
+  const chosen = { fontSize: 24, lineHeight: 2, width: 640 };
+  const defaults = { fontSize: 32, lineHeight: 2.4, width: 1100 };
+  const storage = new Map([
+    ['learn-something.ebook.layout.v1.old%20book', JSON.stringify({ typography: chosen, lockedWidth: 680 })],
+    ['learn-something.ebook.typography.v1', JSON.stringify(defaults)],
+  ]);
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => { storage.set(key, value); } } });
+  t.after(() => { if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor); else Reflect.deleteProperty(globalThis, 'localStorage'); });
+  assert.deepEqual(loadEbookTypography('old book'), chosen);
+  assert.deepEqual(loadEbookTypography('untouched'), defaults);
+  const edited = { ...chosen, fontSize: 26 };
+  assert.equal(saveEbookTypography('old book', edited), true);
+  assert.equal(saveEbookTypography('second book', defaults), true);
+  assert.deepEqual(loadEbookTypography('old book'), edited);
+  assert.deepEqual(loadEbookTypography('second book'), defaults);
 });

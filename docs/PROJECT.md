@@ -4,11 +4,11 @@
 
 See [performance and architecture](PERFORMANCE.md) for resource ownership and verification, and [updates](UPDATING.md) for data-preserving upgrade and rollback steps.
 
-当前源码：客户端 0.1.40，构建 20261110.2，2026年11月10日；尚未发布。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
+当前源码：客户端 0.1.44，构建 20261111.3，2026年11月11日。此文档记录产品设计和模块职责，不包含个人聊天、论文内容或模型配置。
 
 首个公开正式版沿用 v0.1.11 和现有构建，使用 MIT 许可证。公开范围包括已核对的源码及通用 Windows 发行包；历史检查范围见 [公开发布说明](OPEN_SOURCE_RELEASE.md)，本地数据和请求边界见 [隐私说明](PRIVACY.md)。
 
-Current source: **0.1.40 / 20261110.2**. A local PDF and ebook reader for close reading of papers and books, with optional AI questions, quick translation and personal notes. Public introductions and release notes are bilingual. Users can select one of eight interface languages in the app; interface language sets the default AI answer and translation languages without rewriting their documents, messages, notes or custom preferences.
+Current source: **0.1.44 / 20261111.3**. A local PDF and ebook reader for close reading of papers and books, with optional AI questions, quick translation and personal notes. Public introductions and release notes are bilingual. Users can select one of eight interface languages in the app; interface language sets the default AI answer and translation languages without rewriting their documents, messages, notes or custom preferences.
 
 PDF 显示保留有像素上限的整页底图；可视区域按屏幕密度重绘独立高清层，每页高清缓冲最多 800 万像素，仅在可见时保留。滚动复用边缘缓存并丢弃过期任务，页面移出视野或关闭时释放。高清层不接收鼠标事件，文字选取、引用跳转、批注及临时翻译继续使用原文字层。
 
@@ -340,3 +340,9 @@ The file/data layer adds known ebook kinds and stable chapter IDs, text and titl
 整体缩放由 `adapters/ebook-zoom.ts` 管理：固定逻辑正文宽度，使用原生 CSS zoom 同比例显示当前章，复用仅含事件/数学处理的精确滚轮控制，不加载另一套渲染引擎，也不创建页面画布。批注范围继续对应原 DOM。字号和正文宽度属于独立排版偏好；缩放与横向位置是每本书的位置偏好，旧记录缺少新字段时使用 100%。框内范围位置继续使用浏览器视口坐标，外层浮窗保持原尺寸。
 
 The ebook zoom adapter fixes logical content width and uses native CSS zoom, reusing precision-wheel handling without another rendering engine or page canvas. Annotation ranges remain in the same DOM. Typography stays independent; per-book zoom/horizontal position extend reading preferences with 100% defaults for older records. Native range coordinates locate source selections while outer popups retain normal UI dimensions.
+
+## v0.1.42：独立排版和快译重开 / Separate typography and repeat translation
+
+`ReaderToolbar` 在电子书中提供 Aa 排版入口。`EbookReader` 根据视口和排版设置确定逻辑宽度，缩放控制器只改变显示倍率。每本书沿用已保存的字号、行距和正文宽度，旧版的手动锁定不再生效。快译关闭后只在内存中记住一个原文选段和锚点，同一快捷键可在原文仍可见时重译；切换来源、保存译文或退出时清除。资料库和备份格式不变。
+
+`ReaderToolbar` exposes Aa Typography only for ebooks. `EbookReader` derives the logical width from the viewport and typography, and the zoom controller changes only the display scale. Existing font size, spacing and width are preserved per book, while legacy locks are no longer applied. Dismissing quick translation remembers one passage and anchor in memory; the same shortcut translates it again while it remains visible. Leaving the source, saving the translation or exiting clears it. Database and backup formats are unchanged.

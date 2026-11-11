@@ -37,6 +37,10 @@ export function ebookTypography(value: unknown): EbookTypography {
   return { fontSize: n(v.fontSize, 12, 36, 19), lineHeight: n(v.lineHeight, 1.2, 2.6, 1.8), width: n(v.width, 400, 1200, 800) };
 }
 
+export function ebookLayoutWidth(viewportWidth: number, textWidth: number): number {
+  return Math.max(240, Math.min(viewportWidth, textWidth + 40));
+}
+
 export interface EbookPosition { chapter: number; block: number; offset: number; fraction: number; zoom?: number; horizontal?: number }
 export function ebookPosition(value: unknown, count: number): EbookPosition {
   const v = value && typeof value === 'object' ? value as Partial<EbookPosition> : {};

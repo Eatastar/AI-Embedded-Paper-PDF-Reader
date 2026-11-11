@@ -15,7 +15,7 @@ import { loadReaderAppearance, saveReaderAppearance } from '../adapters/reader';
 import { loadEbookPosition, saveEbookPosition, loadEbookTypography, saveEbookTypography } from '../adapters/ebook-preferences';
 import { readerTheme, colorLuminance } from '../domain/reader';
 import { usesRelevantContext } from '../domain/document-context';
-import type { EbookPosition } from '../domain/ebook';
+import { ebookLayoutWidth, ebookTypography, type EbookTypography, type EbookPosition } from '../domain/ebook';
 import type { OutlineEntry, SearchHit } from '../domain/reader-navigation';
 import { readerAnnotationRange } from '../adapters/reader-location';
 import { markReaderSearch } from '../adapters/reader-search';
@@ -26,6 +26,13 @@ const BLOCKS = 'p,h1,h2,h3,h4,h5,h6,li,pre,blockquote,table,figure';
 const CSP = "default-src 'none'; script-src 'none'; img-src blob: data:; font-src blob: data:; style-src 'unsafe-inline' blob:; connect-src 'none'; media-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'";
 function frameSource(chapter: EbookChapter, paper: string, ink: string) {
   return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${CSP}">${chapter.head}<style>html,body{background:${paper};color:${ink};margin:0}body{overflow-wrap:anywhere}#ebook-mount{min-height:100vh}</style></head><body><main id="ebook-mount"></main></body></html>`;
+}
+function sizeEbookPage(doc: Document, textWidth: number) {
+  // The unzoomed root reserves a stable scrollbar gutter; the chapter's
+  // displayed width must not feed back into how its lines are laid out.
+  const available = doc.documentElement.getBoundingClientRect().width;
+  const width = ebookLayoutWidth(available, textWidth);
+  doc.getElementById('ebook-mount')?.style.setProperty('width', `${width}px`, 'important');
 }
 function capturePosition(doc: Document, chapter: number): EbookPosition {
   const root = doc.querySelector<HTMLElement>('.ebook-text'), scroll = doc.scrollingElement;
@@ -54,10 +61,10 @@ export default function EbookReader(props: DocumentReaderProps) {
   const [narrow, setNarrow] = useState(false);
   const rootRef = useRef<HTMLElement>(null);
   const [appearance, setAppearance] = useState(loadReaderAppearance), [saved, setSaved] = useState(true), [compare, setCompare] = useState(false);
-  const [typography, setTypography] = useState(loadEbookTypography);
+  const [typography, setTypography] = useState(() => loadEbookTypography(source.id));
+  const typographyRef = useRef(typography); typographyRef.current = typography;
   const [zoom, setZoom] = useState(initial.zoom || 1);
   const zoomRef = useRef(zoom), zoomController = useRef<EbookZoomController | null>(null);
-  const typographyRef = useRef(typography); typographyRef.current = typography;
   const [search, setSearch] = useState<{ hit: SearchHit; query: string } | null>(null);
   const [returnTo, setReturnTo] = useState<EbookPosition | null>(null);
   const frameRef = useRef<HTMLIFrameElement>(null), pageInputRef = useRef<HTMLInputElement>(null);
@@ -129,13 +136,13 @@ export default function EbookReader(props: DocumentReaderProps) {
     let style = frameDoc.getElementById('ebook-user-style');
     if (!style) { style = frameDoc.createElement('style'); style.id = 'ebook-user-style'; frameDoc.head.append(style); }
     style.textContent = `html,body{background:${paper}!important;color:${ink}!important;color-scheme:${colorLuminance(paper) < .179 ? 'dark' : 'light'};scrollbar-color:${ink}55 ${paper}}html{scrollbar-gutter:stable}body{padding:0!important;margin:0!important;overflow-anchor:none;font-size:${typography.fontSize}px!important;line-height:${typography.lineHeight}!important;box-sizing:border-box}#ebook-mount{box-sizing:border-box!important;display:block!important;padding:24px 20px 60px!important;margin-inline:auto!important;max-width:none!important;overflow:visible!important}.ebook-text{max-width:${typography.width}px;margin-inline:auto;overflow-wrap:anywhere}.ebook-text *{color:inherit!important;line-height:inherit!important;background-color:transparent!important;cursor:text}.ebook-text :is(p,div,span,li,td){font-size:inherit!important}.ebook-text img,.ebook-text svg{max-width:100%!important;height:auto}.ebook-text :is(img,svg,svg *){cursor:default}.ebook-text :is(a,a *){color:${colorLuminance(paper) < .179 ? '#9dc7ff' : '#2165aa'}!important;cursor:pointer}.ebook-text pre,.ebook-text table{max-width:100%;overflow:auto}.ebook-text table{display:block}.annotation-footnote{max-width:${typography.width}px;margin:12px auto;font:14px/1.6 sans-serif}.ebook-chapter-navigation{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;max-width:${typography.width}px;margin:40px auto 0;font:14px/1.5 sans-serif}.ebook-chapter-navigation button{border:1px solid ${ink}55;border-radius:8px;background:transparent;color:inherit;padding:8px 14px;cursor:pointer}.ebook-chapter-navigation button:disabled{opacity:.4;cursor:not-allowed}.ebook-annotator{position:relative}.reader-search-layer{position:absolute;inset:0;pointer-events:none}.reader-search-marker{position:absolute;background:#ffa80088;outline:1px solid #a2670080}::selection{background:#d8b35b80}`;
-    zoomController.current?.resize(typography.width);
+    sizeEbookPage(frameDoc, typography.width);
     if (ready.current && pending.current) { restorePosition(frameDoc, pending.current); pending.current = null; }
   }, [frameDoc, paper, ink, typography]);
 
   useLayoutEffect(() => {
     if (!frameDoc) return;
-    const controller = bindEbookZoom(frameDoc, { zoom: zoomRef.current, contentWidth: typographyRef.current.width, onZoom: value => { zoomRef.current = value; setZoom(value); } });
+    const controller = bindEbookZoom(frameDoc, { zoom: zoomRef.current, onZoom: value => { zoomRef.current = value; setZoom(value); } });
     zoomController.current = controller;
     return () => { controller.destroy(); if (zoomController.current === controller) zoomController.current = null; };
   }, [frameDoc]);
@@ -175,7 +182,11 @@ export default function EbookReader(props: DocumentReaderProps) {
     let frameWidth = frameRef.current?.clientWidth;
     const resize = new ResizeObserver(() => {
       const nextWidth = frameRef.current?.clientWidth;
-      if (nextWidth && frameWidth && nextWidth !== frameWidth) { zoomController.current?.resize(typographyRef.current.width); if (ready.current) restorePosition(frameDoc, position.current); }
+      if (nextWidth && nextWidth !== frameWidth) {
+        const before = ready.current ? capturePosition(frameDoc, chapterIndex) : null;
+        sizeEbookPage(frameDoc, typographyRef.current.width);
+        if (before) restorePosition(frameDoc, before);
+      }
       frameWidth = nextWidth;
     });
     if (frameRef.current) resize.observe(frameRef.current);
@@ -221,10 +232,16 @@ export default function EbookReader(props: DocumentReaderProps) {
     const link = target.closest?.('[data-book-href]'); if (!link) return;
     event.preventDefault(); void followLink(link.getAttribute('data-book-href') || '');
   };
+  const updateTypography = (value: EbookTypography) => {
+    const next = ebookTypography(value);
+    if (frameDoc && ready.current) pending.current = capturePosition(frameDoc, chapterIndex);
+    typographyRef.current = next; setTypography(next);
+    if (!saveEbookTypography(source.id, next)) props.onNotify(t('排版设置仅在本次有效，请检查本机存储空间。'));
+  };
   const srcDoc = useMemo(() => chapter ? frameSource(chapter, paper, ink) : '', [chapter]);
   const pageAnnotations = props.annotations.filter(a => a.messageId === page?.messageId && a.versionId === page?.versionId);
   return <section ref={rootRef} className="document-reader ebook-reader" style={palette} data-reader-focused={props.focused} data-reader-dark={colorLuminance(paper) < .179} data-reader-narrow={narrow}>
-    <ReaderToolbar {...props} kind={source.kind} name={source.name} pageCount={source.pages.length} pageIndex={chapterIndex} pageInput={pageInput} pageInputRef={pageInputRef} onPageInput={setPageInput} onCommitPage={() => { const n = Number(pageInput); if (Number.isInteger(n) && n >= 1 && n <= source.pages.length) jump(n - 1); else setPageInput(String(chapterIndex + 1)); }} onPage={index => jump(index)} zoom={zoom} onZoom={value => zoomController.current?.set(value)} view="original" onView={() => {}} layout="paged" onLayout={() => {}} appearance={appearance} onAppearance={value => { setAppearance(value); setSaved(saveReaderAppearance(value)); }} saved={saved} compareOriginal={compare} onCompareOriginal={() => setCompare(value => !value)} navigationOpen={navigationOpen} onToggleNavigation={() => setNavigationOpen(value => !value)} relevantContext={usesRelevantContext(source, props.contextMode)} onReturnFromLink={returnTo ? () => { jump(returnTo.chapter, returnTo); setReturnTo(null); } : undefined} typography={typography} onTypography={value => { if (frameDoc) pending.current = capturePosition(frameDoc, chapterIndex); setTypography(value); saveEbookTypography(value); }} />
+    <ReaderToolbar {...props} kind={source.kind} name={source.name} pageCount={source.pages.length} pageIndex={chapterIndex} pageInput={pageInput} pageInputRef={pageInputRef} onPageInput={setPageInput} onCommitPage={() => { const n = Number(pageInput); if (Number.isInteger(n) && n >= 1 && n <= source.pages.length) jump(n - 1); else setPageInput(String(chapterIndex + 1)); }} onPage={index => jump(index)} zoom={zoom} onZoom={value => zoomController.current?.set(value)} view="original" onView={() => {}} layout="paged" onLayout={() => {}} appearance={appearance} onAppearance={value => { setAppearance(value); setSaved(saveReaderAppearance(value)); }} saved={saved} compareOriginal={compare} onCompareOriginal={() => setCompare(value => !value)} navigationOpen={navigationOpen} onToggleNavigation={() => setNavigationOpen(value => !value)} relevantContext={usesRelevantContext(source, props.contextMode)} onReturnFromLink={returnTo ? () => { jump(returnTo.chapter, returnTo); setReturnTo(null); } : undefined} typography={typography} onTypography={updateTypography} />
     <div className="document-reader-body">
       <ReaderNavigation open={navigationOpen} source={source} annotations={props.annotations} pageIndex={chapterIndex} outline={outline.length ? outline : source.pages.map((page, index) => ({ key: page.messageId, title: page.title || t('第 {0} 章', [index + 1]), depth: 0, pageIndex: index }))} outlineLoading={!book && loading} outlineError={outlineError} outlineTruncated={outline.length >= 1000} onClose={() => setNavigationOpen(false)} onPage={index => jump(index)} onOutline={entry => { if (entry.href) void followLink(entry.href, true); else if (entry.pageIndex !== null) jump(entry.pageIndex); }} onSearch={(hit, query) => { if (hit.pageIndex !== chapterIndex) jump(hit.pageIndex); setSearch({ hit, query }); }} onClearSearch={() => setSearch(null)} onAnnotation={selectNote} />
       <div className="ebook-content" style={{ background: paper }}>

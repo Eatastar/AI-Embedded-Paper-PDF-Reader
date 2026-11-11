@@ -1,8 +1,16 @@
 .ebook-content { position: relative; min-width: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 .ebook-frame { flex: 1; width: 100%; min-height: 0; border: 0; display: block; }
-.ebook-reader .reader-setting-row input[type="range"] { min-width: 80px; max-width: 180px; flex: 1; accent-color: var(--ls-accent); }
-.ebook-reader .reader-setting-row output { min-width: 38px; text-align: end; }
+.reader-typography-trigger { flex: none; }
+.reader-typography-trigger[aria-expanded="true"] { color: var(--ls-ink); background: var(--ls-hover); box-shadow: inset 0 0 0 1px var(--ls-border-strong); }
+.reader-typography-icon { font-size: 14px; font-weight: 650; line-height: 1; }
+.reader-settings.ebook-typography-settings { width: 340px; }
+.ebook-typography-settings > header { align-items: center; }
+.ebook-typography-settings .reader-setting-row input[type="range"] { min-width: 0; max-width: 180px; flex: 1; accent-color: var(--ls-accent); }
+.ebook-typography-settings .reader-setting-row output { min-width: 48px; text-align: end; white-space: nowrap; }
 .ebook-loading { padding: 40px; color: var(--ls-muted); }
-
-.ebook-typography { margin: 12px 0 18px; padding: 0; border: 0; min-width: 0; }
-.ebook-typography legend { font-size: 12px; font-weight: 650; margin-bottom: 10px; color: var(--ls-text); }
+@container (max-width: 660px) {
+  .reader-typography-trigger { min-width: 31px; justify-content: center; padding-inline: 5px; }
+  .reader-typography-label { display: none; }
+  .ebook-reader .reader-toolbar .translation-trigger { margin-inline-end: 0; padding-inline: 6px; }
+  .ebook-reader .reader-toolbar .translation-trigger span { display: none; }
+}

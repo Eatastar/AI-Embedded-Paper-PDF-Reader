@@ -1,13 +1,21 @@
 AI-Embedded Paper PDF Reader
-AI 嵌入式论文 PDF 阅读器 · 0.1.40 · 20261110.2
+AI 嵌入式论文 PDF 阅读器 · 0.1.44 · 20261111.3
+
+电子书排版 / Ebook typography
+电子书右上角的 Aa 排版按钮可调字号、行距和正文宽度；窄栏也有 Aa，PDF 不显示此按钮。旧版排版参数按书保留，无需先解锁。
+Use Aa Typography in the ebook toolbar to adjust font size, spacing and text width. Aa stays available in narrow panes and does not appear for PDFs. Your existing per-book typography is retained.
 
 电子书缩放 / Ebook zoom
-双指捏合或加减按钮整体缩放，保持当前换行，文字与图片同步放大；点击百分比恢复 100%。字号、行距、宽度另在阅读设置中调整，放大后可横向滚动。缩放和阅读位置会按书保存。
-Pinch or use +/− for layout-preserving page zoom. Text and pictures scale together; click the percentage to reset to 100%. Font size, spacing and width stay in Reading settings. Scroll horizontally when enlarged; zoom and position are remembered per book.
+双指捏合、Ctrl+滚轮或加减按钮整体缩放，保持当前换行，文字与图片同步放大；点击百分比恢复 100%。放大后可横向滚动，缩放和阅读位置按书保存。
+Pinch, Ctrl+wheel or +/− for layout-preserving page zoom. Text and pictures scale together; click the percentage to reset to 100%. Scroll horizontally when enlarged; zoom and position are remembered per book.
+
+快译重试 / Repeat quick translation
+误关译文后，只要原文仍可见，按原来的快捷键（默认 Alt+1）即可重译。新选段优先；要把译文存为批注，请点保留。
+After closing a translation, press the same shortcut (Alt+1 by default) while the passage is still visible. A new selection takes priority. Choose Keep to save the translation as a note.
 
 新增电子书阅读 / Ebook reading
-首页点击“打开 PDF / 电子书”，可选无 DRM 的 EPUB、MOBI、AZW3。沿用批注问答、翻译、目录、搜索和配色，阅读设置可调整字号、行距和宽度。按章节加载，原书只存一份；笔记和聊天继续保存在原本的本机资料中。
-Choose Open PDF / ebook on the start page for DRM-free EPUB, MOBI or AZW3. Use annotation Q&A, translation, contents, search and reading colors, with font size, spacing and width in Reading settings. Chapters load on demand and one original archive is stored. Notes and chats keep using your existing local profile.
+首页点击“打开 PDF / 电子书”，可选无 DRM 的 EPUB、MOBI、AZW3。沿用批注问答、翻译、目录、搜索和配色。按章节加载，原书只存一份；笔记和聊天继续保存在原本的本机资料中。
+Choose Open PDF / ebook on the start page for DRM-free EPUB, MOBI or AZW3. Use annotation Q&A, translation, contents, search and reading colors. Chapters load on demand and one original archive is stored. Notes and chats keep using your existing local profile.
 导入电子书后请使用 v0.1.39 或更新版本，完整备份选择默认格式；旧版不能识别新增的电子书记录。升级和保留数据的步骤见 READ-ME-FIRST-Update-and-Data-Migration.txt。
 After importing ebooks use v0.1.39 or later and the default complete backup format. Older apps cannot interpret ebook records. See READ-ME-FIRST-Update-and-Data-Migration.txt for data-preserving updates.
 

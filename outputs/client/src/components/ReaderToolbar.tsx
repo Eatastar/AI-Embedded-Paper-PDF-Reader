@@ -29,23 +29,27 @@ interface Props {
 export function ReaderToolbar(props: Props) {
   useLocale();
   const ebook = isEbookKind(props.kind);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const settingsRef = useRef<HTMLDivElement>(null), triggerRef = useRef<HTMLButtonElement>(null), id = useId();
+  const { typography, onTypography } = props;
+  const [panel, setPanel] = useState<'reading' | 'typography' | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null), settingsTrigger = useRef<HTMLButtonElement>(null), typographyTrigger = useRef<HTMLButtonElement>(null);
+  const settingsId = useId(), typographyId = useId();
+  const trigger = panel === 'typography' ? typographyTrigger : settingsTrigger;
+  const closePanel = () => { setPanel(null); trigger.current?.focus({ preventScroll: true }); };
   useEffect(() => {
-    if (!settingsOpen) return;
+    if (!panel) return;
     const closeOutside = (event: Event) => {
-      if (event.target instanceof Node && !settingsRef.current?.contains(event.target) && !triggerRef.current?.contains(event.target)) setSettingsOpen(false);
+      if (event.target instanceof Node && !panelRef.current?.contains(event.target) && !trigger.current?.contains(event.target)) setPanel(null);
     };
     const closeKey = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      event.preventDefault(); event.stopPropagation(); setSettingsOpen(false); triggerRef.current?.focus({ preventScroll: true });
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      event.preventDefault(); event.stopPropagation(); setPanel(null); trigger.current?.focus({ preventScroll: true });
     };
-    settingsRef.current?.querySelector<HTMLElement>('button')?.focus({ preventScroll: true });
+    panelRef.current?.querySelector<HTMLElement>('button')?.focus({ preventScroll: true });
     document.addEventListener('pointerdown', closeOutside);
     document.addEventListener('focusin', closeOutside);
     document.addEventListener('keydown', closeKey);
     return () => { document.removeEventListener('pointerdown', closeOutside); document.removeEventListener('focusin', closeOutside); document.removeEventListener('keydown', closeKey); };
-  }, [settingsOpen]);
+  }, [panel, trigger]);
   const mode = ebook ? t('章节') : props.view === 'text' ? t("文本") : props.layout === 'continuous' ? t("连续") : t("单页");
   const zoomControls = <>
     <button type="button" className="document-icon-button" aria-label={t(ebook ? '缩小电子书' : '缩小 PDF')} disabled={props.zoom <= .5} onClick={() => props.onZoom(props.zoom - .25)}><Minus size={15} /></button>
@@ -64,14 +68,24 @@ export function ReaderToolbar(props: Props) {
         <button type="button" className="document-icon-button" aria-label={t(ebook ? '下一章' : '下一页')} disabled={props.pageIndex >= props.pageCount - 1} onClick={() => props.onPage(props.pageIndex + 1)}><ChevronRight size={17} /></button>
       </div>
       {(ebook || props.kind === 'pdf' && props.view === 'original') && <div className="document-zoom-controls reader-toolbar-zoom">{zoomControls}</div>}
+      {ebook && typography && onTypography && <button ref={typographyTrigger} type="button" className="document-tool-button reader-typography-trigger" aria-label={t('电子书排版')} title={t('电子书排版')} aria-expanded={panel === 'typography'} aria-controls={typographyId} onClick={() => setPanel(value => value === 'typography' ? null : 'typography')}><span aria-hidden="true" className="reader-typography-icon">Aa</span><span className="reader-typography-label">{t('排版')}</span></button>}
       <TranslationButton />
       {props.kind === 'pdf' && props.view === 'original' && props.onToggleFigure && <button type="button" className="reader-figure-button" aria-pressed={props.figureSelecting} aria-label={t(props.figureSelecting ? '取消框选图片' : '框选图片提问')} aria-keyshortcuts="Control+Alt+A" title={`${t(props.figureSelecting ? '取消框选图片' : '框选整图，再圈出疑问')} · Ctrl+Alt+A`} onClick={props.onToggleFigure}><Crop size={15} /><span>{t(props.figureSelecting ? '取消框选' : '框选图片')}</span></button>}
-      <button ref={triggerRef} type="button" className="document-icon-button" aria-label={t("阅读设置")} title={t("阅读模式、配色与更多")} aria-controls={id} aria-expanded={settingsOpen} onClick={() => setSettingsOpen(value => !value)}><SlidersHorizontal size={18} /></button>
+      <button ref={settingsTrigger} type="button" className="document-icon-button" aria-label={t("阅读设置")} title={t("阅读模式、配色与更多")} aria-controls={settingsId} aria-expanded={panel === 'reading'} onClick={() => setPanel(value => value === 'reading' ? null : 'reading')}><SlidersHorizontal size={18} /></button>
       <button type="button" className="document-icon-button" aria-label={props.focused ? t("显示聊天") : t("专注阅读")} title={props.focused ? t("显示聊天") : t("专注阅读")} onClick={props.onToggleFocus}>{props.focused ? <Columns2 size={18} /> : <Maximize2 size={18} />}</button>
       <button type="button" className="document-icon-button" aria-label={t("关闭文档阅读")} title={t("关闭文档阅读")} onClick={props.onClose}><X size={19} /></button>
     </header>
-    {settingsOpen && <div ref={settingsRef} id={id} role="dialog" aria-label={t("阅读设置")} className="reader-settings" data-testid="reader-settings">
-      <header><div><strong>{t("阅读设置")}</strong><small title={props.name}>{props.name}</small></div><button type="button" className="document-icon-button" aria-label={t("关闭阅读设置")} onClick={() => { setSettingsOpen(false); triggerRef.current?.focus({ preventScroll: true }); }}><X size={18} /></button></header>
+    {panel === 'typography' && ebook && typography && onTypography && <div ref={panelRef} id={typographyId} role="dialog" aria-label={t('电子书排版')} className="reader-settings ebook-typography-settings">
+      <header><strong>{t('电子书排版')}</strong><button type="button" className="document-icon-button" aria-label={t('关闭排版设置')} onClick={closePanel}><X size={18} /></button></header>
+      {([
+        ['fontSize', '字号', 12, 36, 1, ' px'], ['lineHeight', '行距', 1.2, 2.6, .1, '×'], ['width', '正文宽度', 400, 1200, 40, ' px'],
+      ] as const).map(([key, label, min, max, step, unit]) => <label className="reader-setting-row" key={key}>
+        <span>{t(label)}</span><input type="range" aria-label={t(label)} min={min} max={max} step={step} value={typography[key]} onChange={event => onTypography({ ...typography, [key]: Number(event.target.value) })} /><output>{Math.round(typography[key] * 10) / 10}{unit}</output>
+      </label>)}
+      <p className="reader-settings-help">{t('按书记住排版。双指、Ctrl+滚轮或加减按钮只改变显示倍率，保持换行。')}</p>
+    </div>}
+    {panel === 'reading' && <div ref={panelRef} id={settingsId} role="dialog" aria-label={t("阅读设置")} className="reader-settings" data-testid="reader-settings">
+      <header><div><strong>{t("阅读设置")}</strong><small title={props.name}>{props.name}</small></div><button type="button" className="document-icon-button" aria-label={t("关闭阅读设置")} onClick={closePanel}><X size={18} /></button></header>
       {props.kind === 'pdf' && <div className="reader-setting-row"><span>{t("显示")}</span><div className="document-view-switch" role="group" aria-label={t("文档显示方式")}><button type="button" aria-pressed={props.view === 'original'} onClick={() => props.onView('original')}>{t("PDF 原排版")}</button><button type="button" aria-pressed={props.view === 'text'} onClick={() => props.onView('text')}>{t("可批注文本")}</button></div></div>}
       {props.kind === 'pdf' && props.view === 'original' && <>
         <div className="reader-setting-row"><span>{t("翻页")}</span><div className="document-view-switch" role="group" aria-label={t("翻页方式")}><button type="button" aria-pressed={props.layout === 'continuous'} onClick={() => props.onLayout('continuous')}>{t("连续滚动")}</button><button type="button" aria-pressed={props.layout === 'paged'} onClick={() => props.onLayout('paged')}>{t("单页阅读")}</button></div></div>
@@ -82,15 +96,11 @@ export function ReaderToolbar(props: Props) {
       <label className="reader-setting-row reader-context-setting"><span>{t("AI 资料范围")}</span><select aria-label={t("AI 资料范围")} value={props.contextMode} onChange={event => props.onContextMode(event.target.value as DocumentContextMode)}><option value="auto">{t("自动：小文件全文，大文件按需引用")}</option><option value="relevant">{t("按需引用")}</option><option value="full">{t("全文")}</option></select></label>
       <p className="reader-settings-help" role="status">{props.relevantContext ? t("当前文件：按需引用，发送选段、所在页和相关片段；不发送全文。") : t("当前文件：全文，发送全部提取文字；扫描图片暂不识别。")}{t('批注不带聊天记录；失败重试保留本次问题和资料范围。')}</p>
       <p className="reader-settings-help">{t("自动模式：超过 25 MB、300 页或 12 万字符时按需引用，每份最多引用 2.4 万字符。全文模式仍受模型容量限制。")}</p>
-      {props.typography && props.onTypography && <fieldset className="ebook-typography"><legend>{t('电子书排版')}</legend>{([
-        ['fontSize', '字号', 12, 36, 1], ['lineHeight', '行距', 1.2, 2.6, .1], ['width', '正文宽度', 400, 1200, 40],
-      ] as const).map(([key, label, min, max, step]) => <label className="reader-setting-row" key={key}><span>{t(label)}</span><input type="range" min={min} max={max} step={step} value={props.typography![key]} onChange={event => props.onTypography!({ ...props.typography!, [key]: Number(event.target.value) })} /><output>{Math.round(props.typography![key] * 10) / 10}</output></label>)}</fieldset>}
-      {ebook && <p className="reader-settings-help">{t("双指或加减按钮整体缩放，保持当前换行；调整字号会重新排版。")}</p>}
       <ReaderAppearancePanel kind={props.kind} appearance={props.appearance} onChange={props.onAppearance} saved={props.saved} />
       <div className="reader-setting-actions"><button type="button" className="document-tool-button" aria-pressed={props.compareOriginal} disabled={props.appearance.preset === 'original'} onClick={props.onCompareOriginal}><Eye size={14} />{t("原色对照")}</button>
-        {props.onBackup && <button type="button" className="document-tool-button" onClick={() => { setSettingsOpen(false); props.onBackup?.(); }}><Download size={14} />{t("备份当前对话")}</button>}
+        {props.onBackup && <button type="button" className="document-tool-button" onClick={() => { setPanel(null); props.onBackup?.(); }}><Download size={14} />{t("备份当前对话")}</button>}
       </div>
-      {props.onOpenModelSettings && <button type="button" className="reader-model-settings" onClick={() => { setSettingsOpen(false); props.onOpenModelSettings?.(); }}><Settings2 size={15} /><span>{t("模型与设置")}</span><small>{props.modelLabel}</small></button>}
+      {props.onOpenModelSettings && <button type="button" className="reader-model-settings" onClick={() => { setPanel(null); props.onOpenModelSettings?.(); }}><Settings2 size={15} /><span>{t("模型与设置")}</span><small>{props.modelLabel}</small></button>}
       <p className="reader-settings-help">{t("划选文字可询问 AI 或只写批注。支持触控板捏合缩放；目录、搜索和批注总览在“文档导航”中。")}</p>
       <p className="reader-settings-help">{t('批注只引用所属文档或原回答，不带主聊天和其他批注；原文件保存在本机。')}</p>
       <footer><span>AI-Embedded Paper PDF Reader</span><span>{__APP_VERSION__} · {__APP_BUILD__}</span></footer>

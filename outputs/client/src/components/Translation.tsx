@@ -5,8 +5,9 @@ import { Copy, GripHorizontal, Languages, Pin, RefreshCw, X } from 'lucide-react
 import { t, getLocale, LANGUAGES } from '../i18n/locale';
 import { useLocale } from '../i18n/react';
 import type { ModelSettings, ProfileInput } from '../domain/types';
-import { DEFAULT_TRANSLATION_PREFERENCES, DEFAULT_TRANSLATION_SHORTCUT, localizedTranslationPrompt, translationTargetLanguage, shortcutFromEvent, shortcutLabel, TRANSLATION_TEXT_LIMIT, TRANSLATION_PROMPT_LIMIT } from '../domain/translation';
-import type { TranslationPreferences } from '../domain/translation';
+import { DEFAULT_TRANSLATION_PREFERENCES, DEFAULT_TRANSLATION_SHORTCUT, localizedTranslationPrompt, matchesTranslationShortcut, translationTargetLanguage, shortcutFromEvent, shortcutLabel, TRANSLATION_TEXT_LIMIT, TRANSLATION_PROMPT_LIMIT } from '../domain/translation';
+import type { TranslationPreferences, TranslationShortcut } from '../domain/translation';
+import { elementTarget } from '../adapters/annotation-surface';
 import { loadTranslationPreferences, saveTranslationPreferences } from '../adapters/translation';
 import { streamTranslation } from '../adapters/model';
 import type { TranslationRequest } from '../adapters/model';
@@ -18,12 +19,18 @@ import './translation.css';
 
 export interface TranslationSelection {
   sourceKey: string; text: string; element: HTMLElement; rect: DOMRect; style?: CSSProperties;
+  locate: () => DOMRect | null;
   save: (text: string, model: string) => void;
 }
 interface Result { id: number; source: TranslationSelection; request: TranslationRequest; text: string; model: string; status: 'streaming' | 'complete' | 'error'; error?: string }
 interface TranslationActions { preferences: TranslationPreferences; sourceKey: string | null; translate: (source: TranslationSelection) => void; releaseSource: (key: string) => void; openSettings: () => void; enabled: boolean }
 const TranslationContext = createContext<TranslationActions | null>(null);
 export const useTranslation = () => useContext(TranslationContext);
+
+export function canTranslateWithShortcut(event: KeyboardEvent, shortcut: TranslationShortcut): boolean {
+  return !event.defaultPrevented && matchesTranslationShortcut(event, shortcut) && !document.querySelector('dialog[open]')
+    && !elementTarget(event.target)?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), .translation-result');
+}
 
 export function TranslationButton() {
   useLocale();
@@ -39,6 +46,7 @@ export function TranslationProvider({ settings, scope, enabled, onSaveProfile, o
   const [preferences, setPreferences] = useState(loadTranslationPreferences);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
+  const [retrySource, setRetrySource] = useState<TranslationSelection | null>(null);
   const [position, setPosition] = useState<CSSProperties>({});
   const [manualCopy, setManualCopy] = useState(false);
   const popup = useRef<HTMLDivElement>(null), controller = useRef<AbortController | null>(null), sequence = useRef(0), resultRef = useRef(result);
@@ -46,21 +54,28 @@ export function TranslationProvider({ settings, scope, enabled, onSaveProfile, o
   const settingsRef = useRef(settings); settingsRef.current = settings;
   const preferencesRef = useRef(preferences); preferencesRef.current = preferences;
   const enabledRef = useRef(enabled); enabledRef.current = enabled;
-  const dismiss = useCallback(() => { ++sequence.current; controller.current?.abort(); controller.current = null; resultRef.current = null; setResult(null); setManualCopy(false); }, []);
-  useEffect(() => { dismiss(); }, [scope, enabled, dismiss]);
-  useEffect(() => { document.addEventListener('learn:close-translations', dismiss); return () => { document.removeEventListener('learn:close-translations', dismiss); controller.current?.abort(); }; }, [dismiss]);
+  const closeResult = useCallback(() => { ++sequence.current; controller.current?.abort(); controller.current = null; resultRef.current = null; setResult(null); setManualCopy(false); }, []);
+  const reset = useCallback(() => { setRetrySource(null); closeResult(); }, [closeResult]);
+  const dismiss = useCallback(() => {
+    // Keep one source anchor in memory after dismissing the temporary result.
+    if (resultRef.current) setRetrySource(resultRef.current.source);
+    closeResult();
+  }, [closeResult]);
+  useLayoutEffect(() => { reset(); }, [scope, enabled, reset]);
+  useEffect(() => { document.addEventListener('learn:close-translations', reset); return () => { document.removeEventListener('learn:close-translations', reset); controller.current?.abort(); }; }, [reset]);
   const changePreferences = (value: TranslationPreferences) => {
     preferencesRef.current = value; setPreferences(value);
     if (!saveTranslationPreferences(value)) onNotify('翻译设置仅在本次运行有效。');
   };
   const run = useCallback(async (source: TranslationSelection, frozen?: TranslationRequest) => {
     if (!enabledRef.current || !source.element.isConnected) return;
+    setRetrySource(null);
     const prefs = preferencesRef.current;
     if (!source.text.trim()) return;
     if (source.text.length > TRANSLATION_TEXT_LIMIT) { onNotify('选中文字超过 20000 字符，请缩小选区后翻译；不会截断原文。'); return; }
     const profileId = frozen?.profileId || prefs.profileId;
     const profile = settingsRef.current.profiles.find(item => item.id === profileId);
-    if (!profile) { dismiss(); setSettingsOpen(true); onNotify('请先选择独立的翻译 API 连接。'); return; }
+    if (!profile) { closeResult(); setSettingsOpen(true); onNotify('请先选择独立的翻译 API 连接。'); return; }
     controller.current?.abort(); const current = new AbortController(); controller.current = current;
     const id = ++sequence.current;
     const request = frozen || { profileId: profile.id, text: source.text, prompt: localizedTranslationPrompt(prefs.prompt, getLocale()), targetLanguage: translationTargetLanguage(prefs, getLocale()) };
@@ -79,9 +94,34 @@ export function TranslationProvider({ settings, scope, enabled, onSaveProfile, o
     } catch (error) {
       if (id === sequence.current && !current.signal.aborted) setResult(value => value?.id === id ? { ...value, status: 'error', error: error instanceof Error ? error.message : '翻译未完成，请重试。' } : value);
     } finally { if (controller.current === current) controller.current = null; }
-  }, [dismiss, onNotify]);
-  const releaseSource = useCallback((key: string) => { if (resultRef.current?.source.sourceKey === key) dismiss(); }, [dismiss]);
-  const openSettings = useCallback(() => { dismiss(); setSettingsOpen(true); }, [dismiss]);
+  }, [closeResult, onNotify]);
+  const releaseSource = useCallback((key: string) => {
+    if (resultRef.current?.source.sourceKey === key) closeResult();
+    setRetrySource(source => source?.sourceKey === key ? null : source);
+  }, [closeResult]);
+  const openSettings = useCallback(() => { reset(); setSettingsOpen(true); }, [reset]);
+  useLayoutEffect(() => {
+    if (!retrySource || !enabled || settingsOpen) return;
+    const sourceDoc = retrySource.element.ownerDocument;
+    const sourceWindow = sourceDoc !== document ? sourceDoc.defaultView : null;
+    const retry = (event: KeyboardEvent) => {
+      if (resultRef.current || !canTranslateWithShortcut(event, preferencesRef.current.shortcut)) return;
+      const eventDoc = event.currentTarget === window ? document : sourceDoc;
+      const selection = eventDoc.getSelection();
+      // Selection handlers on the document run first. Even an unrelated
+      // selection should never cause the previous passage to be sent.
+      if (selection && !selection.isCollapsed) return;
+      const targetSource = elementTarget(event.target)?.closest('.annotation-answer');
+      if (targetSource && targetSource !== retrySource.element) return;
+      const rect = retrySource.locate();
+      if (!rect) return;
+      event.preventDefault();
+      void run({ ...retrySource, rect });
+    };
+    window.addEventListener('keydown', retry);
+    sourceWindow?.addEventListener('keydown', retry);
+    return () => { window.removeEventListener('keydown', retry); sourceWindow?.removeEventListener('keydown', retry); };
+  }, [retrySource, enabled, settingsOpen, run]);
   useEffect(() => {
     if (!result) return;
     let outsidePress: { id: number; x: number; y: number; moved: boolean } | null = null;
@@ -128,7 +168,7 @@ export function TranslationProvider({ settings, scope, enabled, onSaveProfile, o
         <button type="button" className="annotation-icon-button" aria-label={t('复制译文')} title={t('复制译文')} disabled={!result.text || result.status !== 'complete'} onClick={() => { void navigator.clipboard?.writeText(result.text).then(() => onNotify('译文已复制。')).catch(() => setManualCopy(true)); if (!navigator.clipboard) setManualCopy(true); }}><Copy size={15} /></button>
         <button type="button" className="annotation-icon-button" aria-label={t('保留为普通批注')} title={t('保留为普通批注')} disabled={result.status !== 'complete'} onClick={() => {
           if (resultRef.current?.id !== result.id || !result.source.element.isConnected) return;
-          try { result.source.save(result.text, result.model); dismiss(); onNotify('译文已保留为普通批注。'); }
+          try { result.source.save(result.text, result.model); reset(); onNotify('译文已保留为普通批注。'); }
           catch (error) { onNotify(error instanceof Error ? error.message : '无法保留译文，请重试。'); }
         }}><Pin size={15} /></button>
         <button type="button" className="annotation-icon-button" aria-label={t('关闭翻译')} onClick={dismiss}><X size={17} /></button>
@@ -177,7 +217,7 @@ function TranslationSettings({ settings, value, onSave, onClose, onSaveProfile, 
         setDraft({ ...draft, shortcut }); setRecording(false); setError('');
       }} /></label>
       <button type="button" className="profile-text-button" onClick={() => { setDraft({ ...draft, shortcut: { ...DEFAULT_TRANSLATION_SHORTCUT } }); setRecording(false); setError(''); }}>{t('恢复 Alt+1')}</button>
-      <p className="field-help">{t('快捷键仅在程序内选中正文时生效，不影响输入框。')}</p>
+      <p className="field-help">{t('关闭译文后，原文仍可见时可按同一快捷键重译。快捷键不影响输入框。')}</p>
       <label className="field-label">{t('翻译提示词')}<textarea className="field-input" rows={5} value={localizedTranslationPrompt(draft.prompt, locale)} maxLength={TRANSLATION_PROMPT_LIMIT} required onChange={event => setDraft({ ...draft, prompt: event.target.value })} /></label>
       <button type="button" className="profile-text-button" onClick={() => setDraft({ ...draft, prompt: DEFAULT_TRANSLATION_PREFERENCES.prompt })}>{t('恢复默认提示词')}</button>
       <p className="field-help">{t('可用 {targetLanguage} 表示目标语言。只发送选中文字和翻译提示词，不发送全文、所在页或聊天历史。')}</p>

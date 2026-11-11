@@ -172,7 +172,7 @@ export const english: Record<string, string> = {
   "请按组合键…": "Press a key combination…",
   "此组合键与常用操作冲突，请使用 Alt、Ctrl 或 ⌘ 加字母或数字。": "This combination conflicts with a common action. Use Alt, Ctrl or ⌘ with a letter or number.",
   "恢复 Alt+1": "Restore Alt+1",
-  "快捷键仅在程序内选中正文时生效，不影响输入框。": "The shortcut works only on selected reading text inside the app, not in input fields.",
+  "关闭译文后，原文仍可见时可按同一快捷键重译。快捷键不影响输入框。": "After closing the translation, use the same shortcut to translate again while the passage is still visible. The shortcut does not affect input fields.",
   "翻译提示词": "Translation prompt",
   "恢复默认提示词": "Restore default prompt",
   "可用 {targetLanguage} 表示目标语言。只发送选中文字和翻译提示词，不发送全文、所在页或聊天历史。": "Use {targetLanguage} for the target language. Only the selection and translation prompt are sent, without the full document, page or chat history.",

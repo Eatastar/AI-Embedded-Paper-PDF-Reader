@@ -4,9 +4,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, Clipboard, Copy, Languages, MessageSquare, MessageSquarePlus, MessageSquareQuote, Trash2, X } from 'lucide-react';
-import { useTranslation } from './Translation';
+import { canTranslateWithShortcut, useTranslation } from './Translation';
 import { useChatTextReference } from './ChatTextReference';
-import { matchesTranslationShortcut, shortcutLabel } from '../domain/translation';
+import { shortcutLabel } from '../domain/translation';
 import { MathMarkdown } from './MathMarkdown';
 import { createTextAnnotator, rangeToSelector } from '@recogito/text-annotator';
 import type { TextAnnotation, TextSelector } from '@recogito/text-annotator';
@@ -288,9 +288,26 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
   };
 
   const translateSelection = (draft: SelectionDraft) => {
-    if (!translation?.enabled || !isComplete || !proseRef.current) return;
+    const element = proseRef.current;
+    if (!translation?.enabled || !isComplete || !element) return;
     setSelectionDraft(null); setAnswerMenu(null); setAnnotationChoice(null);
-    translation.translate({ sourceKey, text: draft.selector.quote, element: proseRef.current, rect: draft.rect, style: readerStyle, save: (text, model) => {
+    const locate = () => {
+      const doc = element.ownerDocument;
+      const frame = doc.defaultView?.frameElement;
+      if (proseRef.current !== element || !element.isConnected || !element.classList.contains('annotation-answer-ready')
+        || (doc !== document && !frame?.isConnected)) return null;
+      const anchor = reviveQuoteSelector(draft.selector, element)[0];
+      if (!anchor) return null;
+      const viewport = (frame || element.closest('.document-reader-viewport, .chat-scroll-region'))?.getBoundingClientRect();
+      for (const rect of anchor.range.getClientRects()) {
+        const projected = annotationViewportRect(rect, doc);
+        if (rect.width > 0 && rect.height > 0
+          && projected.right > Math.max(0, viewport?.left ?? 0) && projected.left < Math.min(window.innerWidth, viewport?.right ?? window.innerWidth)
+          && projected.bottom > Math.max(0, viewport?.top ?? 0) && projected.top < Math.min(window.innerHeight, viewport?.bottom ?? window.innerHeight)) return projected;
+      }
+      return null;
+    };
+    translation.translate({ sourceKey, text: draft.selector.quote, element, rect: draft.rect, style: readerStyle, locate, save: (text, model) => {
       if (!createAnnotation(draft, { text, model })) throw new Error('原文位置已变化，请重新选词翻译。');
     } });
   };
@@ -300,12 +317,11 @@ export function AnnotatedAnswer({ conversationId, messageId, version, annotation
     setSelectionDraft(null); setAnswerMenu(null); setAnnotationChoice(null);
     proseRef.current?.ownerDocument.getSelection()?.removeAllRanges();
   };
-  useEffect(() => () => translation?.releaseSource(sourceKey), [sourceKey, translation?.releaseSource]);
+  useLayoutEffect(() => () => translation?.releaseSource(sourceKey), [sourceKey, translation?.releaseSource]);
   useEffect(() => {
     if (!translation?.enabled || !isComplete) return;
     const keydown = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || !matchesTranslationShortcut(event, translation.preferences.shortcut) || document.querySelector('dialog[open]')) return;
-      if (elementTarget(event.target)?.closest('input, textarea, select, [contenteditable="true"], .translation-result')) return;
+      if (!canTranslateWithShortcut(event, translation.preferences.shortcut)) return;
       const element = proseRef.current, selection = proseRef.current?.ownerDocument.getSelection();
       if (!element || !selection || selection.isCollapsed || !selection.rangeCount) return;
       const range = selection.getRangeAt(0);

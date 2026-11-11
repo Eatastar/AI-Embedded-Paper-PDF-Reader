@@ -1,6 +1,6 @@
 # AI-Embedded Paper PDF Reader
 
-**AI 嵌入式论文 PDF 阅读器** · 0.1.40 · 20261110.2
+**AI 嵌入式论文 PDF 阅读器** · 0.1.44 · 20261111.3
 
 [更新与数据保留 / Updates and your data](../../docs/UPDATING.md) · [性能与架构 / Performance and architecture](../../docs/PERFORMANCE.md)
 
@@ -228,6 +228,10 @@ v0.1.36 automatic recovery points use small `.snapshot.json` files and content-a
 
 Choose a DRM-free book from Open PDF / ebook. Use chapter navigation, search, typography, reading colors, annotation Q&A and quick translation. Original books stay local and are included with notes in complete backups. See the repository README, updating guide and third-party notices.
 
-电子书双指捏合或加减按钮是 50%–250% 的整体缩放，保留当前换行、文字与图片比例；点击百分比恢复 100%。字号、行距和宽度单独在阅读设置中调整，改变这些设置会重新排版。缩放和横向位置按书保存。
+电子书右上角 **Aa 排版** 可调整字号、行距和正文宽度，窄栏也保留 Aa。双指、Ctrl+滚轮或加减按钮是 50%–250% 的整体缩放，保留当前换行、文字与图片比例；点击百分比恢复 100%。排版、缩放和横向位置按书保存。
 
-Ebook pinch and +/− controls scale the current layout from 50% to 250%, retaining line breaks and text/image proportions. Click the percentage to reset to 100%. Font size, spacing and width remain separate reflow controls in Reading settings. Zoom and horizontal position are remembered per book.
+Use **Aa Typography** in the ebook toolbar to adjust font size, spacing and text width. Aa stays available in narrow panes. Pinch, Ctrl+wheel or +/− scales the current layout from 50% to 250%, retaining line breaks and text/image proportions. Click the percentage to reset to 100%. Typography, zoom and horizontal position are remembered per book.
+
+误关划词翻译后，原文仍可见时按同一快捷键可重译；选了新文字则翻译新选段。
+
+After closing a quick translation, use the same shortcut to translate the passage again while it remains visible. A new selection takes priority.

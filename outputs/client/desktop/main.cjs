@@ -2,7 +2,7 @@ const { app, BrowserWindow, Menu, dialog, session, shell, safeStorage, ipcMain }
 const { join, resolve } = require('node:path');
 const { randomBytes } = require('node:crypto');
 const { once } = require('node:events');
-const { mkdir, writeFile } = require('node:fs/promises');
+const { mkdir, readFile, writeFile } = require('node:fs/promises');
 const { createStartupLog, errorCode, withStartupTimeout } = require('./startup.cjs');
 const { createModelFetch } = require('./model-network.cjs');
 const { createRequestLog } = require('./request-log.cjs');
@@ -19,6 +19,8 @@ const profile = smoke
 app.setName('AI-Embedded Paper PDF Reader');
 app.setPath('userData', profile);
 app.setPath('sessionData', join(profile, 'Session'));
+// Leave room for the bundled assets and let Chromium evict old HTTP cache entries.
+app.commandLine.appendSwitch('disk-cache-size', String(24 * 1024 * 1024));
 const startupLog = createStartupLog(profile);
 startupLog.write('main-entered', { version: app.getVersion(), pid: process.pid });
 const ownsLock = app.requestSingleInstanceLock();
@@ -66,6 +68,19 @@ async function saveSmokeReport(error) {
   const reportPath = resolve(process.env.MARGIN_SMOKE_REPORT);
   await mkdir(require('node:path').dirname(reportPath), { recursive: true });
   await writeFile(reportPath, JSON.stringify({ ...report, ...(error ? { error: String(error.message || error) } : {}) }, null, 2));
+}
+async function refreshCodeCache() {
+  const build = `${app.getVersion()}/${require('./package.json').buildId ?? ''}`;
+  const stampPath = join(profile, 'code-cache-build.txt');
+  const previous = await readFile(stampPath, 'utf8').catch(error => {
+    if (error.code === 'ENOENT') return '';
+    throw error;
+  });
+  if (previous === build) return;
+  // Assets get new URLs between builds, so discard the old compiled bytecode.
+  await desktopSession.clearCodeCaches({});
+  await writeFile(stampPath, build, 'utf8');
+  startupLog.write('code-cache-refreshed');
 }
 async function shutdown() {
   desktopSession?.flushStorageData();
@@ -175,6 +190,9 @@ if (!ownsLock) {
       if (!smoke) void failStartup(Object.assign(new Error('Renderer stopped'), { code: 'RENDERER_FAILED' }));
     });
     window.on('closed', () => { desktopBridge?.dispose(); window = null; });
+    await withStartupTimeout(refreshCodeCache(), 500).catch(error => {
+      startupLog.write('code-cache-refresh-skipped', { code: errorCode(error) });
+    });
     startupLog.write('page-loading');
     await withStartupTimeout(window.loadURL(origin));
     report.started = true;

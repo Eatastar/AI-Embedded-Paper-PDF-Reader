@@ -1,10 +1,10 @@
 // Chinese source, English, Spanish, Japanese, Traditional Chinese, German, Arabic, French.
 export const ebookMessages = [
+  ['排版设置仅在本次有效，请检查本机存储空间。', 'Layout settings could not be saved. Check your local storage; they will apply for this session only.', 'No se pudo guardar el diseño. Comprueba el almacenamiento local; se aplicará solo en esta sesión.', '組版設定を保存できませんでした。空き容量を確認してください。設定は今回の起動中のみ有効です。', '排版設定僅在本次有效，請檢查本機儲存空間。', 'Layout-Einstellungen konnten nicht gespeichert werden. Bitte lokalen Speicher prüfen; sie gelten nur für diese Sitzung.', 'تعذّر حفظ إعدادات التخطيط. تحقق من مساحة التخزين المحلية؛ ستُطبّق في هذه الجلسة فقط.', 'Impossible d’enregistrer la mise en page. Vérifiez le stockage local ; elle ne s’appliquera que pour cette session.'],
   ['缩小电子书', 'Zoom out ebook', 'Alejar el libro', '電子書籍を縮小', '縮小電子書', 'E-Book verkleinern', 'تصغير الكتاب', 'Réduire le livre'],
   ['放大电子书', 'Zoom in ebook', 'Acercar el libro', '電子書籍を拡大', '放大電子書', 'E-Book vergrößern', 'تكبير الكتاب', 'Agrandir le livre'],
   ['恢复 100% 缩放', 'Reset zoom to 100%', 'Restablecer zoom al 100%', '表示倍率を100%に戻す', '恢復 100% 縮放', 'Zoom auf 100% zurücksetzen', 'إعادة التكبير إلى 100%', 'Rétablir le zoom à 100%'],
   ['整体缩放', 'Page zoom', 'Zoom de página', '全体の拡大・縮小', '整體縮放', 'Seitenzoom', 'تكبير الصفحة', 'Zoom de page'],
-  ['双指或加减按钮整体缩放，保持当前换行；调整字号会重新排版。', 'Pinch or use +/− to scale the whole page without changing line breaks. Font-size changes reflow the text.', 'Pellizca o usa +/− para ampliar toda la página sin cambiar los saltos de línea. Cambiar el tamaño de letra redistribuye el texto.', 'ピンチ操作や＋／−で改行を保ったまま全体を拡大・縮小できます。文字サイズを変えると組版が変わります。', '雙指或加減按鈕整體縮放，保持目前換行；調整字型大小會重新排版。', 'Mit Pinch-Geste oder +/− die ganze Seite ohne neue Zeilenumbrüche skalieren. Schriftgrößenänderungen umbrechen den Text neu.', 'استخدم إيماءة الإصبعين أو +/− لتكبير الصفحة دون تغيير فواصل الأسطر. تغيير حجم الخط يعيد ترتيب النص.', 'Pincez ou utilisez +/− pour agrandir la page sans modifier les retours à la ligne. La taille de police redistribue le texte.'],
   ['正在提取文字：{0} / {1}', 'Extracting text: {0} / {1}', 'Extrayendo texto: {0} / {1}', 'テキスト抽出中：{0} / {1}', '正在擷取文字：{0} / {1}', 'Text wird extrahiert: {0} / {1}', 'جارٍ استخراج النص: {0} / {1}', 'Extraction du texte : {0} / {1}'],
   ['章', ' chapters', ' capítulos', '章', '章', ' Kapitel', ' فصول', ' chapitres'],
   ['调整纸张与文字颜色，书内插图保持原色，不改变原文件。', 'Adjust paper and text colors; illustrations keep their colors. The original file stays unchanged.', 'Ajusta el color del papel y del texto; las ilustraciones conservan sus colores. El archivo original no cambia.', '背景と文字の色を調整します。挿絵の色と元のファイルは変わりません。', '調整紙張與文字顏色，書內插圖保持原色，不變更原檔。', 'Papier- und Textfarben anpassen; Abbildungen behalten ihre Farben. Die Originaldatei bleibt unverändert.', 'اضبط لون الورق والنص؛ تحتفظ الرسومات بألوانها ولا يتغير الملف الأصلي.', 'Ajustez les couleurs du papier et du texte ; les illustrations conservent leurs couleurs. Le fichier original reste inchangé.'],
@@ -20,6 +20,9 @@ export const ebookMessages = [
   ['下一章', 'Next chapter', 'Capítulo siguiente', '次の章', '下一章', 'Nächstes Kapitel', 'الفصل التالي', 'Chapitre suivant'],
   ['章节编号', 'Chapter number', 'Número de capítulo', '章番号', '章節編號', 'Kapitelnummer', 'رقم الفصل', 'Numéro du chapitre'],
   ['电子书排版', 'Ebook typography', 'Tipografía del libro', '電子書籍の組版', '電子書排版', 'E-Book-Typografie', 'تنسيق الكتاب', 'Typographie du livre'],
+  ['排版', 'Typography', 'Tipografía', '組版', '排版', 'Typografie', 'التنسيق', 'Typographie'],
+  ['关闭排版设置', 'Close typography settings', 'Cerrar ajustes de tipografía', '組版設定を閉じる', '關閉排版設定', 'Typografieeinstellungen schließen', 'إغلاق إعدادات التنسيق', 'Fermer les réglages de typographie'],
+  ['按书记住排版。双指、Ctrl+滚轮或加减按钮只改变显示倍率，保持换行。', 'Typography is saved per book. Pinch, Ctrl+scroll or use +/− to scale the page and keep its line breaks.', 'La tipografía se guarda por libro. Usa dos dedos, Ctrl+rueda o +/− para ampliar sin cambiar los saltos de línea.', '組版は本ごとに保存されます。ピンチ、Ctrl＋ホイール、＋／−では改行を保ったまま拡大・縮小できます。', '按書記住排版。雙指、Ctrl+滾輪或加減按鈕只改變顯示倍率，保持換行。', 'Typografie wird pro Buch gespeichert. Pinch, Strg+Mausrad oder +/− ändern nur den Zoom; die Zeilenumbrüche bleiben erhalten.', 'يُحفظ التنسيق لكل كتاب. كبّر بإصبعين أو Ctrl مع عجلة الفأرة أو +/− مع إبقاء فواصل الأسطر.', 'La typographie est mémorisée par livre. Pincez, utilisez Ctrl+molette ou +/− pour zoomer sans modifier les retours à la ligne.'],
   ['字号', 'Font size', 'Tamaño de letra', '文字サイズ', '字型大小', 'Schriftgröße', 'حجم الخط', 'Taille du texte'],
   ['行距', 'Line spacing', 'Interlineado', '行間', '行距', 'Zeilenabstand', 'تباعد الأسطر', 'Interligne'],
   ['正文宽度', 'Text width', 'Ancho del texto', '本文の幅', '正文寬度', 'Textbreite', 'عرض النص', 'Largeur du texte'],
@@ -34,6 +37,7 @@ export const ebookMessages = [
 ] as const;
 
 export const ebookDiagnostics: Record<string, string> = {
+  '排版设置仅在本次有效，请检查本机存储空间。': 'Layout settings are available for this session only. Check local storage space.',
   '电子书记录需要新版备份，请使用默认导出格式。': 'Ebook records require a current-version backup. Use the default export format.',
   '电子书图片分辨率过大，请先压缩图片。': 'An ebook image exceeds safe resolution limits. Compress the image first.',
   '这不是有效的 EPUB 文件。': 'This is not a valid EPUB file.',

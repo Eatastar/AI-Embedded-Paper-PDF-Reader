@@ -173,3 +173,43 @@ Keep logical layout width separate from display scale. Native CSS zoom scales th
 隔离合成检查：200% 时原始字号仍为 19px，正文宽度 800→1600、插图宽度 480→960，逐字符换行位置一致。触控板等效 Ctrl+wheel 事件只缩放正文，应用窗口倍率保持 1；可滚动范围内保持指针位置。检查放大后的原文高亮点击、译文只发送选段、独立字号重排、缩放与横向位置重开恢复、窄分栏按钮。连续 12 轮放大/缩小，图像资源数量保持不变、画布数量为 0。完整回归 378 项通过。
 
 Isolated synthetic checks: at 200%, font size stays 19px, text width scales 800→1600 and illustration width 480→960, with identical per-character line breaks. Native Ctrl+wheel scales the reading content while application zoom stays 1; the pointer anchor is retained within scroll limits. Verify scaled highlight clicks, selected-text-only translation, independent font reflow, saved zoom/horizontal progress and compact-pane controls. Twelve zoom-in/out cycles keep the resource count unchanged and create zero canvases. All 378 regression tests pass.
+
+## v0.1.41：排版锁定 / Layout lock
+
+锁定排版只记录字号、行距、正文宽度和当前逻辑宽度，不复制 DOM、原书或图片。继续复用同一份原生正文和缩放控制器，当前章资源的释放方式不变。
+
+隔离合成检查中，字号 24px、行距 48px、正文宽度 640px 的排版锁定后，在 500px 窄栏仍保持 680px 逻辑宽度和逐字符换行位置；200% 时正文宽度为 1280px、插图宽度为 960px。切章、重开并修改全局默认值后，本书排版保持；解锁恢复窄栏重排。放大后的高亮点击、只发送选段的翻译、12 轮缩放资源数不变及零新画布检查通过。完整回归 379 项通过。以上仅为虚构资料的检查结果。
+
+Locking stores typography and the current logical width, without copying DOM, original archives or images. Reuse the same live text and zoom controller; current-chapter resource cleanup is unchanged.
+
+In isolated synthetic checks, a locked 24px font / 48px line-height / 640px text layout retains its 680px logical width and per-character line breaks in a 500px pane. At 200%, text width is 1280px and illustration width is 960px. Chapter changes and reopening after global-default changes retain book-specific typography; unlocking restores narrow-pane reflow. Scaled highlight clicks, selected-text-only translation, unchanged resource counts through 12 zoom cycles and zero additional canvases pass. All 379 regression tests pass. These results describe synthetic fixtures only.
+
+## v0.1.42：独立排版与快译重试 / Separate typography and repeat translation
+
+逻辑宽度仅随排版设置或阅读栏宽度更新；缩放继续复用原生 CSS 和同一个章节 DOM。快译关闭时中止当前请求、丢弃译文，只临时记住一个选段和锚点，重译时重新定位，不增加持久缓存。
+
+Logical width updates with typography or reading pane width. Zoom continues to use native CSS and the same chapter DOM. Closing quick translation aborts the request, discards the result and remembers one passage and anchor in memory. The shortcut locates the passage again without a persistent cache.
+
+隔离测试中，排版为 24px 字号、48px 行距及 640px 正文宽度时，从 100% 放到 250%，逐字符换行位置不变，正文 640→1600px、图片 480→1200px，无新增画布。500px 阅读栏仍可用 Aa 修改排版，缩放倍率保留。PDF 和电子书均验证关闭译文后可重译；新选段优先，输入框、离屏原文和已切换的章节不会重发旧选段。379 项回归与解压包启动、退出保存检查通过。
+
+In isolated tests, zooming from 100% to 250% kept every line break at 24px font size, 48px line height and 640px text width. Text scaled from 640 to 1600px and the image from 480 to 1200px without a new canvas. Aa remained accessible in a 500px pane and typography changes preserved zoom. PDF and ebook translations could be repeated after dismissal; new selections took priority, and input fields, offscreen passages and chapter changes did not resend the previous selection. All 379 regression tests and the extracted app's startup and save-on-exit checks passed.
+
+## v0.1.43：桌面 HTTP 磁盘缓存 / Desktop HTTP disk cache
+
+通过 Electron 为桌面 HTTP 缓存设置 24 MiB 预算。Windows 上短时间大量写入时，Chromium 可能稍后才淘汰旧条目。启动时继续使用同一资料目录和会话。[Electron 磁盘缓存设置](https://www.electronjs.org/docs/latest/api/command-line-switches#--disk-cache-sizesize)
+
+The desktop HTTP cache has a 24 MiB budget. On Windows, Chromium can defer eviction after a burst of writes. The app continues to open the existing profile and session. [Electron disk cache setting](https://www.electronjs.org/docs/latest/api/command-line-switches#--disk-cache-sizesize)
+
+Windows 隔离对照中，v0.1.42 的 HTTP 缓存目录为 119.4 MB，首次打开 v0.1.43 后为 8.2 MB。人工连续读取 52 个不同缓存地址后曾增至 119.1 MB，重开后恢复到 8.2 MB。后续重开确认主界面文件命中缓存。各三次启动中位数为 206 ms 和 210 ms，从主进程进入计至页面就绪。原测试电子书和本机偏好可读取，PDF 可正常打开。379 项回归和解压包启动、退出检查通过。
+
+In an isolated Windows comparison, the HTTP cache folder went from 119.4 MB on v0.1.42 to 8.2 MB after opening v0.1.43. A synthetic burst of 52 distinct cache URLs grew it to 119.1 MB. Reopening returned it to 8.2 MB, and subsequent launches reused the cached main bundle. Median times from main process entry to page ready were 206 ms and 210 ms across three launches per version. The test ebook, local preferences and PDF were readable. All 379 regression tests and the extracted app's startup and exit checks passed.
+
+## v0.1.44：按构建刷新编译缓存 / Compiled cache refresh per build
+
+新构建首次启动时，通过 Electron 刷新本机会话的编译缓存。清理成功后记录程序版本和构建号，同一构建继续复用后来生成的缓存。清理超时或失败时照常打开阅读器，后续启动可重试。[Electron 编译缓存接口](https://www.electronjs.org/docs/latest/api/session#sesclearcodecachesoptions)
+
+On the first launch of a build, Electron refreshes the session's compiled code cache. After success, the app records the version and build ID. Later starts reuse compiled code generated for that build. If maintenance times out or fails, the reader opens and can retry on a later launch. [Electron code cache API](https://www.electronjs.org/docs/latest/api/session#sesclearcodecachesoptions)
+
+Windows 隔离对照中，依次使用 v0.1.41、v0.1.42、v0.1.43 阅读虚构 PDF，累计编译缓存 5.77 MB。首次启动 v0.1.44 后为 851 字节，随后三次打开并缩放 PDF，编译缓存均为 1.92 MB。该次首次启动从主进程进入到页面就绪耗时 283 ms，随后三次中位数 206 ms。缩小图形缓存预算的试验中，同一 PDF 的图形缓存目录占用均为 8.10 MB。测试 PDF 与本机偏好可读，381 项回归和解压包启动、退出检查通过。
+
+In an isolated Windows comparison, reading a synthetic PDF across v0.1.41, v0.1.42 and v0.1.43 accumulated 5.77 MB of compiled cache. The first v0.1.44 launch left 851 bytes. Three subsequent launches with PDF zoom kept 1.92 MB. The first page was ready 283 ms after main process entry, and the median of the next three was 206 ms. The graphics cache folders measured 8.10 MB under both budgets in the trial. The test PDF and local preferences remained readable. All 381 regression tests and the extracted app's startup and exit checks passed.

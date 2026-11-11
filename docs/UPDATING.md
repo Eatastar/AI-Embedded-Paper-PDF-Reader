@@ -2,7 +2,7 @@
 
 发行包内的中英双语 TXT 名称：`READ-ME-FIRST-Update-and-Data-Migration.txt`。
 
-适用：Windows 桌面版，在同一台电脑、同一个 Windows 账户中更新。下面以旧版本（例如 v0.1.32）升级到 v0.1.40 为例。
+适用：Windows 桌面版，在同一台电脑、同一个 Windows 账户中更新。下面以旧版本（例如 v0.1.32）升级到 v0.1.44 为例。
 
 **照这个顺序做：留一份备份 → 退出旧版 → 解压新版 → 确认资料 → 删除旧版。**
 
@@ -22,15 +22,15 @@
 
 ## 第 3 步：完整解压新版
 
-1. 下载新版 Windows ZIP，例如 `AI-Embedded-Paper-PDF-Reader-0.1.40-Windows-x64.zip`。
+1. 下载新版 Windows ZIP，例如 `AI-Embedded-Paper-PDF-Reader-0.1.44-Windows-x64.zip`。
 2. 右键 ZIP，选择“全部解压”或解压软件里的“解压到…”。
-3. 解压到一个新的、能分清版本的文件夹，例如桌面上的 `AI-Embedded-Paper-PDF-Reader-0.1.39-Windows-x64`。
+3. 解压到一个新的、能分清版本的文件夹，例如桌面上的 `AI-Embedded-Paper-PDF-Reader-0.1.44-Windows-x64`。
 4. 保留解压出来的全部文件。不要在 ZIP 内直接运行，也不要只把 EXE 单独拖出来。
 
 ## 第 4 步：打开新版，检查原来的资料
 
 1. 进入刚才解压的新文件夹，双击 `AI-Embedded-Paper-PDF-Reader.exe`。
-2. 看窗口上方的版本号，确认是 `0.1.39`。
+2. 看窗口上方的版本号，确认是 `0.1.44`。
 3. 打开一份以前读过的 PDF，点开一条以前的批注，再打开一段历史聊天，确认内容都在。
 4. 打开模型设置，确认原来的连接仍在。
 
@@ -41,7 +41,7 @@
 例如，现在有下面两个程序文件夹：
 
 - `AI-Embedded-Paper-PDF-Reader-0.1.32-Windows-x64`：旧版，确认资料正常后可以删除。
-- `AI-Embedded-Paper-PDF-Reader-0.1.39-Windows-x64`：新版，保留整个文件夹。
+- `AI-Embedded-Paper-PDF-Reader-0.1.44-Windows-x64`：新版，保留整个文件夹。
 
 旧版的 ZIP 和对应 `.sha256` 校验文件也可以删除。第 1 步导出的 `.json` 备份先留着。
 
@@ -88,15 +88,15 @@ v0.1.33 保留 v0.1.32 的资料目录、固定本机地址、数据库版本和
 
 The bilingual TXT in the release is named `READ-ME-FIRST-Update-and-Data-Migration.txt`.
 
-For the Windows desktop app on the same computer and Windows account. This example updates an older version, such as v0.1.32, to v0.1.39.
+For the Windows desktop app on the same computer and Windows account. This example updates an older version, such as v0.1.32, to v0.1.44.
 
 **Back up → exit the old app → extract the new ZIP → check your data → remove the old app.** The app and your profile are stored separately. Same-account updates reuse the profile automatically; exporting and importing is not normally required. The backup is an extra precaution.
 
 1. **Keep a backup first (recommended).** In v0.1.34 or later, choose **Menu → Backup & restore** at the top left of the start page. In earlier versions, open chat mode first, then choose **Backup & restore** at the lower left. Select **All records (including trash)** and click **Export backup**. Save the `.json` on your desktop or elsewhere outside the old program folder. It includes chats, answer versions, notes, annotations, figure regions/markings and imported PDFs, but excludes API connections and keys.
 2. **Exit the old app normally.** Click × and wait for saving to finish and the window to disappear. Keep its folder for now.
-3. **Fully extract the new ZIP into a new folder.** For example, extract `AI-Embedded-Paper-PDF-Reader-0.1.40-Windows-x64.zip` into a separate folder with that version number. Keep every accompanying file. Do not run from inside the ZIP or copy only the EXE.
-4. **Open and check the new app.** Run `AI-Embedded-Paper-PDF-Reader.exe` from the new folder. Verify `0.1.39` in the window, open an existing PDF and annotation, check an old chat, and confirm your saved model connections. If the data is present, continue using it; do not import the backup again. The new version creates a verified upgrade checkpoint when it first opens an existing profile from an earlier version.
-5. **Only then delete the old version folder.** You may remove the old program folder (for example, `0.1.32`), its ZIP and checksum. Keep the entire `0.1.39` folder and your exported backup. Move any PDFs or backups you manually placed inside the old folder elsewhere before deleting it.
+3. **Fully extract the new ZIP into a new folder.** For example, extract `AI-Embedded-Paper-PDF-Reader-0.1.44-Windows-x64.zip` into a separate folder with that version number. Keep every accompanying file. Do not run from inside the ZIP or copy only the EXE.
+4. **Open and check the new app.** Run `AI-Embedded-Paper-PDF-Reader.exe` from the new folder. Verify `0.1.44` in the window, open an existing PDF and annotation, check an old chat, and confirm your saved model connections. If the data is present, continue using it; do not import the backup again. The new version creates a verified upgrade checkpoint when it first opens an existing profile from an earlier version.
+5. **Only then delete the old version folder.** You may remove the old program folder (for example, `0.1.32`), its ZIP and checksum. Keep the entire `0.1.44` folder and your exported backup. Move any PDFs or backups you manually placed inside the old folder elsewhere before deleting it.
 6. **Launch the new app from now on.** Replace old desktop shortcuts with shortcuts to the new EXE. Removing an old shortcut does not delete data.
 
 **If old data does not appear:** keep the old version and profile. In the new app, choose **Backup & restore → Restore from file**, select the complete `.json`, and recheck the contents before removing the old app. In normal operation, restoring adds new conversations; the recovery screen shown after a read failure preserves the prior records before replacement. If you have no export yet, use the old app to create one.
@@ -150,3 +150,13 @@ Legacy-format export is blocked for records containing ebooks. Use the default c
 Exit the old app, fully extract the new ZIP and run its EXE to keep using existing chats, source notes, ebooks and API connections. This version only adds zoom and horizontal position to per-book reading preferences; the main database and backup formats are unchanged, with no manual migration required. After verification, remove old program folders, ZIPs and checksum files while retaining `%APPDATA%\MarginChat` and your exported backups.
 
 Opening a PDF/ebook stores a local library copy of its original bytes, with annotations and Q&A saved separately. The original file is never modified, and identical contents reuse existing records when available. Program files and reading data are separate; removing an old app folder does not remove your books or notes.
+
+## v0.1.42 电子书排版与快译 / Ebook typography and repeat translation
+
+电子书右上角的 **Aa 排版** 取代锁定按钮。字号、行距和正文宽度继续按书保存，旧版已保存的参数会沿用；窗口或分栏实际改宽时可自动重排。双指、Ctrl+滚轮或加减按钮只改变缩放倍率。误关快译后，只要原文仍可见，再按原快捷键即可重译。
+
+同一电脑账户下，正常退出旧版、完整解压并运行新版即可保留原资料。资料库和备份格式不变；手动 JSON 备份包含阅读资料，不包含本机显示偏好。新版确认可用后可删除旧程序目录、ZIP 和校验文件，保留个人资料目录。
+
+**Aa Typography** replaces the ebook lock. Existing font size, spacing and text width carry forward per book. The layout can reflow as the reading pane changes width; pinch, Ctrl+wheel and +/− change only the scale. If you close a translation, press the same shortcut while the passage is still visible to translate it again.
+
+On the same computer/account, exit the old app and fully extract and run the new one to retain your profile. Database and backup formats are unchanged. Manual JSON backups contain reading data, not local display preferences. Once verified, old program folders, ZIPs and checksums can be removed while keeping the personal profile.

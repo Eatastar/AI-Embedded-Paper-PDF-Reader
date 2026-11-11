@@ -59,7 +59,8 @@ function startupHarness(options: { writeFails?: boolean; existingSize?: number }
   };
 }
 
-type HarnessOptions = { smoke?: boolean; ownsLock?: boolean; listenAutomatically?: boolean };
+type CodeCacheState = { build?: string; clearCalls: number; fail?: boolean };
+type HarnessOptions = { smoke?: boolean; ownsLock?: boolean; listenAutomatically?: boolean; codeCache?: CodeCacheState };
 
 function mainHarness(options: HarnessOptions = {}) {
   const startup = startupHarness();
@@ -70,6 +71,8 @@ function mainHarness(options: HarnessOptions = {}) {
   const dialogs: [string, string][] = [];
   const reports: string[] = [];
   const exitCodes: number[] = [];
+  const switches = new Map<string, string>();
+  const codeCache: CodeCacheState = options.codeCache ?? { clearCalls: 0 };
   let serverOptions: any;
   const fakeProcess = Object.assign(new EventEmitter(), {
     argv: options.smoke ? ['MarginChat.exe', '--smoke-test'] : ['MarginChat.exe'],
@@ -78,6 +81,7 @@ function mainHarness(options: HarnessOptions = {}) {
   });
   const app = Object.assign(new EventEmitter(), {
     isPackaged: true,
+    commandLine: { appendSwitch(name: string, value: string) { switches.set(name, value); } },
     setName() {},
     setPath() {},
     getPath() { return 'C:/virtual/app-data'; },
@@ -124,6 +128,10 @@ function mainHarness(options: HarnessOptions = {}) {
     webRequest: { onBeforeSendHeaders() {}, onHeadersReceived() {} },
     setPermissionRequestHandler() {},
     setPermissionCheckHandler() {},
+    async clearCodeCaches() {
+      codeCache.clearCalls += 1;
+      if (codeCache.fail) throw Object.assign(new Error('Cache unavailable'), { code: 'EIO' });
+    },
     flushStorageData() { trace.push('session.flushStorageData'); },
     async forceReloadProxyConfig() { trace.push('session.proxy-reloaded'); },
     async fetch() { trace.push('session.model-fetch'); return new Response('model-response'); },
@@ -147,7 +155,19 @@ function mainHarness(options: HarnessOptions = {}) {
       if (id === './request-log.cjs') return { createRequestLog: () => ({ write() {} }) };
       if (id === './backup-store.cjs') return { createBackupStore: () => ({ list: async () => [], read: async () => '', write: async () => ({}) }) };
       if (id === './desktop-bridge.cjs') return require('../desktop/desktop-bridge.cjs');
-      if (id === 'node:fs/promises') return { async mkdir() {}, async writeFile(_path: string, value: string) { reports.push(value); } };
+      if (id === './package.json') return { buildId: 'test-build' };
+      if (id === 'node:fs/promises') return {
+        async mkdir() {},
+        async readFile(path: string) {
+          assert.ok(path.endsWith('code-cache-build.txt'));
+          if (codeCache.build === undefined) throw Object.assign(new Error('Stamp missing'), { code: 'ENOENT' });
+          return codeCache.build;
+        },
+        async writeFile(path: string, value: string) {
+          if (path.endsWith('code-cache-build.txt')) codeCache.build = value;
+          else reports.push(value);
+        },
+      };
       if (['node:path', 'node:crypto', 'node:events'].includes(id)) return require(id);
       throw new Error('Unexpected main dependency: ' + id);
     },
@@ -162,7 +182,7 @@ function mainHarness(options: HarnessOptions = {}) {
     setTimeout(callback: () => void) { queueMicrotask(callback); },
   }, { filename: 'desktop/main.cjs' });
   return {
-    ...startup, ready, page, trace, windows, dialogs, reports, exitCodes,
+    ...startup, ready, page, trace, windows, dialogs, reports, exitCodes, switches,
     app, server, process: fakeProcess,
     get serverOptions() { return serverOptions; },
     logEntries() {
@@ -172,8 +192,38 @@ function mainHarness(options: HarnessOptions = {}) {
   };
 }
 
+test('compiled code is refreshed once per build and stays available for later starts', async () => {
+  const codeCache = { build: '0.1.2/old-build', clearCalls: 0 };
+  const first = mainHarness({ codeCache });
+  first.ready.resolve();
+  await first.settle();
+  assert.equal(codeCache.build, '0.1.2/test-build');
+  assert.equal(codeCache.clearCalls, 1);
+  assert.ok(first.logEntries().some(entry => entry.phase === 'code-cache-refreshed'));
+  assert.ok(first.trace.includes('window.loadURL'));
+
+  const restart = mainHarness({ codeCache });
+  restart.ready.resolve();
+  await restart.settle();
+  assert.equal(codeCache.clearCalls, 1);
+  assert.ok(restart.trace.includes('window.loadURL'));
+});
+
+test('compiled cache refresh failure leaves the build stamp available for a later retry', async () => {
+  const codeCache = { build: 'old-build', clearCalls: 0, fail: true };
+  const app = mainHarness({ codeCache });
+  app.ready.resolve();
+  app.page.resolve();
+  await app.settle();
+  assert.equal(codeCache.build, 'old-build');
+  assert.equal(codeCache.clearCalls, 1);
+  assert.ok(app.logEntries().some(entry => entry.phase === 'code-cache-refresh-skipped'));
+  assert.ok(app.logEntries().some(entry => entry.phase === 'page-ready'));
+});
+
 test('desktop shows its normal window before page loading completes and retains renderer isolation', async () => {
   const app = mainHarness();
+  assert.equal(app.switches.get('disk-cache-size'), String(24 * 1024 * 1024));
   app.ready.resolve();
   await app.settle();
   assert.equal(app.windows.length, 1);

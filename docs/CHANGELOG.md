@@ -1,5 +1,37 @@
 # 版本记录 / Changelog
 
+## 0.1.44 · 20261111.3 · 2026-11-11
+
+桌面版首次启动新构建时回收旧版 JavaScript 编译缓存。同一构建重开时继续复用已生成的编译结果。
+
+The desktop app refreshes compiled JavaScript caches on the first launch of a new build. Later starts of that build reuse its compiled code.
+
+## 0.1.43 · 20261111.2 · 2026-11-11
+
+桌面版将界面和阅读资源的 HTTP 磁盘缓存预算设为 24 MiB，自动淘汰旧缓存，并为常用资源保留空间。
+
+The desktop app gives its HTTP disk cache a 24 MiB budget, evicting older entries while keeping frequently used assets cacheable.
+
+## 0.1.42 · 20261111.1 · 2026-11-11
+
+电子书右上角用 **Aa 排版** 替换锁定按钮，窄栏保留 Aa。字号、行距和正文宽度可随时调整并按书保存；双指、Ctrl+滚轮和加减按钮只改变显示倍率，保留当前换行。实际改变阅读栏宽度时，正文会适应新空间。旧版已保存的排版和阅读进度可继续使用。
+
+**Aa Typography** replaces the ebook toolbar lock and stays available in narrow panes. Adjust and save font size, spacing and text width per book. Pinch, Ctrl+wheel and +/− zoom the current layout without changing line breaks. The text reflows when the reading pane itself changes width. Existing typography and reading progress carry forward.
+
+关闭划词翻译后，只要原文仍在眼前，再按同一快捷键就能重译。新选段优先，切换原文或关闭文档后不会沿用旧选段。临时译文仍需点击保留才会写入笔记。
+
+After closing a quick translation, use the same shortcut while the original passage is still visible. A new selection takes priority, and leaving the source clears the previous passage. Temporary translations are saved only by choosing Keep.
+
+## 0.1.41 · 20261110.3 · 2026-11-10
+
+电子书新增“锁定排版”：先在阅读设置中调好字号、行距和正文宽度，再锁定当前排版。双指或加减按钮继续整体缩放；改变窗口宽度、打开并排聊天、切换章节或重开书籍时保留排版宽度和换行，空间不足时横向滚动。锁定后排版滑块暂停使用，点击“解锁排版”即可重新调整。锁定动作保留当前缩放比例，不突然跳回 100%。
+
+Ebooks gain Lock layout: adjust font size, spacing and text width in Reading settings, then lock that layout. Pinch and +/− still zoom proportionally. Preserve layout width and line breaks across window resizing, split chat, chapter changes and reopening; scroll horizontally when needed. Typography sliders are disabled while locked and become editable after Unlock layout. Locking retains the current zoom without jumping to 100%.
+
+每本书单独保存排版与锁定状态。窄工具栏隐藏锁定图标，可从阅读设置中的文字按钮操作。只保存少量排版参数，不制作页面截图、不复制书籍或图片缓存；主资料库、备份格式和资料路径不变，已有聊天与笔记继续使用。
+
+Save typography and lock state per book. Narrow toolbars keep the labelled lock control in Reading settings. Store only small layout parameters, with no page screenshots or duplicate book/image caches. Database and backup formats and the profile location stay unchanged; existing chats and notes remain available.
+
 ## 0.1.40 · 20261110.2 · 2026-11-10
 
 电子书的双指捏合与加减按钮改为保持当前排版的整体缩放，范围 50%–250%；文字、公式、插图和高亮同步放大，不改变当前换行，点击百分比恢复 100%。字号、行距和正文宽度仍在阅读设置中独立调整，需要时重新排版。仅缩放阅读内容，工具栏、聊天和批注框保持正常界面尺寸；放大后可横向滚动，窄分栏可在阅读设置中使用缩放按钮。

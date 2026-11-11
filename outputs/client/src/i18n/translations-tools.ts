@@ -1,4 +1,5 @@
 export const tools = String.raw`
+关闭译文后，原文仍可见时可按同一快捷键重译。快捷键不影响输入框。|Tras cerrar la traducción, vuelve a usar el atajo mientras el pasaje siga visible. No afecta a los campos de entrada.|翻訳を閉じた後も、原文が表示されていれば同じショートカットで再翻訳できます。入力欄には影響しません。|Nach dem Schließen kann die sichtbare Textstelle mit derselben Tastenkombination erneut übersetzt werden. Eingabefelder sind davon nicht betroffen.|بعد إغلاق الترجمة، استخدم الاختصار نفسه لإعادتها ما دام النص الأصلي ظاهرًا. لا يؤثر الاختصار على حقول الإدخال.|Après fermeture, utilisez le même raccourci pour retraduire le passage encore visible. Le raccourci n’affecte pas les champs de saisie.
 停靠到阅读器|Acoplar al lector|リーダーに固定|Am Reader andocken|تثبيت في القارئ|Ancrer au lecteur
 取消停靠，释放阅读空间|Desacoplar y liberar espacio de lectura|固定を解除して閲覧領域を広げる|Abdocken und Lesebereich freigeben|إلغاء التثبيت لتوسيع مساحة القراءة|Détacher pour libérer l’espace de lecture
 图片问答|Preguntas sobre imágenes|画像 Q&A|Bildfragen|أسئلة الصور|Questions sur les images
